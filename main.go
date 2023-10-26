@@ -4,10 +4,9 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"github.com/Piszmog/pathwise/components"
+	"github.com/Piszmog/pathwise/db"
+	"github.com/Piszmog/pathwise/db/store"
 	"github.com/Piszmog/pathwise/handlers"
-	"github.com/Piszmog/pathwise/types"
-	"github.com/a-h/templ"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -20,40 +19,27 @@ import (
 var assets embed.FS
 
 func main() {
+	database, err := db.New(db.DatabaseTypeFile, db.DatabaseOpts{URL: "./db.sqlite3"})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer database.Close()
+
+	if err = db.Init(database); err != nil {
+		log.Fatal(err)
+	}
+
+	handler := &handlers.Handler{
+		JobApplicationStore:              &store.JobApplicationStore{Database: database},
+		JobApplicationNoteStore:          &store.JobApplicationNoteStore{Database: database},
+		JobApplicationStatusHistoryStore: &store.JobApplicationStatusHistoryStore{Database: database},
+		StatsStore:                       &store.StatsStore{Database: database},
+	}
+
 	r := mux.NewRouter()
 	r.PathPrefix("/assets/").Handler(http.FileServer(http.FS(assets)))
-
-	m := components.Main(
-		[]types.JobApplication{
-			{
-				ID:        1,
-				Company:   "Company 1",
-				Title:     "Title 1",
-				Status:    types.JobApplicationStatusApplied,
-				AppliedAt: time.Now(),
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			},
-			{
-				ID:        2,
-				Company:   "Company 2",
-				Title:     "Title 2",
-				Status:    types.JobApplicationStatusApplied,
-				AppliedAt: time.Now(),
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			},
-		},
-		types.StatsOpts{
-			TotalApplications:           "2",
-			TotalCompanies:              "2",
-			AverageTimeToHearBackInDays: "2",
-			TotalInterviewingPercentage: "4",
-			TotalRejectionsPercentage:   "44",
-		},
-	)
-	r.Handle("/", templ.Handler(m))
-	r.HandleFunc("/jobs/{id}", handlers.GetJob).Methods(http.MethodGet)
+	r.HandleFunc("/", handler.Jobs).Methods(http.MethodGet)
+	r.HandleFunc("/jobs/{id}", handler.JobDetails).Methods(http.MethodGet)
 
 	srv := &http.Server{
 		Handler: r,

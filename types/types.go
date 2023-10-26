@@ -16,8 +16,13 @@ type JobApplication struct {
 	AppliedAt time.Time
 }
 
+func (j JobApplication) RecordID() int {
+	return j.ID
+}
+
 type JobApplicationTimelineEntry interface {
 	Type() JobApplicationTimelineType
+	Created() time.Time
 }
 
 type JobApplicationTimelineType string
@@ -35,8 +40,16 @@ type JobApplicationStatusHistory struct {
 	Status           JobApplicationStatus
 }
 
+func (j JobApplicationStatusHistory) RecordID() int {
+	return j.ID
+}
+
 func (j JobApplicationStatusHistory) Type() JobApplicationTimelineType {
 	return JobApplicationTimelineTypeStatus
+}
+
+func (j JobApplicationStatusHistory) Created() time.Time {
+	return j.CreatedAt
 }
 
 type JobApplicationNote struct {
@@ -47,8 +60,16 @@ type JobApplicationNote struct {
 	Note             string
 }
 
+func (j JobApplicationNote) RecordID() int {
+	return j.ID
+}
+
 func (j JobApplicationNote) Type() JobApplicationTimelineType {
 	return JobApplicationTimelineTypeNote
+}
+
+func (j JobApplicationNote) Created() time.Time {
+	return j.CreatedAt
 }
 
 type JobApplicationStatus string
@@ -68,6 +89,33 @@ const (
 
 func (j JobApplicationStatus) String() string {
 	return string(j)
+}
+
+func ToJobApplicationStatus(val string) JobApplicationStatus {
+	switch strings.ToLower(val) {
+	case strings.ToLower(JobApplicationStatusAccepted.String()):
+		return JobApplicationStatusAccepted
+	case strings.ToLower(JobApplicationStatusApplied.String()):
+		return JobApplicationStatusApplied
+	case strings.ToLower(JobApplicationStatusCanceled.String()):
+		return JobApplicationStatusCanceled
+	case strings.ToLower(JobApplicationStatusClosed.String()):
+		return JobApplicationStatusClosed
+	case strings.ToLower(JobApplicationStatusDeclined.String()):
+		return JobApplicationStatusDeclined
+	case strings.ToLower(JobApplicationStatusInterviewing.String()):
+		return JobApplicationStatusInterviewing
+	case strings.ToLower(JobApplicationStatusOffered.String()):
+		return JobApplicationStatusOffered
+	case strings.ToLower(JobApplicationStatusRejected.String()):
+		return JobApplicationStatusRejected
+	case strings.ToLower(JobApplicationStatusWatching.String()):
+		return JobApplicationStatusWatching
+	case strings.ToLower(JobApplicationStatusWithdrawn.String()):
+		return JobApplicationStatusWithdrawn
+	default:
+		return JobApplicationStatusWatching
+	}
 }
 
 type SelectOpts struct {

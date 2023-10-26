@@ -140,7 +140,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 }
 
 templ jobApplicationForm() {
-	<form>
+	<form hx-post="/jobs" hx-on::after-request="this.reset()">
 		<div class="grid grid-cols-1 gap-x-6 gap-y-8">
 			<div>
 				<label for="company" class="block text-sm font-medium leading-6 text-gray-900">Company</label>

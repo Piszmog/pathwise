@@ -29,3 +29,4 @@ appengine-generated/
 .idea
 *.iml
 /assets/css
+*.sqlite3
