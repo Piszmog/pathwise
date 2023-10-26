@@ -39,6 +39,7 @@ func main() {
 	r := mux.NewRouter()
 	r.PathPrefix("/assets/").Handler(http.FileServer(http.FS(assets)))
 	r.HandleFunc("/", handler.Jobs).Methods(http.MethodGet)
+	r.HandleFunc("/jobs", handler.AddJob).Methods(http.MethodPost)
 	r.HandleFunc("/jobs/{id}", handler.JobDetails).Methods(http.MethodGet)
 
 	srv := &http.Server{

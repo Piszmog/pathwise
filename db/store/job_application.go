@@ -106,11 +106,10 @@ func scanJobApplications(rows *sql.Rows) ([]types.JobApplication, error) {
 func (s *JobApplicationStore) Insert(ctx context.Context, rec types.JobApplication) error {
 	_, err := s.Database.DB().ExecContext(
 		ctx,
-		`INSERT INTO job_applications (company, title, url, status) VALUES (?, ?, ?, ?)`,
+		`INSERT INTO job_applications (company, title, url) VALUES (?, ?, ?)`,
 		rec.Company,
 		rec.Title,
 		rec.URL,
-		strings.ToLower(rec.Status.String()),
 	)
 	return err
 }

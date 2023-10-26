@@ -10,9 +10,16 @@ import (
 
 templ jobs(jobs []types.JobApplication) {
 	@filter()
-	<ul role="list" class="divide-y divide-gray-100 px-4 py-5 sm:px-6">
+	@JobList(jobs)
+	@drawer("job-details", "Job Application") {
+		<div id="job-details"></div>
+	}
+}
+
+templ JobList(jobs []types.JobApplication) {
+	<ul id="job-list" role="list" class="divide-y divide-gray-100 px-4 py-5 sm:px-6">
 		for _, j := range jobs {
-			<li class="flex items-center justify-between gap-x-6 py-5">
+			<li id={ strconv.Itoa(j.ID) + "-item" } class="flex items-center justify-between gap-x-6 py-5">
 				@job(j.Company, j.Title, j.Status, j.UpdatedAt)
 				<div class="flex flex-none items-center gap-x-4">
 					<button
@@ -28,9 +35,6 @@ templ jobs(jobs []types.JobApplication) {
 			</li>
 		}
 	</ul>
-	@drawer("job-details", "Job Application") {
-		<div id="job-details"></div>
-	}
 }
 
 templ job(company string, title string, status types.JobApplicationStatus, updatedAt time.Time) {
@@ -141,7 +145,21 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 }
 
 templ jobApplicationForm() {
-	<form hx-post="/jobs" hx-on::after-request="this.reset()">
+	<script lang="javascript">
+        function afterRequest(form) {
+            form.reset();
+            const slideOver = document.getElementById('new-job-slideOver');
+            const overlay = document.getElementById('new-job-overlay');
+            slideOver.classList.toggle('translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+    </script>
+	<form
+ 		id="new-job-form"
+ 		hx-post="/jobs"
+ 		hx-on::after-request="afterRequest(this)"
+ 		hx-target="#job-list"
+	>
 		<div class="grid grid-cols-1 gap-x-6 gap-y-8">
 			<div>
 				<label for="company" class="block text-sm font-medium leading-6 text-gray-900">Company</label>

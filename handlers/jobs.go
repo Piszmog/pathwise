@@ -91,3 +91,33 @@ func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
 	details := components.JobDetails(job, timelineEntries)
 	details.Render(r.Context(), w)
 }
+
+func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	company := r.FormValue("company")
+	title := r.FormValue("title")
+	url := r.FormValue("url")
+	if company == "" || title == "" || url == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	job := types.JobApplication{
+		Company: company,
+		Title:   title,
+		URL:     url,
+	}
+	if err := h.JobApplicationStore.Insert(r.Context(), job); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	jobs, err := h.JobApplicationStore.Get(r.Context(), store.GetOpts{Page: 0, PerPage: 10})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	components.JobList(jobs).Render(r.Context(), w)
+}
