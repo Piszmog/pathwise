@@ -1,0 +1,23 @@
+package components
+
+import "github.com/Piszmog/pathwise/types"
+
+templ statusBadge(status types.JobApplicationStatus) {
+	<p
+ 		class={ 
+    	    templ.SafeClass("mt-0.5 whitespace-nowrap rounded-md px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset"),
+    	    templ.KV(templ.SafeClass("bg-green-50 text-green-700 ring-green-600/20"), status == types.JobApplicationStatusAccepted),
+    	    templ.KV(templ.SafeClass("bg-blue-50 text-blue-700 ring-blue-600/20"), status == types.JobApplicationStatusApplied),
+    	    templ.KV(templ.SafeClass("bg-gray-50 text-gray-700 ring-gray-600/20"), status == types.JobApplicationStatusCanceled),
+    	    templ.KV(templ.SafeClass("bg-gray-50 text-gray-700 ring-gray-600/20"), status == types.JobApplicationStatusClosed),
+    	    templ.KV(templ.SafeClass("bg-red-50 text-red-700 ring-red-600/20"), status == types.JobApplicationStatusDeclined),
+    	    templ.KV(templ.SafeClass("bg-yellow-50 text-yellow-700 ring-yellow-600/20"), status == types.JobApplicationStatusInterviewing),
+    	    templ.KV(templ.SafeClass("bg-purple-50 text-purple-700 ring-purple-600/20"), status == types.JobApplicationStatusOffered),
+    	    templ.KV(templ.SafeClass("bg-red-50 text-red-700 ring-red-600/20"), status == types.JobApplicationStatusRejected),
+    	    templ.KV(templ.SafeClass("bg-gray-50 text-gray-700 ring-gray-600/20"), status == types.JobApplicationStatusWatching),
+    	    templ.KV(templ.SafeClass("bg-gray-50 text-gray-700 ring-gray-600/20"), status == types.JobApplicationStatusWithdrawn),
+    	 }
+	>
+		{ status.String() }
+	</p>
+}

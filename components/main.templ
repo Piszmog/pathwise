@@ -1,0 +1,23 @@
+package components
+
+import "github.com/Piszmog/pathwise/types"
+
+templ Main(j []types.JobApplication, s types.StatsOpts) {
+	<html>
+		@Head()
+		@body(j, s)
+	</html>
+}
+
+templ body(j []types.JobApplication, s types.StatsOpts) {
+	<body>
+		<main>
+			@header("Job Applications")
+			@stats(s)
+			@jobs(j)
+			@drawer("New Job Application") {
+				@jobApplicationForm()
+			}
+		</main>
+	</body>
+}
