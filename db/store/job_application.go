@@ -63,21 +63,8 @@ func (s *JobApplicationStore) Get(ctx context.Context, opts GetOpts) ([]types.Jo
 	return scanJobApplications(rows)
 }
 
-func (s *JobApplicationStore) GetAll(ctx context.Context) ([]types.JobApplication, error) {
-	rows, err := s.Database.DB().QueryContext(
-		ctx,
-		`
-		SELECT
-		    j.id, j.company, j.title, j.url, j.status, j.applied_at, j.updated_at
-		FROM 
-		    job_applications j
-		ORDER BY j.applied_at DESC`,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	return scanJobApplications(rows)
+func (s *JobApplicationStore) GetAllByID(ctx context.Context, id int) ([]types.JobApplication, error) {
+	return nil, nil
 }
 
 func scanJobApplications(rows *sql.Rows) ([]types.JobApplication, error) {

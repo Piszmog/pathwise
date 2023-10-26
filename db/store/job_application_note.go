@@ -57,7 +57,7 @@ func (s *JobApplicationNoteStore) Get(ctx context.Context, opts GetOpts) ([]type
 	return scanJobApplicationNotes(rows)
 }
 
-func (s *JobApplicationNoteStore) GetAll(ctx context.Context) ([]types.JobApplicationNote, error) {
+func (s *JobApplicationNoteStore) GetAllByID(ctx context.Context, id int) ([]types.JobApplicationNote, error) {
 	rows, err := s.Database.DB().QueryContext(
 		ctx,
 		`
@@ -65,7 +65,10 @@ func (s *JobApplicationNoteStore) GetAll(ctx context.Context) ([]types.JobApplic
 		    n.id, n.job_application_id, n.note, n.created_at
 		FROM 
 		    job_application_notes n
+		WHERE
+		    n.job_application_id = ?
 		ORDER BY n.created_at DESC`,
+		id,
 	)
 	if err != nil {
 		return nil, err

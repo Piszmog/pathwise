@@ -67,12 +67,12 @@ func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	notes, err := h.JobApplicationNoteStore.GetAll(r.Context())
+	notes, err := h.JobApplicationNoteStore.GetAllByID(r.Context(), id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	histories, err := h.JobApplicationStatusHistoryStore.GetAll(r.Context())
+	histories, err := h.JobApplicationStatusHistoryStore.GetAllByID(r.Context(), id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

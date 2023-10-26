@@ -60,7 +60,7 @@ func (s *JobApplicationStatusHistoryStore) Get(ctx context.Context, opts GetOpts
 	return scanJobApplicationStatusHistories(rows)
 }
 
-func (s *JobApplicationStatusHistoryStore) GetAll(ctx context.Context) ([]types.JobApplicationStatusHistory, error) {
+func (s *JobApplicationStatusHistoryStore) GetAllByID(ctx context.Context, id int) ([]types.JobApplicationStatusHistory, error) {
 	rows, err := s.Database.DB().QueryContext(
 		ctx,
 		`
@@ -68,7 +68,10 @@ func (s *JobApplicationStatusHistoryStore) GetAll(ctx context.Context) ([]types.
 		    h.id, h.job_application_id, h.status, h.created_at
 		FROM 
 		    job_application_status_histories h
+		WHERE
+		    h.job_application_id = ?
 		ORDER BY h.created_at DESC`,
+		id,
 	)
 	if err != nil {
 		return nil, err
