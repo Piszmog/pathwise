@@ -17,7 +17,7 @@ templ jobs(jobs []types.JobApplication) {
 				<div class="flex flex-none items-center gap-x-4">
 					<button
  						class="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:block"
- 						onClick={ toggleSlideOver() }
+ 						onClick={ toggleSlideOver("job-details") }
  						hx-get="/jobs/1"
  						hx-target="#job-details"
  						hx-trigger="click"
@@ -28,7 +28,7 @@ templ jobs(jobs []types.JobApplication) {
 			</li>
 		}
 	</ul>
-	@drawer("Job Application") {
+	@drawer("job-details", "Job Application") {
 		<div id="job-details"></div>
 	}
 }
@@ -125,7 +125,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 			<button
  				type="button"
  				class="text-sm font-semibold leading-6 text-gray-900"
- 				onClick={ toggleSlideOver() }
+ 				onClick={ toggleSlideOver("job-details") }
 			>
 				Cancel
 			</button>
@@ -184,6 +184,7 @@ templ jobApplicationForm() {
 			<button
  				type="button"
  				class="text-sm font-semibold leading-6 text-gray-900"
+ 				onClick={ toggleSlideOver("new-job") }
 			>
 				Cancel
 			</button>

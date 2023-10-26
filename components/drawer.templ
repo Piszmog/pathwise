@@ -1,27 +1,27 @@
 package components
 
-templ drawer(title string) {
+templ drawer(name string, title string) {
 	<div
- 		id="overlay"
+ 		id={ name + "-overlay" }
  		role="dialog"
  		aria-modal="true"
  		class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"
- 		onClick={ toggleSlideOver() }
+ 		onClick={ toggleSlideOver(name) }
  		tabindex="-1"
- 		aria-labelledby="slide-over-title"
+ 		aria-labelledby={ name + "-slide-over-title" }
 	></div>
-	<div class="h-full flex-col overflow-y-scroll fixed flex max-w-full top-0 right-0 h-full bg-white py-6 shadow-xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out" id="slideOver">
+	<div class="h-full flex-col overflow-y-scroll fixed flex max-w-full top-0 right-0 h-full bg-white py-6 shadow-xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out" id={ name+"-slideOver" }>
 		<div class="pointer-events-auto w-screen max-w-7xl">
 			<div class="px-4 sm:px-6">
 				<div class="flex items-start justify-between">
-					<h2 class="text-base font-semibold leading-6 text-gray-900" id="slide-over-title">
+					<h2 class="text-base font-semibold leading-6 text-gray-900" id={ name + "-slide-over-title" }>
 						{ title }
 					</h2>
 					<div class="ml-3 flex h-7 items-center">
 						<button
  							type="button"
  							class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
- 							onClick={ toggleSlideOver() }
+ 							onClick={ toggleSlideOver(name) }
 						>
 							<span class="sr-only">Close panel</span>
 							<svg
@@ -49,9 +49,9 @@ templ drawer(title string) {
 	</div>
 }
 
-script toggleSlideOver() {
-    const slideOver = document.getElementById('slideOver');
-    const overlay = document.getElementById('overlay');
+script toggleSlideOver(name string) {
+    const slideOver = document.getElementById(name + '-slideOver');
+    const overlay = document.getElementById(name + '-overlay');
     slideOver.classList.toggle('translate-x-full');
     overlay.classList.toggle('hidden');
 }

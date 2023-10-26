@@ -15,7 +15,7 @@ templ body(j []types.JobApplication, s types.StatsOpts) {
 			@header("Job Applications")
 			@stats(s)
 			@jobs(j)
-			@drawer("New Job Application") {
+			@drawer("new-job", "New Job Application") {
 				@jobApplicationForm()
 			}
 		</main>
