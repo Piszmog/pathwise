@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"time"
 )
 
 type Handler struct {
@@ -125,4 +126,43 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	components.AddJob(jobs, stats).Render(r.Context(), w)
+}
+
+func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if err = r.ParseForm(); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	company := r.FormValue("company")
+	title := r.FormValue("title")
+	url := r.FormValue("url")
+	status := r.FormValue("status")
+	if company == "" || title == "" || url == "" || status == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	job := types.JobApplication{
+		ID:      id,
+		Company: company,
+		Title:   title,
+		URL:     url,
+		Status:  types.ToJobApplicationStatus(status),
+	}
+	if err = h.JobApplicationStore.Update(r.Context(), job); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	job.UpdatedAt = time.Now()
+	stats, err := h.StatsStore.Get(r.Context())
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	components.UpdateJob(job, stats).Render(r.Context(), w)
 }

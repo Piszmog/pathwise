@@ -1,0 +1,8 @@
+package components
+
+import "github.com/Piszmog/pathwise/types"
+
+templ UpdateJob(j types.JobApplication, s types.StatsOpts) {
+    @job(j)
+    @stats(s, "true")
+}

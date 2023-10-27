@@ -104,7 +104,7 @@ func (s *JobApplicationStore) Insert(ctx context.Context, rec types.JobApplicati
 func (s *JobApplicationStore) Update(ctx context.Context, rec types.JobApplication) error {
 	_, err := s.Database.DB().ExecContext(
 		ctx,
-		`UPDATE job_applications SET company = ?, title = ?, url = ?, status = ? WHERE id = ?`,
+		`UPDATE job_applications SET company = ?, title = ?, url = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
 		rec.Company,
 		rec.Title,
 		rec.URL,

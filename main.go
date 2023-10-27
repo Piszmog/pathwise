@@ -41,6 +41,7 @@ func main() {
 	r.HandleFunc("/", handler.Jobs).Methods(http.MethodGet)
 	r.HandleFunc("/jobs", handler.AddJob).Methods(http.MethodPost)
 	r.HandleFunc("/jobs/{id}", handler.JobDetails).Methods(http.MethodGet)
+	r.HandleFunc("/jobs/{id}", handler.UpdateJob).Methods(http.MethodPatch)
 
 	srv := &http.Server{
 		Handler: r,
