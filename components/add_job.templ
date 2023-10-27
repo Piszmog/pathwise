@@ -1,0 +1,8 @@
+package components
+
+import "github.com/Piszmog/pathwise/types"
+
+templ AddJob(jobs []types.JobApplication, s types.StatsOpts) {
+	@jobList(jobs)
+	@stats(s, "true")
+}

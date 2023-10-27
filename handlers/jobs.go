@@ -119,5 +119,10 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	components.JobList(jobs).Render(r.Context(), w)
+	stats, err := h.StatsStore.Get(r.Context())
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	components.AddJob(jobs, stats).Render(r.Context(), w)
 }

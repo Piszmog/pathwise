@@ -15,20 +15,21 @@ type StatsStore struct {
 func (s *StatsStore) Get(ctx context.Context) (types.StatsOpts, error) {
 	row := s.Database.DB().QueryRowContext(
 		ctx,
-		`WITH first_status AS (
-            SELECT job_application_id, min(created_at) as first_status_at
-            FROM job_application_status_histories
-            WHERE status = 'interviewing' or status = 'rejected' or status = 'cancelled' or status = 'closed'
-            GROUP BY job_application_id
-        )
-        SELECT
-            (SELECT COUNT(*) FROM job_applications) as total_applications,
-            COUNT(DISTINCT company) as total_companies,
-            ROUND(AVG(JULIANDAY(fs.first_status_at) - JULIANDAY(ja.applied_at))) as average_time_to_hear_back,
-            SUM(CASE WHEN status = 'interviewing' THEN 1 ELSE 0 END) as total_interviewing,
-            SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as total_rejections
-        FROM job_applications ja
-        JOIN first_status fs ON ja.id = fs.job_application_id`,
+		`
+		WITH first_status AS (
+			SELECT job_application_id, min(created_at) as first_status_at
+			FROM job_application_status_histories
+			WHERE status IN ('interviewing', 'rejected', 'cancelled', 'closed')
+			GROUP BY job_application_id
+		)
+		SELECT
+			(SELECT COUNT(*) FROM job_applications) as total_applications,
+			(SELECT COUNT(DISTINCT company) FROM job_applications) as total_companies,
+			ROUND(AVG(JULIANDAY(fs.first_status_at) - JULIANDAY(ja.applied_at))) as average_time_to_hear_back,
+			SUM(CASE WHEN ja.status = 'interviewing' THEN 1 ELSE 0 END) as total_interviewing,
+			SUM(CASE WHEN ja.status = 'rejected' THEN 1 ELSE 0 END) as total_rejections
+		FROM job_applications ja
+				 LEFT JOIN first_status fs ON ja.id = fs.job_application_id;`,
 	)
 	var totalApplications int
 	var totalCompanies int
