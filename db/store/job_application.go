@@ -51,7 +51,7 @@ func (s *JobApplicationStore) Get(ctx context.Context, opts GetOpts) ([]types.Jo
 		    j.id, j.company, j.title, j.url, j.status, j.applied_at, j.updated_at
 		FROM 
 		    job_applications j
-		ORDER BY j.applied_at DESC
+		ORDER BY j.updated_at DESC
 		LIMIT ? OFFSET ?`,
 		opts.PerPage,
 		opts.Page*opts.PerPage,
@@ -102,7 +102,11 @@ func (s *JobApplicationStore) Insert(ctx context.Context, rec types.JobApplicati
 }
 
 func (s *JobApplicationStore) Update(ctx context.Context, rec types.JobApplication) error {
-	_, err := s.Database.DB().ExecContext(
+	tx, err := s.Database.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(
 		ctx,
 		`UPDATE job_applications SET company = ?, title = ?, url = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
 		rec.Company,
@@ -111,7 +115,35 @@ func (s *JobApplicationStore) Update(ctx context.Context, rec types.JobApplicati
 		strings.ToLower(rec.Status.String()),
 		rec.ID,
 	)
-	return err
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	_, err = tx.ExecContext(
+		ctx,
+		`INSERT INTO job_application_status_histories (job_application_id, status)
+                SELECT ?, ?
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM (
+                             SELECT status
+                             FROM job_application_status_histories
+                             WHERE job_application_id = ?
+                             ORDER BY created_at DESC
+                             LIMIT 1
+                         )
+                    WHERE status = ?
+                )`,
+		rec.ID,
+		strings.ToLower(rec.Status.String()),
+		rec.ID,
+		strings.ToLower(rec.Status.String()),
+	)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 }
 
 func (s *JobApplicationStore) Delete(ctx context.Context, id int) error {

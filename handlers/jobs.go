@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"github.com/Piszmog/pathwise/components"
 	"github.com/Piszmog/pathwise/db/store"
 	"github.com/Piszmog/pathwise/types"
@@ -68,26 +69,11 @@ func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	notes, err := h.JobApplicationNoteStore.GetAllByID(r.Context(), id)
+	timelineEntries, err := h.getTimelineEntries(r.Context(), id)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	histories, err := h.JobApplicationStatusHistoryStore.GetAllByID(r.Context(), id)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	timelineEntries := make([]types.JobApplicationTimelineEntry, len(notes)+len(histories))
-	for i, note := range notes {
-		timelineEntries[i] = note
-	}
-	for i, history := range histories {
-		timelineEntries[i+len(notes)] = history
-	}
-	sort.Slice(timelineEntries, func(i, j int) bool {
-		return timelineEntries[i].Created().After(timelineEntries[j].Created())
-	})
 
 	details := components.JobDetails(job, timelineEntries)
 	details.Render(r.Context(), w)
@@ -147,6 +133,7 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
 	job := types.JobApplication{
 		ID:      id,
 		Company: company,
@@ -164,5 +151,32 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	components.UpdateJob(job, stats).Render(r.Context(), w)
+	entries, err := h.getTimelineEntries(r.Context(), id)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	components.UpdateJob(job, stats, entries).Render(r.Context(), w)
+}
+
+func (h *Handler) getTimelineEntries(ctx context.Context, id int) ([]types.JobApplicationTimelineEntry, error) {
+	notes, err := h.JobApplicationNoteStore.GetAllByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	histories, err := h.JobApplicationStatusHistoryStore.GetAllByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	timelineEntries := make([]types.JobApplicationTimelineEntry, len(notes)+len(histories))
+	for i, note := range notes {
+		timelineEntries[i] = note
+	}
+	for i, history := range histories {
+		timelineEntries[i+len(notes)] = history
+	}
+	sort.Slice(timelineEntries, func(i, j int) bool {
+		return timelineEntries[i].Created().After(timelineEntries[j].Created())
+	})
+	return timelineEntries, nil
 }

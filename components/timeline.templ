@@ -2,29 +2,72 @@ package components
 
 import (
 	"time"
+	"strconv"
 	"github.com/Piszmog/pathwise/types"
 )
 
-templ timeline(id int, entries []types.JobApplicationTimelineEntry) {
-	<div class="flow-root">
-		<ul role="list" class="-mb-8">
+templ timeline(entries []types.JobApplicationTimelineEntry, oob string) {
+	<div id="timeline" class="flow-root" hx-swap-oob={ oob }>
+		<ul id="timeline-list" role="list" class="-mb-8">
 			for i, entry := range entries {
 				switch v := entry.(type) {
 					case types.JobApplicationStatusHistory:
-						@timelineEntryStatus(v.Status, v.CreatedAt, i == len(entries) - 1)
+						@timelineEntryStatus(v.ID, v.Status, v.CreatedAt, i == len(entries) - 1)
 					case types.JobApplicationNote:
-						@timelineEntryNote(v.Note, v.CreatedAt, i == len(entries) - 1)
+						@timelineEntryNote(v.ID, v.Note, v.CreatedAt, i == len(entries) - 1)
 				}
 			}
 		</ul>
 	</div>
-	<div class="mt-6 flex gap-x-3">
-		@note(id)
-	</div>
 }
 
-templ timelineEntryNote(note string, createdAt time.Time, isLast bool) {
-	<div class="relative pb-8">
+templ timelineEntryStatus(id int, status types.JobApplicationStatus, createdAt time.Time, isLast bool) {
+	<li id={ "status-" + strconv.Itoa(id) + "-entry" } class="relative pb-8">
+		if !isLast {
+			<span class="absolute left-5 top-5 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+		}
+		<div class="relative flex items-start space-x-3">
+			<div>
+				<div class="relative px-1">
+					<div
+ 						class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 ring-8 ring-white"
+					>
+						<svg
+ 							xmlns="http://www.w3.org/2000/svg"
+ 							class="icon icon-tabler icon-tabler-tag"
+ 							width="24"
+ 							height="24"
+ 							viewBox="0 0 24 24"
+ 							stroke-width="2"
+ 							stroke="currentColor"
+ 							fill="none"
+ 							stroke-linecap="round"
+ 							stroke-linejoin="round"
+						>
+							<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+							<circle cx="8.5" cy="8.5" r="1" fill="currentColor"></circle>
+							<path
+ 								d="M4 7v3.859c0 .537 .213 1.052 .593 1.432l8.116 8.116a2.025 2.025 0 0 0 2.864 0l4.834 -4.834a2.025 2.025 0 0 0 0 -2.864l-8.117 -8.116a2.025 2.025 0 0 0 -1.431 -.593h-3.859a3 3 0 0 0 -3 3z"
+							></path>
+						</svg>
+					</div>
+				</div>
+			</div>
+			<div class="min-w-0 flex-1 py-0">
+				<div class="text-sm leading-8 text-gray-500">
+					<span class="mr-0.5">Status Change </span>
+					<span class="mr-0.5 inline-flex">
+						@statusBadge(status)
+					</span>
+					<span class="whitespace-nowrap">{ createdAt.Format("Mon Jan 2 2006") }</span>
+				</div>
+			</div>
+		</div>
+	</li>
+}
+
+templ timelineEntryNote(id int, note string, createdAt time.Time, isLast bool) {
+	<li id={ "note-" + strconv.Itoa(id) + "-entry" } class="relative pb-8">
 		if !isLast {
 			<span class="absolute left-5 top-5 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
 		}
@@ -70,50 +113,5 @@ templ timelineEntryNote(note string, createdAt time.Time, isLast bool) {
 				</div>
 			</div>
 		</div>
-	</div>
-}
-
-templ timelineEntryStatus(status types.JobApplicationStatus, createdAt time.Time, isLast bool) {
-	<div class="relative pb-8">
-		if !isLast {
-			<span class="absolute left-5 top-5 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
-		}
-		<div class="relative flex items-start space-x-3">
-			<div>
-				<div class="relative px-1">
-					<div
- 						class="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 ring-8 ring-white"
-					>
-						<svg
- 							xmlns="http://www.w3.org/2000/svg"
- 							class="icon icon-tabler icon-tabler-tag"
- 							width="24"
- 							height="24"
- 							viewBox="0 0 24 24"
- 							stroke-width="2"
- 							stroke="currentColor"
- 							fill="none"
- 							stroke-linecap="round"
- 							stroke-linejoin="round"
-						>
-							<path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-							<circle cx="8.5" cy="8.5" r="1" fill="currentColor"></circle>
-							<path
- 								d="M4 7v3.859c0 .537 .213 1.052 .593 1.432l8.116 8.116a2.025 2.025 0 0 0 2.864 0l4.834 -4.834a2.025 2.025 0 0 0 0 -2.864l-8.117 -8.116a2.025 2.025 0 0 0 -1.431 -.593h-3.859a3 3 0 0 0 -3 3z"
-							></path>
-						</svg>
-					</div>
-				</div>
-			</div>
-			<div class="min-w-0 flex-1 py-0">
-				<div class="text-sm leading-8 text-gray-500">
-					<span class="mr-0.5">Status Change </span>
-					<span class="mr-0.5 inline-flex">
-						@statusBadge(status)
-					</span>
-					<span class="whitespace-nowrap">{ createdAt.Format("Mon Jan 2 2006") }</span>
-				</div>
-			</div>
-		</div>
-	</div>
+	</li>
 }
