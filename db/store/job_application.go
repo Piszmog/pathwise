@@ -91,14 +91,36 @@ func scanJobApplications(rows *sql.Rows) ([]types.JobApplication, error) {
 }
 
 func (s *JobApplicationStore) Insert(ctx context.Context, rec types.JobApplication) error {
-	_, err := s.Database.DB().ExecContext(
+	tx, err := s.Database.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	res, err := tx.ExecContext(
 		ctx,
 		`INSERT INTO job_applications (company, title, url) VALUES (?, ?, ?)`,
 		rec.Company,
 		rec.Title,
 		rec.URL,
 	)
-	return err
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	_, err = tx.ExecContext(
+		ctx,
+		`INSERT INTO job_application_status_histories (job_application_id) VALUES (?)`,
+		id,
+	)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	return tx.Commit()
 }
 
 func (s *JobApplicationStore) Update(ctx context.Context, rec types.JobApplication) error {

@@ -25,9 +25,9 @@ func (s *StatsStore) Get(ctx context.Context) (types.StatsOpts, error) {
 		SELECT
 			(SELECT COUNT(*) FROM job_applications) as total_applications,
 			(SELECT COUNT(DISTINCT company) FROM job_applications) as total_companies,
-			ROUND(AVG(JULIANDAY(fs.first_status_at) - JULIANDAY(ja.applied_at))) as average_time_to_hear_back,
-			SUM(CASE WHEN ja.status = 'interviewing' THEN 1 ELSE 0 END) as total_interviewing,
-			SUM(CASE WHEN ja.status = 'rejected' THEN 1 ELSE 0 END) as total_rejections
+			ROUND(IFNULL(AVG(JULIANDAY(fs.first_status_at) - JULIANDAY(ja.applied_at)), 0)) as average_time_to_hear_back,
+			IFNULL(SUM(CASE WHEN ja.status = 'interviewing' THEN 1 ELSE 0 END), 0) as total_interviewing,
+			IFNULL(SUM(CASE WHEN ja.status = 'rejected' THEN 1 ELSE 0 END), 0) as total_rejections
 		FROM job_applications ja
 				 LEFT JOIN first_status fs ON ja.id = fs.job_application_id;`,
 	)
