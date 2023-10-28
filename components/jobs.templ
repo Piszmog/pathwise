@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Piszmog/pathwise/types"
+	"github.com/Piszmog/pathwise/utils"
 )
 
 templ jobs(jobs []types.JobApplication) {
@@ -64,6 +65,8 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
  		hx-target={ "#job-" + strconv.Itoa(j.ID) + "-overview" }
  		hx-swap="outerHTML"
 	>
+		<input type="hidden" name="firstTimelineEntryID" value={ strconv.Itoa(utils.GetFirstElementID(timelineEntries)) }/>
+		<input type="hidden" name="firstTimelineEntryType" value={ string(utils.GetFirstElementType(timelineEntries)) }/>
 		<div class="mb-5 flex items-center gap-x-2 text-xs leading-5 text-gray-500">
 			<p class="whitespace-nowrap">
 				Applied
@@ -119,6 +122,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 				</div>
 			</div>
 			<div>
+				<input type="hidden" name="previousStatus" value={ strings.ToLower(j.Status.String()) }/>
 				@inputSelect(types.SelectOpts{
 			        Name: "status",
 			        Label: "Status",
@@ -144,7 +148,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 			</button>
 		</div>
 	</form>
-	@timeline(timelineEntries, "")
+	@Timeline(timelineEntries, "")
 	<div class="mt-6 flex gap-x-3">
 		@note(j.ID)
 	</div>

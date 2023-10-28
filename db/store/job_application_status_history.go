@@ -27,6 +27,23 @@ func (s *JobApplicationStatusHistoryStore) GetByID(ctx context.Context, id int) 
 	return scanJobApplicationStatusHistory(row)
 }
 
+func (s *JobApplicationStatusHistoryStore) GetLatestByID(ctx context.Context, id int) (types.JobApplicationStatusHistory, error) {
+	row := s.Database.DB().QueryRowContext(
+		ctx,
+		`
+		SELECT
+		    h.id, h.job_application_id, h.status, h.created_at
+		FROM 
+		    job_application_status_histories h
+		WHERE
+		    h.job_application_id = ?
+		ORDER BY h.created_at DESC
+		LIMIT 1`,
+		id,
+	)
+	return scanJobApplicationStatusHistory(row)
+}
+
 func scanJobApplicationStatusHistory(row *sql.Row) (types.JobApplicationStatusHistory, error) {
 	var history types.JobApplicationStatusHistory
 	var status string

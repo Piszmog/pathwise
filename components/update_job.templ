@@ -2,8 +2,14 @@ package components
 
 import "github.com/Piszmog/pathwise/types"
 
-templ UpdateJob(j types.JobApplication, s types.StatsOpts, entries []types.JobApplicationTimelineEntry) {
+templ UpdateJob(j types.JobApplication, s *types.StatsOpts, newTimelineEntry types.NewTimelineEntry) {
+	if s != nil {
+		@stats(*s, "true")
+	}
+	if newTimelineEntry.SwapOOB != "" {
+		<div hx-swap-oob={ newTimelineEntry.SwapOOB }>
+			@timelineEntry(newTimelineEntry.Entry, false)
+		</div>
+	}
 	@job(j)
-	@stats(s, "true")
-	@timeline(entries, "true")
 }

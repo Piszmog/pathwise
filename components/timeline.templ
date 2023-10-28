@@ -1,28 +1,31 @@
 package components
 
 import (
-	"time"
 	"strconv"
 	"github.com/Piszmog/pathwise/types"
 )
 
-templ timeline(entries []types.JobApplicationTimelineEntry, oob string) {
+templ Timeline(entries []types.JobApplicationTimelineEntry, oob string) {
 	<div id="timeline" class="flow-root" hx-swap-oob={ oob }>
 		<ul id="timeline-list" role="list" class="-mb-8">
 			for i, entry := range entries {
-				switch v := entry.(type) {
-					case types.JobApplicationStatusHistory:
-						@timelineEntryStatus(v.ID, v.Status, v.CreatedAt, i == len(entries) - 1)
-					case types.JobApplicationNote:
-						@timelineEntryNote(v.ID, v.Note, v.CreatedAt, i == len(entries) - 1)
-				}
+				@timelineEntry(entry, i == len(entries) - 1)
 			}
 		</ul>
 	</div>
 }
 
-templ timelineEntryStatus(id int, status types.JobApplicationStatus, createdAt time.Time, isLast bool) {
-	<li id={ "status-" + strconv.Itoa(id) + "-entry" } class="relative pb-8">
+templ timelineEntry(entry types.JobApplicationTimelineEntry, isLast bool) {
+	switch v := entry.(type) {
+		case types.JobApplicationStatusHistory:
+			@timelineEntryStatus(v, isLast)
+		case types.JobApplicationNote:
+			@timelineEntryNote(v, isLast)
+	}
+}
+
+templ timelineEntryStatus(entry types.JobApplicationStatusHistory, isLast bool) {
+	<li id={ "status-" + strconv.Itoa(entry.ID) + "-entry" } class="relative pb-8">
 		if !isLast {
 			<span class="absolute left-5 top-5 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
 		}
@@ -57,17 +60,17 @@ templ timelineEntryStatus(id int, status types.JobApplicationStatus, createdAt t
 				<div class="text-sm leading-8 text-gray-500">
 					<span class="mr-0.5">Status Change </span>
 					<span class="mr-0.5 inline-flex">
-						@statusBadge(status)
+						@statusBadge(entry.Status)
 					</span>
-					<span class="whitespace-nowrap">{ createdAt.Format("Mon Jan 2 2006") }</span>
+					<span class="whitespace-nowrap">{ entry.CreatedAt.Format("Mon Jan 2 2006") }</span>
 				</div>
 			</div>
 		</div>
 	</li>
 }
 
-templ timelineEntryNote(id int, note string, createdAt time.Time, isLast bool) {
-	<li id={ "note-" + strconv.Itoa(id) + "-entry" } class="relative pb-8">
+templ timelineEntryNote(entry types.JobApplicationNote, isLast bool) {
+	<li id={ "note-" + strconv.Itoa(entry.ID) + "-entry" } class="relative pb-8">
 		if !isLast {
 			<span class="absolute left-5 top-5 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
 		}
@@ -103,12 +106,12 @@ templ timelineEntryNote(id int, note string, createdAt time.Time, isLast bool) {
 				<div>
 					<p class="mt-0.5 text-sm text-gray-500">
 						Note added
-						<span class="whitespace-nowrap">{ createdAt.Format("Mon Jan 2 2006") }</span>
+						<span class="whitespace-nowrap">{ entry.CreatedAt.Format("Mon Jan 2 2006") }</span>
 					</p>
 				</div>
 				<div class="mt-2 text-sm text-gray-700">
 					<p>
-						{ note }
+						{ entry.Note }
 					</p>
 				</div>
 			</div>

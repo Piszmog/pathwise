@@ -1,7 +1,15 @@
 package components
 
+import "strconv"
+
 templ note(id int) {
-	<form id="note-form" class="relative flex-auto">
+	<form
+ 		id="note-form"
+ 		class="relative flex-auto"
+ 		hx-post={ "/jobs/" + strconv.Itoa(id) + "/notes" }
+ 		hx-on::after-request="this.reset()"
+ 		hx-target="#timeline"
+	>
 		<div
  			class="overflow-hidden rounded-lg pb-12 shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-blue-600"
 		>

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -79,6 +80,28 @@ func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
 	details.Render(r.Context(), w)
 }
 
+func (h *Handler) getTimelineEntries(ctx context.Context, id int) ([]types.JobApplicationTimelineEntry, error) {
+	notes, err := h.JobApplicationNoteStore.GetAllByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	histories, err := h.JobApplicationStatusHistoryStore.GetAllByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	timelineEntries := make([]types.JobApplicationTimelineEntry, len(notes)+len(histories))
+	for i, note := range notes {
+		timelineEntries[i] = note
+	}
+	for i, history := range histories {
+		timelineEntries[i+len(notes)] = history
+	}
+	sort.Slice(timelineEntries, func(i, j int) bool {
+		return timelineEntries[i].Created().After(timelineEntries[j].Created())
+	})
+	return timelineEntries, nil
+}
+
 func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -133,6 +156,9 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	previousStatus := r.FormValue("previousStatus")
+	firstTimelineEntryID := r.FormValue("firstTimelineEntryID")
+	firstTimelineEntryType := r.FormValue("firstTimelineEntryType")
 
 	job := types.JobApplication{
 		ID:      id,
@@ -146,37 +172,59 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	job.UpdatedAt = time.Now()
-	stats, err := h.StatsStore.Get(r.Context())
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+
+	var stats *types.StatsOpts
+	var newTimelineEntry types.NewTimelineEntry
+	if previousStatus != status {
+		updatedStats, err := h.StatsStore.Get(r.Context())
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		stats = &updatedStats
+
+		latestStatus, err := h.JobApplicationStatusHistoryStore.GetLatestByID(r.Context(), id)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if latestStatus.ID > 0 {
+			newTimelineEntry = types.NewTimelineEntry{
+				SwapOOB: "beforebegin:#" + newTimelineID(firstTimelineEntryType, firstTimelineEntryID),
+				Entry:   latestStatus,
+			}
+		}
 	}
-	entries, err := h.getTimelineEntries(r.Context(), id)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	components.UpdateJob(job, stats, entries).Render(r.Context(), w)
+
+	components.UpdateJob(job, stats, newTimelineEntry).Render(r.Context(), w)
 }
 
-func (h *Handler) getTimelineEntries(ctx context.Context, id int) ([]types.JobApplicationTimelineEntry, error) {
-	notes, err := h.JobApplicationNoteStore.GetAllByID(ctx, id)
+func newTimelineID(entryType string, entryID string) string {
+	return strings.ToLower(entryType) + "-" + entryID + "-entry"
+}
+
+func (h *Handler) AddNote(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		return nil, err
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
-	histories, err := h.JobApplicationStatusHistoryStore.GetAllByID(ctx, id)
-	if err != nil {
-		return nil, err
+	if err = r.ParseForm(); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
-	timelineEntries := make([]types.JobApplicationTimelineEntry, len(notes)+len(histories))
-	for i, note := range notes {
-		timelineEntries[i] = note
+	note := r.FormValue("note")
+	if note == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
-	for i, history := range histories {
-		timelineEntries[i+len(notes)] = history
+	job := types.JobApplicationNote{
+		JobApplicationID: id,
+		Note:             note,
 	}
-	sort.Slice(timelineEntries, func(i, j int) bool {
-		return timelineEntries[i].Created().After(timelineEntries[j].Created())
-	})
-	return timelineEntries, nil
+	if err = h.JobApplicationNoteStore.Insert(r.Context(), job); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }

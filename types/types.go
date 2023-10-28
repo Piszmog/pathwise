@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+type Record interface {
+	RecordID() int
+}
+
 type JobApplication struct {
 	ID        int
 	CreatedAt time.Time
@@ -21,6 +25,7 @@ func (j JobApplication) RecordID() int {
 }
 
 type JobApplicationTimelineEntry interface {
+	RecordID() int
 	Type() JobApplicationTimelineType
 	Created() time.Time
 }
@@ -182,4 +187,10 @@ type StatsOpts struct {
 	AverageTimeToHearBackInDays string
 	TotalInterviewingPercentage string
 	TotalRejectionsPercentage   string
+}
+
+type NewTimelineEntry struct {
+	SwapOOB string
+	Entry   JobApplicationTimelineEntry
+	First   bool
 }
