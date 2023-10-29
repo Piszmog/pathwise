@@ -19,22 +19,26 @@ templ jobs(jobs []types.JobApplication) {
 templ jobList(jobs []types.JobApplication) {
 	<ul id="job-list" role="list" class="divide-y divide-gray-100 px-4 py-5 sm:px-6">
 		for _, j := range jobs {
-			<li id={ "job-" + strconv.Itoa(j.ID) + "-item" } class="flex items-center justify-between gap-x-6 py-5">
-				@job(j)
-				<div class="flex flex-none items-center gap-x-4">
-					<button
- 						class="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:block"
- 						onClick={ toggleSlideOver("job-details") }
- 						hx-get={ "/jobs/" + strconv.Itoa(j.ID) }
- 						hx-target="#job-details"
- 						hx-trigger="click"
-					>
-						View job
-					</button>
-				</div>
-			</li>
+			@jobRow(j)
 		}
 	</ul>
+}
+
+templ jobRow(j types.JobApplication) {
+	<li id={ "job-" + strconv.Itoa(j.ID) + "-item" } class="flex items-center justify-between gap-x-6 py-5">
+		@job(j)
+		<div class="flex flex-none items-center gap-x-4">
+			<button
+ 				class="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:block"
+ 				onClick={ toggleSlideOver("job-details") }
+ 				hx-get={ "/jobs/" + strconv.Itoa(j.ID) }
+ 				hx-target="#job-details"
+ 				hx-trigger="click"
+			>
+				View job
+			</button>
+		</div>
+	</li>
 }
 
 templ job(j types.JobApplication) {
@@ -150,11 +154,11 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 	</form>
 	@Timeline(timelineEntries, "")
 	<div class="mt-6 flex gap-x-3">
-		@note(j.ID)
+		@note(j.ID, timelineEntries)
 	</div>
 }
 
-templ jobApplicationForm() {
+templ jobApplicationForm(firstID int) {
 	<script lang="javascript">
         function afterRequest(form) {
             form.reset();
@@ -169,6 +173,7 @@ templ jobApplicationForm() {
  		hx-post="/jobs"
  		hx-on::after-request="afterRequest(this)"
  		hx-target="#job-list"
+ 		hx-prepend="true"
 	>
 		<div class="grid grid-cols-1 gap-x-6 gap-y-8">
 			<div>

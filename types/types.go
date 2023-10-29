@@ -192,5 +192,4 @@ type StatsOpts struct {
 type NewTimelineEntry struct {
 	SwapOOB string
 	Entry   JobApplicationTimelineEntry
-	First   bool
 }

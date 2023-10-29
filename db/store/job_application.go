@@ -6,6 +6,7 @@ import (
 	"github.com/Piszmog/pathwise/db"
 	"github.com/Piszmog/pathwise/types"
 	"strings"
+	"time"
 )
 
 type JobApplicationStore struct {
@@ -123,10 +124,10 @@ func (s *JobApplicationStore) Insert(ctx context.Context, rec types.JobApplicati
 	return tx.Commit()
 }
 
-func (s *JobApplicationStore) Update(ctx context.Context, rec types.JobApplication) error {
+func (s *JobApplicationStore) Update(ctx context.Context, rec types.JobApplication) (time.Time, error) {
 	tx, err := s.Database.DB().BeginTx(ctx, nil)
 	if err != nil {
-		return err
+		return time.Time{}, err
 	}
 	_, err = tx.ExecContext(
 		ctx,
@@ -139,7 +140,7 @@ func (s *JobApplicationStore) Update(ctx context.Context, rec types.JobApplicati
 	)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return time.Time{}, err
 	}
 	_, err = tx.ExecContext(
 		ctx,
@@ -163,9 +164,19 @@ func (s *JobApplicationStore) Update(ctx context.Context, rec types.JobApplicati
 	)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return time.Time{}, err
 	}
-	return tx.Commit()
+	row := tx.QueryRowContext(
+		ctx,
+		`SELECT updated_at FROM job_applications WHERE id = ?`,
+		rec.ID,
+	)
+	var updatedAt time.Time
+	if err = row.Scan(&updatedAt); err != nil {
+		tx.Rollback()
+		return time.Time{}, err
+	}
+	return updatedAt, tx.Commit()
 }
 
 func (s *JobApplicationStore) Delete(ctx context.Context, id int) error {

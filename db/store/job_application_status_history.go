@@ -117,14 +117,37 @@ func scanJobApplicationStatusHistories(rows *sql.Rows) ([]types.JobApplicationSt
 	return histories, nil
 }
 
-func (s *JobApplicationStatusHistoryStore) Insert(ctx context.Context, rec types.JobApplicationStatusHistory) error {
-	_, err := s.Database.DB().ExecContext(
+func (s *JobApplicationStatusHistoryStore) Insert(ctx context.Context, rec types.JobApplicationStatusHistory) (types.JobApplicationStatusHistory, error) {
+	tx, err := s.Database.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return types.JobApplicationStatusHistory{}, err
+	}
+	res, err := tx.ExecContext(
 		ctx,
 		`INSERT INTO job_application_status_histories (job_application_id, status) VALUES (?, ?)`,
 		rec.JobApplicationID,
 		strings.ToLower(rec.Status.String()),
 	)
-	return err
+	if err != nil {
+		tx.Rollback()
+		return types.JobApplicationStatusHistory{}, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		tx.Rollback()
+		return types.JobApplicationStatusHistory{}, err
+	}
+	row := tx.QueryRowContext(
+		ctx,
+		`SELECT id, job_application_id, status, created_at FROM job_application_status_histories WHERE id = ?`,
+		id,
+	)
+	history, err := scanJobApplicationStatusHistory(row)
+	if err != nil {
+		tx.Rollback()
+		return types.JobApplicationStatusHistory{}, err
+	}
+	return history, tx.Commit()
 }
 
 func (s *JobApplicationStatusHistoryStore) Update(ctx context.Context, rec types.JobApplicationStatusHistory) error {

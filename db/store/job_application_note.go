@@ -95,14 +95,37 @@ func scanJobApplicationNotes(rows *sql.Rows) ([]types.JobApplicationNote, error)
 	return notes, nil
 }
 
-func (s *JobApplicationNoteStore) Insert(ctx context.Context, rec types.JobApplicationNote) error {
-	_, err := s.Database.DB().ExecContext(
+func (s *JobApplicationNoteStore) Insert(ctx context.Context, rec types.JobApplicationNote) (types.JobApplicationNote, error) {
+	tx, err := s.Database.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return types.JobApplicationNote{}, err
+	}
+	res, err := tx.ExecContext(
 		ctx,
 		`INSERT INTO job_application_notes (job_application_id, note) VALUES (?, ?)`,
 		rec.JobApplicationID,
 		rec.Note,
 	)
-	return err
+	if err != nil {
+		tx.Rollback()
+		return types.JobApplicationNote{}, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		tx.Rollback()
+		return types.JobApplicationNote{}, err
+	}
+	row := tx.QueryRowContext(
+		ctx,
+		`SELECT id, job_application_id, note, created_at FROM job_application_notes WHERE id = ?`,
+		id,
+	)
+	note, err := scanJobApplicationNote(row)
+	if err != nil {
+		tx.Rollback()
+		return types.JobApplicationNote{}, err
+	}
+	return note, tx.Commit()
 }
 
 func (s *JobApplicationNoteStore) Update(ctx context.Context, rec types.JobApplicationNote) error {

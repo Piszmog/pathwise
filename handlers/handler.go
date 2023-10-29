@@ -10,7 +10,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type Handler struct {
@@ -129,6 +128,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	stats, err := h.StatsStore.Get(r.Context())
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -167,11 +167,12 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		URL:     url,
 		Status:  types.ToJobApplicationStatus(status),
 	}
-	if err = h.JobApplicationStore.Update(r.Context(), job); err != nil {
+	updatedAt, err := h.JobApplicationStore.Update(r.Context(), job)
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	job.UpdatedAt = time.Now()
+	job.UpdatedAt = updatedAt
 
 	var stats *types.StatsOpts
 	var newTimelineEntry types.NewTimelineEntry
@@ -219,12 +220,22 @@ func (h *Handler) AddNote(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	job := types.JobApplicationNote{
+	firstTimelineEntryID := r.FormValue("firstTimelineEntryID")
+	firstTimelineEntryType := r.FormValue("firstTimelineEntryType")
+
+	jobNote := types.JobApplicationNote{
 		JobApplicationID: id,
 		Note:             note,
 	}
-	if err = h.JobApplicationNoteStore.Insert(r.Context(), job); err != nil {
+	n, err := h.JobApplicationNoteStore.Insert(r.Context(), jobNote)
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	components.AddNote(
+		types.NewTimelineEntry{
+			SwapOOB: "beforebegin:#" + newTimelineID(firstTimelineEntryType, firstTimelineEntryID),
+			Entry:   n,
+		},
+	).Render(r.Context(), w)
 }
