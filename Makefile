@@ -7,12 +7,12 @@ generate-templ:
 generate-templ-watch:
 	@echo "Generating templ files..."
 	@templ generate -path ./components -watch
-generate-templ-watch-run:
-	@echo "Generating templ files..."
-	@templ generate -watch -cmd="go run ."
 generate-tailwind:
 	@echo "Generating tailwind files..."
 	@tailwindcss -i ./styles/input.css -o ./assets/css/output.css --minify
 generate-tailwind-watch:
 	@echo "Generating tailwind files..."
 	@tailwindcss -i ./styles/input.css -o ./assets/css/output.css --minify --watch
+air:
+	@echo "Running air..."
+	@air
