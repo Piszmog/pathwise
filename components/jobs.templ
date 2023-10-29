@@ -9,14 +9,14 @@ import (
 )
 
 templ jobs(jobs []types.JobApplication) {
-	@filter()
-	@jobList(jobs)
+	@filterForm()
+	@JobList(jobs)
 	@drawer("job-details", "Job Application") {
 		<div id="job-details"></div>
 	}
 }
 
-templ jobList(jobs []types.JobApplication) {
+templ JobList(jobs []types.JobApplication) {
 	<ul id="job-list" role="list" class="divide-y divide-gray-100 px-4 py-5 sm:px-6">
 		for _, j := range jobs {
 			@jobRow(j)

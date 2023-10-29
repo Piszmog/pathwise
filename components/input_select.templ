@@ -15,7 +15,7 @@ templ inputSelect(opts types.SelectOpts) {
  				aria-describedby={ opts.Name + "-select" + "-error" }
 			>
 				if opts.Placeholder != "" {
-					<option disabled selected value="">{ opts.Placeholder }</option>
+					<option selected value="">{ opts.Placeholder }</option>
 				}
 				for _, option := range opts.Options {
 					<option value={ option.Value } selected?={ option.Value == opts.Value }>{ option.Label }</option>

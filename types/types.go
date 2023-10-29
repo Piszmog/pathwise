@@ -124,13 +124,14 @@ func ToJobApplicationStatus(val string) JobApplicationStatus {
 }
 
 type SelectOpts struct {
-	Name        string
-	Label       string
-	Placeholder string
-	Value       string
-	Options     []SelectOption
-	Required    bool
-	Err         error
+	Name              string
+	Label             string
+	Placeholder       string
+	EnablePlaceholder bool
+	Value             string
+	Options           []SelectOption
+	Required          bool
+	Err               error
 }
 
 type SelectOption struct {

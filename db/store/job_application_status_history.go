@@ -57,7 +57,7 @@ func scanJobApplicationStatusHistory(row *sql.Row) (types.JobApplicationStatusHi
 	return history, err
 }
 
-func (s *JobApplicationStatusHistoryStore) Get(ctx context.Context, opts GetOpts) ([]types.JobApplicationStatusHistory, error) {
+func (s *JobApplicationStatusHistoryStore) Get(ctx context.Context, opts LimitOpts) ([]types.JobApplicationStatusHistory, error) {
 	rows, err := s.Database.DB().QueryContext(
 		ctx,
 		`

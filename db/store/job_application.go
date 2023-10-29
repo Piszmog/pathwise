@@ -44,7 +44,7 @@ func scanJobApplication(row *sql.Row) (types.JobApplication, error) {
 	return job, err
 }
 
-func (s *JobApplicationStore) Get(ctx context.Context, opts GetOpts) ([]types.JobApplication, error) {
+func (s *JobApplicationStore) Get(ctx context.Context, opts LimitOpts) ([]types.JobApplication, error) {
 	rows, err := s.Database.DB().QueryContext(
 		ctx,
 		`
@@ -64,8 +64,43 @@ func (s *JobApplicationStore) Get(ctx context.Context, opts GetOpts) ([]types.Jo
 	return scanJobApplications(rows)
 }
 
-func (s *JobApplicationStore) GetAllByID(ctx context.Context, id int) ([]types.JobApplication, error) {
-	return nil, nil
+func (s *JobApplicationStore) Filter(ctx context.Context, opts LimitOpts, company string, status string) ([]types.JobApplication, error) {
+	query := `SELECT
+		    j.id, j.company, j.title, j.url, j.status, j.applied_at, j.updated_at
+		FROM 
+		    job_applications j`
+	if company != "" || status != "" {
+		query += ` WHERE`
+		if company != "" {
+			query += ` j.company LIKE ?`
+		}
+		if status != "" {
+			if company != "" {
+				query += ` AND`
+			}
+			query += ` j.status LIKE ?`
+		}
+	}
+	query += ` ORDER BY j.updated_at DESC LIMIT ? OFFSET ?`
+	var queryArgs = []interface{}{}
+	if company != "" {
+		queryArgs = append(queryArgs, "%"+company+"%")
+	}
+	if status != "" {
+		queryArgs = append(queryArgs, "%"+status+"%")
+	}
+	queryArgs = append(queryArgs, opts.PerPage, opts.Page*opts.PerPage)
+
+	rows, err := s.Database.DB().QueryContext(
+		ctx,
+		query,
+		queryArgs...,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanJobApplications(rows)
 }
 
 func scanJobApplications(rows *sql.Rows) ([]types.JobApplication, error) {

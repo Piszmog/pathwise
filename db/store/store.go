@@ -1,6 +1,6 @@
 package store
 
-type GetOpts struct {
+type LimitOpts struct {
 	Page    int
 	PerPage int
 }

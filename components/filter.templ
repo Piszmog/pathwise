@@ -4,9 +4,11 @@ import (
 	"github.com/Piszmog/pathwise/types"
 )
 
-templ filter() {
+templ filterForm() {
 	<form
  		class="ml-3 mr-3 mt-3 flex items-center space-x-2"
+ 		hx-get="/jobs"
+ 		hx-target="#job-list"
 	>
 		<div class="w-full">
 			<label for="company" class="block text-sm font-medium leading-6 text-gray-900">Company</label>

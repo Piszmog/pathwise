@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"github.com/Piszmog/pathwise/components"
 	"github.com/Piszmog/pathwise/db/store"
 	"github.com/Piszmog/pathwise/types"
@@ -40,7 +41,7 @@ func (h *Handler) Jobs(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	jobs, err := h.JobApplicationStore.Get(r.Context(), store.GetOpts{Page: page, PerPage: perPage})
+	jobs, err := h.JobApplicationStore.Get(r.Context(), store.LimitOpts{Page: page, PerPage: perPage})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -58,6 +59,7 @@ func (h *Handler) Jobs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) FilterJobs(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Filtering jobs")
 	queries := r.URL.Query()
 	pageQuery := queries.Get("page")
 	perPageQuery := queries.Get("per_page")
@@ -78,21 +80,16 @@ func (h *Handler) FilterJobs(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	jobs, err := h.JobApplicationStore.Get(r.Context(), store.GetOpts{Page: page, PerPage: perPage})
+
+	company := queries.Get("company")
+	status := queries.Get("status")
+
+	jobs, err := h.JobApplicationStore.Filter(r.Context(), store.LimitOpts{Page: page, PerPage: perPage}, company, status)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	statsOpts, err := h.StatsStore.Get(r.Context())
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	m := components.Main(
-		jobs,
-		statsOpts,
-	)
-	m.Render(r.Context(), w)
+	components.JobList(jobs).Render(r.Context(), w)
 }
 
 func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
@@ -161,7 +158,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jobs, err := h.JobApplicationStore.Get(r.Context(), store.GetOpts{Page: 0, PerPage: 10})
+	jobs, err := h.JobApplicationStore.Get(r.Context(), store.LimitOpts{Page: 0, PerPage: 10})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

@@ -37,7 +37,7 @@ func scanJobApplicationNote(row *sql.Row) (types.JobApplicationNote, error) {
 	return note, err
 }
 
-func (s *JobApplicationNoteStore) Get(ctx context.Context, opts GetOpts) ([]types.JobApplicationNote, error) {
+func (s *JobApplicationNoteStore) Get(ctx context.Context, opts LimitOpts) ([]types.JobApplicationNote, error) {
 	rows, err := s.Database.DB().QueryContext(
 		ctx,
 		`
