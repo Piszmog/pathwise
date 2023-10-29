@@ -9,13 +9,13 @@ templ Timeline(entries []types.JobApplicationTimelineEntry, oob string) {
 	<div id="timeline" class="flow-root" hx-swap-oob={ oob }>
 		<ul id="timeline-list" role="list" class="-mb-8">
 			for i, entry := range entries {
-				@timelineEntry(entry, i == len(entries) - 1)
+				@TimelineEntry(entry, i == len(entries) - 1)
 			}
 		</ul>
 	</div>
 }
 
-templ timelineEntry(entry types.JobApplicationTimelineEntry, isLast bool) {
+templ TimelineEntry(entry types.JobApplicationTimelineEntry, isLast bool) {
 	switch v := entry.(type) {
 		case types.JobApplicationStatusHistory:
 			@timelineEntryStatus(v, isLast)

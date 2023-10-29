@@ -8,7 +8,7 @@ templ UpdateJob(j types.JobApplication, s *types.StatsOpts, newTimelineEntry typ
 	}
 	if newTimelineEntry.SwapOOB != "" {
 		<div hx-swap-oob={ newTimelineEntry.SwapOOB }>
-			@timelineEntry(newTimelineEntry.Entry, false)
+			@TimelineEntry(newTimelineEntry.Entry, false)
 		</div>
 	}
 	@job(j)

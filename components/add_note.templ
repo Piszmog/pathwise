@@ -1,9 +1,0 @@
-package components
-
-import "github.com/Piszmog/pathwise/types"
-
-templ AddNote(newTimelineEntry types.NewTimelineEntry) {
-	<div hx-swap-oob={ newTimelineEntry.SwapOOB }>
-		@timelineEntry(newTimelineEntry.Entry, false)
-	</div>
-}

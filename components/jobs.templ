@@ -154,7 +154,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 	</form>
 	@Timeline(timelineEntries, "")
 	<div class="mt-6 flex gap-x-3">
-		@note(j.ID, timelineEntries)
+		@note(j.ID)
 	</div>
 }
 

@@ -57,6 +57,44 @@ func (h *Handler) Jobs(w http.ResponseWriter, r *http.Request) {
 	m.Render(r.Context(), w)
 }
 
+func (h *Handler) FilterJobs(w http.ResponseWriter, r *http.Request) {
+	queries := r.URL.Query()
+	pageQuery := queries.Get("page")
+	perPageQuery := queries.Get("per_page")
+	page := 0
+	var err error
+	if pageQuery != "" {
+		page, err = strconv.Atoi(pageQuery)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	}
+	perPage := 10
+	if perPageQuery != "" {
+		perPage, err = strconv.Atoi(perPageQuery)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	}
+	jobs, err := h.JobApplicationStore.Get(r.Context(), store.GetOpts{Page: page, PerPage: perPage})
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	statsOpts, err := h.StatsStore.Get(r.Context())
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	m := components.Main(
+		jobs,
+		statsOpts,
+	)
+	m.Render(r.Context(), w)
+}
+
 func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
@@ -220,8 +258,6 @@ func (h *Handler) AddNote(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	firstTimelineEntryID := r.FormValue("firstTimelineEntryID")
-	firstTimelineEntryType := r.FormValue("firstTimelineEntryType")
 
 	jobNote := types.JobApplicationNote{
 		JobApplicationID: id,
@@ -232,10 +268,5 @@ func (h *Handler) AddNote(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	components.AddNote(
-		types.NewTimelineEntry{
-			SwapOOB: "beforebegin:#" + newTimelineID(firstTimelineEntryType, firstTimelineEntryID),
-			Entry:   n,
-		},
-	).Render(r.Context(), w)
+	components.TimelineEntry(n, false).Render(r.Context(), w)
 }

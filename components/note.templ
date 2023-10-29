@@ -2,19 +2,17 @@ package components
 
 import (
 	"strconv"
-	"github.com/Piszmog/pathwise/types"
-	"github.com/Piszmog/pathwise/utils"
 )
 
-templ note(id int, timelineEntries []types.JobApplicationTimelineEntry) {
+templ note(id int) {
 	<form
  		id="note-form"
  		class="relative flex-auto"
  		hx-post={ "/jobs/" + strconv.Itoa(id) + "/notes" }
  		hx-on::after-request="this.reset()"
+ 		hx-target="#timeline-list"
+ 		hx-swap="afterbegin"
 	>
-		<input type="hidden" name="firstTimelineEntryID" value={ strconv.Itoa(utils.GetFirstElementID(timelineEntries)) }/>
-		<input type="hidden" name="firstTimelineEntryType" value={ string(utils.GetFirstElementType(timelineEntries)) }/>
 		<div
  			class="overflow-hidden rounded-lg pb-12 shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-blue-600"
 		>
