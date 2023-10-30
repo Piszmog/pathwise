@@ -3,12 +3,13 @@ package main
 import (
 	"context"
 	"embed"
-	"fmt"
 	"github.com/Piszmog/pathwise/db"
 	"github.com/Piszmog/pathwise/db/store"
 	"github.com/Piszmog/pathwise/handlers"
+	"github.com/Piszmog/pathwise/logger"
+	"github.com/Piszmog/pathwise/middleware"
 	"github.com/gorilla/mux"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,17 +20,22 @@ import (
 var assets embed.FS
 
 func main() {
+	l := logger.New(os.Getenv("LOG_LEVEL"))
+
 	database, err := db.New(db.DatabaseTypeFile, db.DatabaseOpts{URL: "./db.sqlite3"})
 	if err != nil {
-		log.Fatal(err)
+		l.Error("failed to create database", "error", err)
+		return
 	}
 	defer database.Close()
 
 	if err = db.Init(database); err != nil {
-		log.Fatal(err)
+		l.Error("failed to initialize database", "error", err)
+		return
 	}
 
 	handler := &handlers.Handler{
+		Logger:                           l,
 		JobApplicationStore:              &store.JobApplicationStore{Database: database},
 		JobApplicationNoteStore:          &store.JobApplicationNoteStore{Database: database},
 		JobApplicationStatusHistoryStore: &store.JobApplicationStatusHistoryStore{Database: database},
@@ -45,6 +51,9 @@ func main() {
 	r.HandleFunc("/jobs/{id}", handler.UpdateJob).Methods(http.MethodPatch)
 	r.HandleFunc("/jobs/{id}/notes", handler.AddNote).Methods(http.MethodPost)
 
+	loggingMiddleware := middleware.LoggingMiddleware{Logger: l}
+	r.Use(loggingMiddleware.Middleware)
+
 	srv := &http.Server{
 		Handler: r,
 		Addr:    ":8080",
@@ -54,16 +63,16 @@ func main() {
 	}
 
 	go func() {
-		fmt.Println("Listening on port 8080")
+		l.Info("starting server", "port", "8080")
 		if err = srv.ListenAndServe(); err != nil {
-			log.Println(err)
+			l.Warn("failed to start server", "error", err)
 		}
 	}()
 
-	gracefulShutdown(srv)
+	gracefulShutdown(srv, l)
 }
 
-func gracefulShutdown(srv *http.Server) {
+func gracefulShutdown(srv *http.Server, l *slog.Logger) {
 	c := make(chan os.Signal, 1)
 	// We'll accept graceful shutdowns when quit via SIGINT (Ctrl+C)
 	// SIGKILL, SIGQUIT or SIGTERM (Ctrl+/) will not be caught.
@@ -81,6 +90,6 @@ func gracefulShutdown(srv *http.Server) {
 	// Optionally, you could run srv.Shutdown in a goroutine and block on
 	// <-ctx.Done() if your application should wait for other services
 	// to finalize based on context cancellation.
-	log.Println("shutting down")
+	l.Info("shutting down")
 	os.Exit(0)
 }

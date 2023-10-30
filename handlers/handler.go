@@ -7,12 +7,14 @@ import (
 	"github.com/Piszmog/pathwise/types"
 	"github.com/Piszmog/pathwise/utils"
 	"github.com/gorilla/mux"
+	"log/slog"
 	"net/http"
 	"sort"
 	"strconv"
 )
 
 type Handler struct {
+	Logger                           *slog.Logger
 	JobApplicationStore              *store.JobApplicationStore
 	JobApplicationNoteStore          *store.JobApplicationNoteStore
 	JobApplicationStatusHistoryStore *store.JobApplicationStatusHistoryStore
@@ -22,11 +24,13 @@ type Handler struct {
 func (h *Handler) Main(w http.ResponseWriter, r *http.Request) {
 	jobs, err := h.JobApplicationStore.Get(r.Context(), store.LimitOpts{Page: 0, PerPage: 10})
 	if err != nil {
+		h.Logger.Error("failed to get jobs", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	statsOpts, err := h.StatsStore.Get(r.Context())
 	if err != nil {
+		h.Logger.Error("failed to get stats", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -46,6 +50,7 @@ func (h *Handler) FilterJobs(w http.ResponseWriter, r *http.Request) {
 	if pageQuery != "" {
 		page, err = strconv.Atoi(pageQuery)
 		if err != nil {
+			h.Logger.Error("failed to parse page query", "error", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -54,6 +59,7 @@ func (h *Handler) FilterJobs(w http.ResponseWriter, r *http.Request) {
 	if perPageQuery != "" {
 		perPage, err = strconv.Atoi(perPageQuery)
 		if err != nil {
+			h.Logger.Error("failed to parse per_page query", "error", err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -64,6 +70,7 @@ func (h *Handler) FilterJobs(w http.ResponseWriter, r *http.Request) {
 
 	jobs, err := h.JobApplicationStore.Filter(r.Context(), store.LimitOpts{Page: page, PerPage: perPage}, company, status)
 	if err != nil {
+		h.Logger.Error("failed to get jobs", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -74,16 +81,19 @@ func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
+		h.Logger.Error("failed to parse id", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	job, err := h.JobApplicationStore.GetByID(r.Context(), id)
 	if err != nil {
+		h.Logger.Error("failed to get job", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	timelineEntries, err := h.getTimelineEntries(r.Context(), id)
 	if err != nil {
+		h.Logger.Error("failed to get timeline entries", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -116,6 +126,7 @@ func (h *Handler) getTimelineEntries(ctx context.Context, id int) ([]types.JobAp
 
 func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
+		h.Logger.Error("failed to parse form", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -123,6 +134,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 	title := r.FormValue("title")
 	url := r.FormValue("url")
 	if company == "" || title == "" || url == "" {
+		h.Logger.Error("missing required form values", "company", company, "title", title, "url", url)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -132,18 +144,21 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		URL:     url,
 	}
 	if err := h.JobApplicationStore.Insert(r.Context(), job); err != nil {
+		h.Logger.Error("failed to insert job", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	jobs, err := h.JobApplicationStore.Get(r.Context(), store.LimitOpts{Page: 0, PerPage: 10})
 	if err != nil {
+		h.Logger.Error("failed to get jobs", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	stats, err := h.StatsStore.Get(r.Context())
 	if err != nil {
+		h.Logger.Error("failed to get stats", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -154,10 +169,12 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
+		h.Logger.Error("failed to parse id", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	if err = r.ParseForm(); err != nil {
+		h.Logger.Error("failed to parse form", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -166,6 +183,7 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	url := r.FormValue("url")
 	status := r.FormValue("status")
 	if company == "" || title == "" || url == "" || status == "" {
+		h.Logger.Error("missing required form values", "company", company, "title", title, "url", url, "status", status)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -182,6 +200,7 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	}
 	updatedAt, err := h.JobApplicationStore.Update(r.Context(), job)
 	if err != nil {
+		h.Logger.Error("failed to update job", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -192,6 +211,7 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	if previousStatus != status {
 		updatedStats, err := h.StatsStore.Get(r.Context())
 		if err != nil {
+			h.Logger.Error("failed to get stats", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -199,6 +219,7 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 
 		latestStatus, err := h.JobApplicationStatusHistoryStore.GetLatestByID(r.Context(), id)
 		if err != nil {
+			h.Logger.Error("failed to get latest status", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -228,15 +249,18 @@ func (h *Handler) AddNote(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
+		h.Logger.Error("failed to parse id", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	if err = r.ParseForm(); err != nil {
+		h.Logger.Error("failed to parse form", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	note := r.FormValue("note")
 	if note == "" {
+		h.Logger.Error("missing required form values", "note", note)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -247,6 +271,7 @@ func (h *Handler) AddNote(w http.ResponseWriter, r *http.Request) {
 	}
 	n, err := h.JobApplicationNoteStore.Insert(r.Context(), jobNote)
 	if err != nil {
+		h.Logger.Error("failed to insert note", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
