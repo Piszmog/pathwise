@@ -9,12 +9,18 @@ import (
 )
 
 templ Jobs(jobs []types.JobApplication) {
+	<div id="jobs">
+		@jobList(jobs)
+		@pagination(0, 10, len(jobs))
+	</div>
+}
+
+templ jobList(jobs []types.JobApplication) {
 	<ul id="job-list" role="list" class="divide-y divide-gray-100 px-4 py-5 sm:px-6">
 		for _, j := range jobs {
 			@jobRow(j)
 		}
 	</ul>
-	@pagination(0, 10, len(jobs))
 }
 
 templ jobRow(j types.JobApplication) {
@@ -151,7 +157,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 	</div>
 }
 
-templ jobApplicationForm(firstID int) {
+templ jobApplicationForm() {
 	<script lang="javascript">
         function afterRequest(form) {
             form.reset();
@@ -165,8 +171,8 @@ templ jobApplicationForm(firstID int) {
  		id="new-job-form"
  		hx-post="/jobs"
  		hx-on::after-request="afterRequest(this)"
- 		hx-target="#job-list"
- 		hx-prepend="true"
+ 		hx-target="#jobs"
+ 		hx-swap="outerHTML"
 	>
 		<div class="grid grid-cols-1 gap-x-6 gap-y-8">
 			<div>

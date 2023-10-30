@@ -2,7 +2,6 @@ package components
 
 import (
 	"github.com/Piszmog/pathwise/types"
-	"github.com/Piszmog/pathwise/utils"
 )
 
 templ Main(j []types.JobApplication, s types.StatsOpts) {
@@ -20,7 +19,7 @@ templ body(j []types.JobApplication, s types.StatsOpts) {
 			@stats(s, "")
 			@mainContent(j)
 			@drawer("new-job", "New Job Application") {
-				@jobApplicationForm(utils.GetFirstElementID(j))
+				@jobApplicationForm()
 			}
 		</main>
 	</body>

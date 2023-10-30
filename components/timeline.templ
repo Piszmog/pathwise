@@ -12,11 +12,11 @@ templ Timeline(entries []types.JobApplicationTimelineEntry, oob string) {
 }
 
 templ timelineList(entries []types.JobApplicationTimelineEntry) {
-    <ul id="timeline-list" role="list" class="-mb-8">
-        for i, entry := range entries {
-            @TimelineEntry(entry, i == len(entries) - 1)
-        }
-    </ul>
+	<ul id="timeline-list" role="list" class="-mb-8">
+		for i, entry := range entries {
+			@TimelineEntry(entry, i == len(entries) - 1)
+		}
+	</ul>
 }
 
 templ TimelineEntry(entry types.JobApplicationTimelineEntry, isLast bool) {

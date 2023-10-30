@@ -1,8 +1,15 @@
 package utils
 
-func GetActualMax(perPage int, total int) int {
-	if total < perPage {
+func GetActualMin(start int, total int) int {
+	if total < start {
 		return total
 	}
-	return perPage
+	return start
+}
+
+func GetActualMax(end int, total int) int {
+	if total < end {
+		return total
+	}
+	return end
 }

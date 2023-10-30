@@ -10,7 +10,7 @@ templ pagination(page int, perPage int, total int) {
 		<div class="hidden sm:block">
 			<p class="text-sm text-gray-700">
 				Showing
-				<span class="font-medium">{ strconv.Itoa(page * perPage + 1) }</span>
+				<span class="font-medium">{ strconv.Itoa(utils.GetActualMin(page * perPage + 1, total)) }</span>
 				to
 				<span class="font-medium">{ strconv.Itoa(utils.GetActualMax((page+1) * perPage, total)) }</span>
 				of
@@ -29,7 +29,7 @@ templ pagination(page int, perPage int, total int) {
 			<button
  				type="button"
  				class="relative ml-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
- 				disabled?={ page == total / perPage }
+ 				disabled?={ (page+1) == total / perPage }
 			>
 				Next
 			</button>
