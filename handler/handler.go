@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"context"
@@ -13,6 +13,13 @@ import (
 	"strconv"
 )
 
+const (
+	defaultPage    = 0
+	defaultPerPage = 10
+)
+
+var defaultLimitOpts = store.LimitOpts{Page: defaultPage, PerPage: defaultPerPage}
+
 type Handler struct {
 	Logger                           *slog.Logger
 	JobApplicationStore              *store.JobApplicationStore
@@ -22,7 +29,7 @@ type Handler struct {
 }
 
 func (h *Handler) Main(w http.ResponseWriter, r *http.Request) {
-	jobs, total, err := h.JobApplicationStore.Get(r.Context(), store.LimitOpts{Page: 0, PerPage: 10})
+	jobs, total, err := h.JobApplicationStore.Get(r.Context(), defaultLimitOpts)
 	if err != nil {
 		h.Logger.Error("failed to get jobs", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -38,8 +45,8 @@ func (h *Handler) Main(w http.ResponseWriter, r *http.Request) {
 		jobs,
 		statsOpts,
 		types.PaginationOpts{
-			Page:    0,
-			PerPage: 10,
+			Page:    defaultPage,
+			PerPage: defaultPerPage,
 			Total:   total,
 		},
 		types.FilterOpts{},
@@ -48,33 +55,15 @@ func (h *Handler) Main(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
-	queries := r.URL.Query()
-	pageQuery := queries.Get("page")
-	perPageQuery := queries.Get("per_page")
-	page := 0
-	var err error
-	if pageQuery != "" {
-		page, err = strconv.Atoi(pageQuery)
-		if err != nil {
-			h.Logger.Error("failed to parse page query", "error", err)
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
+	page, perPage, err := getPageOpts(r)
+	if err != nil {
+		h.Logger.Error("failed to get page opts", "error", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
-	perPage := 10
-	if perPageQuery != "" {
-		perPage, err = strconv.Atoi(perPageQuery)
-		if err != nil {
-			h.Logger.Error("failed to parse per_page query", "error", err)
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-	}
+	filterOpts := getFilterOpts(r)
 
-	company := queries.Get("company")
-	status := queries.Get("status")
-
-	jobs, total, err := h.JobApplicationStore.Filter(r.Context(), store.LimitOpts{Page: page, PerPage: perPage}, company, status)
+	jobs, total, err := h.JobApplicationStore.Filter(r.Context(), store.LimitOpts{Page: page, PerPage: perPage}, filterOpts.Company, filterOpts.Status)
 	if err != nil {
 		h.Logger.Error("failed to get jobs", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -83,7 +72,7 @@ func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	components.Jobs(
 		jobs,
 		types.PaginationOpts{Page: page, PerPage: perPage, Total: total},
-		types.FilterOpts{Company: company, Status: types.ToJobApplicationStatus(status)},
+		filterOpts,
 	).Render(r.Context(), w)
 }
 
@@ -159,7 +148,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jobs, total, err := h.JobApplicationStore.Get(r.Context(), store.LimitOpts{Page: 0, PerPage: 10})
+	jobs, total, err := h.JobApplicationStore.Get(r.Context(), defaultLimitOpts)
 	if err != nil {
 		h.Logger.Error("failed to get jobs", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -172,10 +161,11 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	components.AddJob(
 		jobs,
 		stats,
-		types.PaginationOpts{Page: 0, PerPage: 10, Total: total},
+		types.PaginationOpts{Page: defaultPage, PerPage: defaultPerPage, Total: total},
 		types.FilterOpts{},
 	).Render(r.Context(), w)
 }
@@ -291,4 +281,34 @@ func (h *Handler) AddNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	components.TimelineEntry(n, false).Render(r.Context(), w)
+}
+
+func getPageOpts(r *http.Request) (int, int, error) {
+	queries := r.URL.Query()
+	pageQuery := queries.Get("page")
+	perPageQuery := queries.Get("per_page")
+	page := defaultPage
+	var err error
+	if pageQuery != "" {
+		page, err = strconv.Atoi(pageQuery)
+		if err != nil {
+			return 0, 0, err
+		}
+	}
+	perPage := defaultPerPage
+	if perPageQuery != "" {
+		perPage, err = strconv.Atoi(perPageQuery)
+		if err != nil {
+			return 0, 0, err
+		}
+	}
+	return page, perPage, nil
+}
+
+func getFilterOpts(r *http.Request) types.FilterOpts {
+	queries := r.URL.Query()
+	return types.FilterOpts{
+		Company: queries.Get("company"),
+		Status:  types.ToJobApplicationStatus(queries.Get("status")),
+	}
 }

@@ -2,7 +2,6 @@ package components
 
 import (
 	"strconv"
-	"strings"
 
 	"github.com/Piszmog/pathwise/types"
 	"github.com/Piszmog/pathwise/utils"
@@ -125,13 +124,13 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 				</div>
 			</div>
 			<div>
-				<input type="hidden" name="previousStatus" value={ strings.ToLower(j.Status.String()) }/>
+				<input type="hidden" name="previousStatus" value={ j.Status.String() }/>
 				@inputSelect(types.SelectOpts{
 			        Name: "status",
 			        Label: "Status",
 			        Options: types.JobApplicationStatusSelectOptions,
                     Required: true,
-                    Value: strings.ToLower(j.Status.String()),
+                    Value: j.Status.String(),
 			    })
 			</div>
 		</div>

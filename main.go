@@ -5,7 +5,7 @@ import (
 	"embed"
 	"github.com/Piszmog/pathwise/db"
 	"github.com/Piszmog/pathwise/db/store"
-	"github.com/Piszmog/pathwise/handlers"
+	"github.com/Piszmog/pathwise/handler"
 	"github.com/Piszmog/pathwise/logger"
 	"github.com/Piszmog/pathwise/middleware"
 	"github.com/gorilla/mux"
@@ -34,7 +34,7 @@ func main() {
 		return
 	}
 
-	handler := &handlers.Handler{
+	handler := &handler.Handler{
 		Logger:                           l,
 		JobApplicationStore:              &store.JobApplicationStore{Database: database},
 		JobApplicationNoteStore:          &store.JobApplicationNoteStore{Database: database},

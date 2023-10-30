@@ -80,7 +80,7 @@ func (s *JobApplicationStore) Get(ctx context.Context, opts LimitOpts) ([]types.
 	return jobs, total, tx.Commit()
 }
 
-func (s *JobApplicationStore) Filter(ctx context.Context, opts LimitOpts, company string, status string) ([]types.JobApplication, int, error) {
+func (s *JobApplicationStore) Filter(ctx context.Context, opts LimitOpts, company string, status types.JobApplicationStatus) ([]types.JobApplication, int, error) {
 	query := `SELECT
 		    j.id, j.company, j.title, j.url, j.status, j.applied_at, j.updated_at
 		FROM 
@@ -110,8 +110,8 @@ func (s *JobApplicationStore) Filter(ctx context.Context, opts LimitOpts, compan
 		totalQueryArgs = append(totalQueryArgs, "%"+company+"%")
 	}
 	if status != "" {
-		queryArgs = append(queryArgs, "%"+status+"%")
-		totalQueryArgs = append(totalQueryArgs, "%"+status+"%")
+		queryArgs = append(queryArgs, "%"+status.String()+"%")
+		totalQueryArgs = append(totalQueryArgs, "%"+status.String()+"%")
 	}
 	queryArgs = append(queryArgs, opts.PerPage, opts.Page*opts.PerPage)
 

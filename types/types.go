@@ -1,8 +1,8 @@
 package types
 
 import (
-	"strings"
 	"time"
+	"unicode"
 )
 
 type Record interface {
@@ -33,8 +33,8 @@ type JobApplicationTimelineEntry interface {
 type JobApplicationTimelineType string
 
 const (
-	JobApplicationTimelineTypeNote   JobApplicationTimelineType = "Note"
-	JobApplicationTimelineTypeStatus JobApplicationTimelineType = "Status"
+	JobApplicationTimelineTypeNote   JobApplicationTimelineType = "note"
+	JobApplicationTimelineTypeStatus JobApplicationTimelineType = "status"
 )
 
 func (t JobApplicationTimelineType) String() string {
@@ -42,14 +42,12 @@ func (t JobApplicationTimelineType) String() string {
 }
 
 func ToJobApplicationTimelineType(val string) JobApplicationTimelineType {
-	switch strings.ToLower(val) {
-	case strings.ToLower(JobApplicationTimelineTypeNote.String()):
-		return JobApplicationTimelineTypeNote
-	case strings.ToLower(JobApplicationTimelineTypeStatus.String()):
-		return JobApplicationTimelineTypeStatus
-	default:
-		return ""
-	}
+	return jobApplicationTimelineTypeMap[val]
+}
+
+var jobApplicationTimelineTypeMap = map[string]JobApplicationTimelineType{
+	"note":   JobApplicationTimelineTypeNote,
+	"status": JobApplicationTimelineTypeStatus,
 }
 
 type JobApplicationStatusHistory struct {
@@ -95,47 +93,47 @@ func (j JobApplicationNote) Created() time.Time {
 type JobApplicationStatus string
 
 const (
-	JobApplicationStatusAccepted     JobApplicationStatus = "Accepted"
-	JobApplicationStatusApplied      JobApplicationStatus = "Applied"
-	JobApplicationStatusCanceled     JobApplicationStatus = "Canceled"
-	JobApplicationStatusClosed       JobApplicationStatus = "Closed"
-	JobApplicationStatusDeclined     JobApplicationStatus = "Declined"
-	JobApplicationStatusInterviewing JobApplicationStatus = "Interviewing"
-	JobApplicationStatusOffered      JobApplicationStatus = "Offered"
-	JobApplicationStatusRejected     JobApplicationStatus = "Rejected"
-	JobApplicationStatusWatching     JobApplicationStatus = "Watching"
-	JobApplicationStatusWithdrawn    JobApplicationStatus = "Withdrawn"
+	JobApplicationStatusAccepted     JobApplicationStatus = "accepted"
+	JobApplicationStatusApplied      JobApplicationStatus = "applied"
+	JobApplicationStatusCanceled     JobApplicationStatus = "canceled"
+	JobApplicationStatusClosed       JobApplicationStatus = "closed"
+	JobApplicationStatusDeclined     JobApplicationStatus = "declined"
+	JobApplicationStatusInterviewing JobApplicationStatus = "interviewing"
+	JobApplicationStatusOffered      JobApplicationStatus = "offered"
+	JobApplicationStatusRejected     JobApplicationStatus = "rejected"
+	JobApplicationStatusWatching     JobApplicationStatus = "watching"
+	JobApplicationStatusWithdrawn    JobApplicationStatus = "withdrawn"
 )
 
 func (j JobApplicationStatus) String() string {
 	return string(j)
 }
 
-func ToJobApplicationStatus(val string) JobApplicationStatus {
-	switch strings.ToLower(val) {
-	case strings.ToLower(JobApplicationStatusAccepted.String()):
-		return JobApplicationStatusAccepted
-	case strings.ToLower(JobApplicationStatusApplied.String()):
-		return JobApplicationStatusApplied
-	case strings.ToLower(JobApplicationStatusCanceled.String()):
-		return JobApplicationStatusCanceled
-	case strings.ToLower(JobApplicationStatusClosed.String()):
-		return JobApplicationStatusClosed
-	case strings.ToLower(JobApplicationStatusDeclined.String()):
-		return JobApplicationStatusDeclined
-	case strings.ToLower(JobApplicationStatusInterviewing.String()):
-		return JobApplicationStatusInterviewing
-	case strings.ToLower(JobApplicationStatusOffered.String()):
-		return JobApplicationStatusOffered
-	case strings.ToLower(JobApplicationStatusRejected.String()):
-		return JobApplicationStatusRejected
-	case strings.ToLower(JobApplicationStatusWatching.String()):
-		return JobApplicationStatusWatching
-	case strings.ToLower(JobApplicationStatusWithdrawn.String()):
-		return JobApplicationStatusWithdrawn
-	default:
+func (j JobApplicationStatus) PrettyString() string {
+	val := j.String()
+	if len(val) == 0 {
 		return ""
 	}
+	r := []rune(val)
+	r[0] = unicode.ToUpper(r[0])
+	return string(r)
+}
+
+func ToJobApplicationStatus(val string) JobApplicationStatus {
+	return jobApplicationStatusMap[val]
+}
+
+var jobApplicationStatusMap = map[string]JobApplicationStatus{
+	"accepted":     JobApplicationStatusAccepted,
+	"applied":      JobApplicationStatusApplied,
+	"canceled":     JobApplicationStatusCanceled,
+	"closed":       JobApplicationStatusClosed,
+	"declined":     JobApplicationStatusDeclined,
+	"interviewing": JobApplicationStatusInterviewing,
+	"offered":      JobApplicationStatusOffered,
+	"rejected":     JobApplicationStatusRejected,
+	"watching":     JobApplicationStatusWatching,
+	"withdrawn":    JobApplicationStatusWithdrawn,
 }
 
 type SelectOpts struct {
@@ -156,43 +154,43 @@ type SelectOption struct {
 var JobApplicationStatusSelectOptions = []SelectOption{
 	{
 		Label: "Accepted",
-		Value: strings.ToLower(JobApplicationStatusAccepted.String()),
+		Value: JobApplicationStatusAccepted.String(),
 	},
 	{
 		Label: "Applied",
-		Value: strings.ToLower(JobApplicationStatusApplied.String()),
+		Value: JobApplicationStatusApplied.String(),
 	},
 	{
 		Label: "Canceled",
-		Value: strings.ToLower(JobApplicationStatusCanceled.String()),
+		Value: JobApplicationStatusCanceled.String(),
 	},
 	{
 		Label: "Closed",
-		Value: strings.ToLower(JobApplicationStatusClosed.String()),
+		Value: JobApplicationStatusClosed.String(),
 	},
 	{
 		Label: "Declined",
-		Value: strings.ToLower(JobApplicationStatusDeclined.String()),
+		Value: JobApplicationStatusDeclined.String(),
 	},
 	{
 		Label: "Interviewing",
-		Value: strings.ToLower(JobApplicationStatusInterviewing.String()),
+		Value: JobApplicationStatusInterviewing.String(),
 	},
 	{
 		Label: "Offered",
-		Value: strings.ToLower(JobApplicationStatusOffered.String()),
+		Value: JobApplicationStatusOffered.String(),
 	},
 	{
 		Label: "Rejected",
-		Value: strings.ToLower(JobApplicationStatusRejected.String()),
+		Value: JobApplicationStatusRejected.String(),
 	},
 	{
 		Label: "Watching",
-		Value: strings.ToLower(JobApplicationStatusWatching.String()),
+		Value: JobApplicationStatusWatching.String(),
 	},
 	{
 		Label: "Withdrawn",
-		Value: strings.ToLower(JobApplicationStatusWithdrawn.String()),
+		Value: JobApplicationStatusWithdrawn.String(),
 	},
 }
 

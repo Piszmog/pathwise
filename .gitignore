@@ -30,3 +30,4 @@ appengine-generated/
 *.iml
 /assets/css
 *.sqlite3
+/tmp

@@ -24,7 +24,7 @@ templ pagination(paginationOpts types.PaginationOpts, filterOpts types.FilterOpt
  				type="button"
  				class="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
  				disabled?={ paginationOpts.Page == 0 }
- 				hx-get={ "/jobs?page=" + strconv.Itoa(paginationOpts.Page-1) + "&perPage=" + strconv.Itoa(paginationOpts.PerPage) + "&company=" + filterOpts.Company + "&status=" + filterOpts.Status.String() }
+ 				hx-get={ "/jobs?page=" + strconv.Itoa(paginationOpts.Page-1) + "&per_page=" + strconv.Itoa(paginationOpts.PerPage) + "&company=" + filterOpts.Company + "&status=" + filterOpts.Status.String() }
  				hx-target="#jobs"
  				hx-trigger="click"
 			>
@@ -34,7 +34,7 @@ templ pagination(paginationOpts types.PaginationOpts, filterOpts types.FilterOpt
  				type="button"
  				class="relative ml-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
  				disabled?={ paginationOpts.Total <= (paginationOpts.Page+1) * paginationOpts.PerPage }
- 				hx-get={ "/jobs?page=" + strconv.Itoa(paginationOpts.Page+1) + "&perPage=" + strconv.Itoa(paginationOpts.PerPage) + "&company=" + filterOpts.Company + "&status=" + filterOpts.Status.String() }
+ 				hx-get={ "/jobs?page=" + strconv.Itoa(paginationOpts.Page+1) + "&per_page=" + strconv.Itoa(paginationOpts.PerPage) + "&company=" + filterOpts.Company + "&status=" + filterOpts.Status.String() }
  				hx-target="#jobs"
  				hx-trigger="click"
 			>
