@@ -46,7 +46,7 @@ func (h *Handler) Main(w http.ResponseWriter, r *http.Request) {
 	m.Render(r.Context(), w)
 }
 
-func (h *Handler) FilterJobs(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	queries := r.URL.Query()
 	pageQuery := queries.Get("page")
 	perPageQuery := queries.Get("per_page")

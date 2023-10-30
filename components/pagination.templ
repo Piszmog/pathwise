@@ -24,6 +24,9 @@ templ pagination(opts types.PaginationOpts) {
  				type="button"
  				class="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
  				disabled?={ opts.Page == 0 }
+ 				hx-get={ "/jobs?page=" + strconv.Itoa(opts.Page-1) + "&perPage=" + strconv.Itoa(opts.PerPage) }
+ 				hx-target="#jobs"
+ 				hx-trigger="click"
 			>
 				Previous
 			</button>
@@ -31,6 +34,9 @@ templ pagination(opts types.PaginationOpts) {
  				type="button"
  				class="relative ml-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
  				disabled?={ opts.Total <= (opts.Page+1) * opts.PerPage }
+ 				hx-get={ "/jobs?page=" + strconv.Itoa(opts.Page+1) + "&perPage=" + strconv.Itoa(opts.PerPage) }
+ 				hx-target="#jobs"
+ 				hx-trigger="click"
 			>
 				Next
 			</button>
