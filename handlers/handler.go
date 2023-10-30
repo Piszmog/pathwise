@@ -42,6 +42,7 @@ func (h *Handler) Main(w http.ResponseWriter, r *http.Request) {
 			PerPage: 10,
 			Total:   total,
 		},
+		types.FilterOpts{},
 	)
 	m.Render(r.Context(), w)
 }
@@ -79,7 +80,11 @@ func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	components.Jobs(jobs, types.PaginationOpts{Page: page, PerPage: perPage, Total: total}).Render(r.Context(), w)
+	components.Jobs(
+		jobs,
+		types.PaginationOpts{Page: page, PerPage: perPage, Total: total},
+		types.FilterOpts{Company: company, Status: types.ToJobApplicationStatus(status)},
+	).Render(r.Context(), w)
 }
 
 func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
@@ -167,7 +172,12 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	components.AddJob(jobs, stats, types.PaginationOpts{Page: 0, PerPage: 10, Total: total}).Render(r.Context(), w)
+	components.AddJob(
+		jobs,
+		stats,
+		types.PaginationOpts{Page: 0, PerPage: 10, Total: total},
+		types.FilterOpts{},
+	).Render(r.Context(), w)
 }
 
 func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {

@@ -4,20 +4,20 @@ import (
 	"github.com/Piszmog/pathwise/types"
 )
 
-templ Main(j []types.JobApplication, s types.StatsOpts, paginationOpts types.PaginationOpts) {
+templ Main(j []types.JobApplication, s types.StatsOpts, paginationOpts types.PaginationOpts, filterOpts types.FilterOpts) {
 	<!DOCTYPE html>
 	<html>
 		@Head()
-		@body(j, s, paginationOpts)
+		@body(j, s, paginationOpts, filterOpts)
 	</html>
 }
 
-templ body(j []types.JobApplication, s types.StatsOpts, paginationOpts types.PaginationOpts) {
+templ body(j []types.JobApplication, s types.StatsOpts, paginationOpts types.PaginationOpts, filterOpts types.FilterOpts) {
 	<body>
 		<main>
 			@header("Job Applications")
 			@stats(s, "")
-			@mainContent(j, paginationOpts)
+			@mainContent(j, paginationOpts, filterOpts)
 			@drawer("new-job", "New Job Application") {
 				@jobApplicationForm()
 			}
@@ -25,9 +25,9 @@ templ body(j []types.JobApplication, s types.StatsOpts, paginationOpts types.Pag
 	</body>
 }
 
-templ mainContent(jobs []types.JobApplication, paginationOpts types.PaginationOpts) {
+templ mainContent(jobs []types.JobApplication, paginationOpts types.PaginationOpts, filterOpts types.FilterOpts) {
 	@filterForm()
-	@Jobs(jobs, paginationOpts)
+	@Jobs(jobs, paginationOpts, filterOpts)
 	@drawer("job-details", "Job Application") {
 		<div id="job-details"></div>
 	}

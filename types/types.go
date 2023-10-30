@@ -209,6 +209,11 @@ type NewTimelineEntry struct {
 	Entry   JobApplicationTimelineEntry
 }
 
+type FilterOpts struct {
+	Company string
+	Status  JobApplicationStatus
+}
+
 type PaginationOpts struct {
 	Page    int
 	PerPage int
