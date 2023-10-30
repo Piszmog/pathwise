@@ -1,18 +1,22 @@
 package components
 
 import (
-	"strconv"
 	"github.com/Piszmog/pathwise/types"
+	"github.com/Piszmog/pathwise/utils"
 )
 
 templ Timeline(entries []types.JobApplicationTimelineEntry, oob string) {
 	<div id="timeline" class="flow-root" hx-swap-oob={ oob }>
-		<ul id="timeline-list" role="list" class="-mb-8">
-			for i, entry := range entries {
-				@TimelineEntry(entry, i == len(entries) - 1)
-			}
-		</ul>
+		@timelineList(entries)
 	</div>
+}
+
+templ timelineList(entries []types.JobApplicationTimelineEntry) {
+    <ul id="timeline-list" role="list" class="-mb-8">
+        for i, entry := range entries {
+            @TimelineEntry(entry, i == len(entries) - 1)
+        }
+    </ul>
 }
 
 templ TimelineEntry(entry types.JobApplicationTimelineEntry, isLast bool) {
@@ -25,7 +29,7 @@ templ TimelineEntry(entry types.JobApplicationTimelineEntry, isLast bool) {
 }
 
 templ timelineEntryStatus(entry types.JobApplicationStatusHistory, isLast bool) {
-	<li id={ "status-" + strconv.Itoa(entry.ID) + "-entry" } class="relative pb-8">
+	<li id={ utils.TimelineStatusRowID(entry.ID) } class="relative pb-8">
 		if !isLast {
 			<span class="absolute left-5 top-5 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
 		}
@@ -70,7 +74,7 @@ templ timelineEntryStatus(entry types.JobApplicationStatusHistory, isLast bool) 
 }
 
 templ timelineEntryNote(entry types.JobApplicationNote, isLast bool) {
-	<li id={ "note-" + strconv.Itoa(entry.ID) + "-entry" } class="relative pb-8">
+	<li id={ utils.TimelineNoteRowID(entry.ID) } class="relative pb-8">
 		if !isLast {
 			<span class="absolute left-5 top-5 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
 		}

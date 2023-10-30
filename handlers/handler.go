@@ -2,15 +2,14 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"github.com/Piszmog/pathwise/components"
 	"github.com/Piszmog/pathwise/db/store"
 	"github.com/Piszmog/pathwise/types"
+	"github.com/Piszmog/pathwise/utils"
 	"github.com/gorilla/mux"
 	"net/http"
 	"sort"
 	"strconv"
-	"strings"
 )
 
 type Handler struct {
@@ -20,28 +19,8 @@ type Handler struct {
 	StatsStore                       *store.StatsStore
 }
 
-func (h *Handler) Jobs(w http.ResponseWriter, r *http.Request) {
-	queries := r.URL.Query()
-	pageQuery := queries.Get("page")
-	perPageQuery := queries.Get("per_page")
-	page := 0
-	var err error
-	if pageQuery != "" {
-		page, err = strconv.Atoi(pageQuery)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-	}
-	perPage := 10
-	if perPageQuery != "" {
-		perPage, err = strconv.Atoi(perPageQuery)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-	}
-	jobs, err := h.JobApplicationStore.Get(r.Context(), store.LimitOpts{Page: page, PerPage: perPage})
+func (h *Handler) Main(w http.ResponseWriter, r *http.Request) {
+	jobs, err := h.JobApplicationStore.Get(r.Context(), store.LimitOpts{Page: 0, PerPage: 10})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -59,7 +38,6 @@ func (h *Handler) Jobs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) FilterJobs(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Filtering jobs")
 	queries := r.URL.Query()
 	pageQuery := queries.Get("page")
 	perPageQuery := queries.Get("per_page")
@@ -89,7 +67,7 @@ func (h *Handler) FilterJobs(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	components.JobList(jobs).Render(r.Context(), w)
+	components.Jobs(jobs).Render(r.Context(), w)
 }
 
 func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
@@ -226,7 +204,7 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		}
 		if latestStatus.ID > 0 {
 			newTimelineEntry = types.NewTimelineEntry{
-				SwapOOB: "beforebegin:#" + newTimelineID(firstTimelineEntryType, firstTimelineEntryID),
+				SwapOOB: "beforebegin:#" + newTimelineID(types.ToJobApplicationTimelineType(firstTimelineEntryType), firstTimelineEntryID),
 				Entry:   latestStatus,
 			}
 		}
@@ -235,8 +213,15 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	components.UpdateJob(job, stats, newTimelineEntry).Render(r.Context(), w)
 }
 
-func newTimelineID(entryType string, entryID string) string {
-	return strings.ToLower(entryType) + "-" + entryID + "-entry"
+func newTimelineID(entryType types.JobApplicationTimelineType, entryID string) string {
+	switch entryType {
+	case types.JobApplicationTimelineTypeStatus:
+		return utils.TimelineStatusRowStringID(entryID)
+	case types.JobApplicationTimelineTypeNote:
+		return utils.TimelineNoteRowStringID(entryID)
+	default:
+		return "unknown"
+	}
 }
 
 func (h *Handler) AddNote(w http.ResponseWriter, r *http.Request) {

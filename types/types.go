@@ -37,6 +37,21 @@ const (
 	JobApplicationTimelineTypeStatus JobApplicationTimelineType = "Status"
 )
 
+func (t JobApplicationTimelineType) String() string {
+	return string(t)
+}
+
+func ToJobApplicationTimelineType(val string) JobApplicationTimelineType {
+	switch strings.ToLower(val) {
+	case strings.ToLower(JobApplicationTimelineTypeNote.String()):
+		return JobApplicationTimelineTypeNote
+	case strings.ToLower(JobApplicationTimelineTypeStatus.String()):
+		return JobApplicationTimelineTypeStatus
+	default:
+		return ""
+	}
+}
+
 type JobApplicationStatusHistory struct {
 	ID               int
 	CreatedAt        time.Time
@@ -119,7 +134,7 @@ func ToJobApplicationStatus(val string) JobApplicationStatus {
 	case strings.ToLower(JobApplicationStatusWithdrawn.String()):
 		return JobApplicationStatusWithdrawn
 	default:
-		return JobApplicationStatusWatching
+		return ""
 	}
 }
 

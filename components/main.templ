@@ -18,10 +18,18 @@ templ body(j []types.JobApplication, s types.StatsOpts) {
 		<main>
 			@header("Job Applications")
 			@stats(s, "")
-			@jobs(j)
+			@mainContent(j)
 			@drawer("new-job", "New Job Application") {
 				@jobApplicationForm(utils.GetFirstElementID(j))
 			}
 		</main>
 	</body>
+}
+
+templ mainContent(jobs []types.JobApplication) {
+	@filterForm()
+	@Jobs(jobs)
+	@drawer("job-details", "Job Application") {
+		<div id="job-details"></div>
+	}
 }
