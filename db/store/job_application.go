@@ -44,8 +44,9 @@ func scanJobApplication(row *sql.Row) (types.JobApplication, error) {
 	return job, err
 }
 
-func (s *JobApplicationStore) Get(ctx context.Context, opts LimitOpts) ([]types.JobApplication, error) {
-	rows, err := s.Database.DB().QueryContext(
+func (s *JobApplicationStore) Get(ctx context.Context, opts LimitOpts) ([]types.JobApplication, int, error) {
+	tx, err := s.Database.DB().BeginTx(ctx, nil)
+	rows, err := tx.QueryContext(
 		ctx,
 		`
 		SELECT
@@ -58,49 +59,89 @@ func (s *JobApplicationStore) Get(ctx context.Context, opts LimitOpts) ([]types.
 		opts.Page*opts.PerPage,
 	)
 	if err != nil {
-		return nil, err
+		tx.Rollback()
+		return nil, 0, err
 	}
 	defer rows.Close()
-	return scanJobApplications(rows)
+	jobs, err := scanJobApplications(rows)
+	if err != nil {
+		tx.Rollback()
+		return nil, 0, err
+	}
+	row := tx.QueryRowContext(
+		ctx,
+		`SELECT COUNT(*) FROM job_applications`,
+	)
+	var total int
+	if err = row.Scan(&total); err != nil {
+		tx.Rollback()
+		return nil, 0, err
+	}
+	return jobs, total, tx.Commit()
 }
 
-func (s *JobApplicationStore) Filter(ctx context.Context, opts LimitOpts, company string, status string) ([]types.JobApplication, error) {
+func (s *JobApplicationStore) Filter(ctx context.Context, opts LimitOpts, company string, status string) ([]types.JobApplication, int, error) {
 	query := `SELECT
 		    j.id, j.company, j.title, j.url, j.status, j.applied_at, j.updated_at
 		FROM 
 		    job_applications j`
+	totalQuery := `SELECT COUNT(*) FROM job_applications`
 	if company != "" || status != "" {
 		query += ` WHERE`
+		totalQuery += ` WHERE`
 		if company != "" {
 			query += ` j.company LIKE ?`
+			totalQuery += ` company LIKE ?`
 		}
 		if status != "" {
 			if company != "" {
 				query += ` AND`
+				totalQuery += ` AND`
 			}
 			query += ` j.status LIKE ?`
+			totalQuery += ` status LIKE ?`
 		}
 	}
 	query += ` ORDER BY j.updated_at DESC LIMIT ? OFFSET ?`
-	var queryArgs = []interface{}{}
+	var queryArgs []interface{}
+	var totalQueryArgs []interface{}
 	if company != "" {
 		queryArgs = append(queryArgs, "%"+company+"%")
+		totalQueryArgs = append(totalQueryArgs, "%"+company+"%")
 	}
 	if status != "" {
 		queryArgs = append(queryArgs, "%"+status+"%")
+		totalQueryArgs = append(totalQueryArgs, "%"+status+"%")
 	}
 	queryArgs = append(queryArgs, opts.PerPage, opts.Page*opts.PerPage)
 
-	rows, err := s.Database.DB().QueryContext(
+	tx, err := s.Database.DB().BeginTx(ctx, nil)
+	rows, err := tx.QueryContext(
 		ctx,
 		query,
 		queryArgs...,
 	)
 	if err != nil {
-		return nil, err
+		tx.Rollback()
+		return nil, 0, err
 	}
 	defer rows.Close()
-	return scanJobApplications(rows)
+	jobs, err := scanJobApplications(rows)
+	if err != nil {
+		tx.Rollback()
+		return nil, 0, err
+	}
+	row := tx.QueryRowContext(
+		ctx,
+		totalQuery,
+		totalQueryArgs...,
+	)
+	var total int
+	if err = row.Scan(&total); err != nil {
+		tx.Rollback()
+		return nil, 0, err
+	}
+	return jobs, total, tx.Commit()
 }
 
 func scanJobApplications(rows *sql.Rows) ([]types.JobApplication, error) {

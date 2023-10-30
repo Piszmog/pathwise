@@ -8,10 +8,10 @@ import (
 	"github.com/Piszmog/pathwise/utils"
 )
 
-templ Jobs(jobs []types.JobApplication) {
+templ Jobs(jobs []types.JobApplication, paginationOpts types.PaginationOpts) {
 	<div id="jobs">
 		@jobList(jobs)
-		@pagination(0, 10, len(jobs))
+		@pagination(paginationOpts)
 	</div>
 }
 

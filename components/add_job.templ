@@ -2,7 +2,7 @@ package components
 
 import "github.com/Piszmog/pathwise/types"
 
-templ AddJob(jobs []types.JobApplication, s types.StatsOpts) {
+templ AddJob(jobs []types.JobApplication, s types.StatsOpts, paginationOpts types.PaginationOpts) {
 	@stats(s, "true")
-	@Jobs(jobs)
+	@Jobs(jobs, paginationOpts)
 }

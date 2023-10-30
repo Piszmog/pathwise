@@ -22,7 +22,7 @@ type Handler struct {
 }
 
 func (h *Handler) Main(w http.ResponseWriter, r *http.Request) {
-	jobs, err := h.JobApplicationStore.Get(r.Context(), store.LimitOpts{Page: 0, PerPage: 10})
+	jobs, total, err := h.JobApplicationStore.Get(r.Context(), store.LimitOpts{Page: 0, PerPage: 10})
 	if err != nil {
 		h.Logger.Error("failed to get jobs", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -37,6 +37,11 @@ func (h *Handler) Main(w http.ResponseWriter, r *http.Request) {
 	m := components.Main(
 		jobs,
 		statsOpts,
+		types.PaginationOpts{
+			Page:    0,
+			PerPage: 10,
+			Total:   total,
+		},
 	)
 	m.Render(r.Context(), w)
 }
@@ -68,13 +73,13 @@ func (h *Handler) FilterJobs(w http.ResponseWriter, r *http.Request) {
 	company := queries.Get("company")
 	status := queries.Get("status")
 
-	jobs, err := h.JobApplicationStore.Filter(r.Context(), store.LimitOpts{Page: page, PerPage: perPage}, company, status)
+	jobs, total, err := h.JobApplicationStore.Filter(r.Context(), store.LimitOpts{Page: page, PerPage: perPage}, company, status)
 	if err != nil {
 		h.Logger.Error("failed to get jobs", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	components.Jobs(jobs).Render(r.Context(), w)
+	components.Jobs(jobs, types.PaginationOpts{Page: page, PerPage: perPage, Total: total}).Render(r.Context(), w)
 }
 
 func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
@@ -149,7 +154,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jobs, err := h.JobApplicationStore.Get(r.Context(), store.LimitOpts{Page: 0, PerPage: 10})
+	jobs, total, err := h.JobApplicationStore.Get(r.Context(), store.LimitOpts{Page: 0, PerPage: 10})
 	if err != nil {
 		h.Logger.Error("failed to get jobs", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -162,7 +167,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	components.AddJob(jobs, stats).Render(r.Context(), w)
+	components.AddJob(jobs, stats, types.PaginationOpts{Page: 0, PerPage: 10, Total: total}).Render(r.Context(), w)
 }
 
 func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {

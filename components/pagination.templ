@@ -2,19 +2,20 @@ package components
 
 import (
 	"strconv"
+	"github.com/Piszmog/pathwise/types"
 	"github.com/Piszmog/pathwise/utils"
 )
 
-templ pagination(page int, perPage int, total int) {
+templ pagination(opts types.PaginationOpts) {
 	<nav id="pagination" class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6" aria-label="Pagination">
 		<div class="hidden sm:block">
 			<p class="text-sm text-gray-700">
 				Showing
-				<span class="font-medium">{ strconv.Itoa(utils.GetActualMin(page * perPage + 1, total)) }</span>
+				<span class="font-medium">{ strconv.Itoa(utils.GetActualMin(opts.Page * opts.PerPage + 1, opts.Total)) }</span>
 				to
-				<span class="font-medium">{ strconv.Itoa(utils.GetActualMax((page+1) * perPage, total)) }</span>
+				<span class="font-medium">{ strconv.Itoa(utils.GetActualMax((opts.Page+1) * opts.PerPage, opts.Total)) }</span>
 				of
-				<span class="font-medium">{ strconv.Itoa(total) }</span>
+				<span class="font-medium">{ strconv.Itoa(opts.Total) }</span>
 				results
 			</p>
 		</div>
@@ -22,14 +23,14 @@ templ pagination(page int, perPage int, total int) {
 			<button
  				type="button"
  				class="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
- 				disabled?={ page == 0 }
+ 				disabled?={ opts.Page == 0 }
 			>
 				Previous
 			</button>
 			<button
  				type="button"
  				class="relative ml-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
- 				disabled?={ (page+1) == total / perPage }
+ 				disabled?={ opts.Total <= (opts.Page+1) * opts.PerPage }
 			>
 				Next
 			</button>

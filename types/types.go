@@ -208,3 +208,9 @@ type NewTimelineEntry struct {
 	SwapOOB string
 	Entry   JobApplicationTimelineEntry
 }
+
+type PaginationOpts struct {
+	Page    int
+	PerPage int
+	Total   int
+}
