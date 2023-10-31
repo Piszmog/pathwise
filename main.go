@@ -1,12 +1,16 @@
 package main
 
 import (
+	"embed"
 	"github.com/Piszmog/pathwise/db"
 	"github.com/Piszmog/pathwise/logger"
 	"github.com/Piszmog/pathwise/server"
 	"github.com/Piszmog/pathwise/server/router"
 	"os"
 )
+
+//go:embed assets/*
+var assets embed.FS
 
 func main() {
 	l := logger.New(os.Getenv("LOG_LEVEL"))
@@ -23,7 +27,7 @@ func main() {
 		return
 	}
 
-	r := router.New(l, database)
+	r := router.New(l, database, assets)
 
 	server.New(l, ":8080", server.WithHandler(r)).StartAndWait()
 }

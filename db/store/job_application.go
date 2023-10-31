@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"github.com/Piszmog/pathwise/db"
 	"github.com/Piszmog/pathwise/types"
-	"strings"
 	"time"
 )
 
@@ -14,19 +13,17 @@ type JobApplicationStore struct {
 }
 
 func (s *JobApplicationStore) GetByID(ctx context.Context, id int) (types.JobApplication, error) {
-	row := s.Database.DB().QueryRowContext(
-		ctx,
-		`
-		SELECT
-		    j.id, j.company, j.title, j.url, j.status, j.applied_at, j.updated_at
-		FROM 
-		    job_applications j
-		WHERE
-		    j.id = ?`,
-		id,
-	)
-	return scanJobApplication(row)
+	return scanJobApplication(s.Database.DB().QueryRowContext(ctx, jobGetByIDQuery, id))
 }
+
+const jobGetByIDQuery = `
+SELECT
+	j.id, j.company, j.title, j.url, j.status, j.applied_at, j.updated_at
+FROM 
+	job_applications j
+WHERE
+	j.id = ?
+`
 
 func scanJobApplication(row *sql.Row) (types.JobApplication, error) {
 	var job types.JobApplication
@@ -46,32 +43,17 @@ func scanJobApplication(row *sql.Row) (types.JobApplication, error) {
 
 func (s *JobApplicationStore) Get(ctx context.Context, opts LimitOpts) ([]types.JobApplication, int, error) {
 	tx, err := s.Database.DB().BeginTx(ctx, nil)
-	rows, err := tx.QueryContext(
-		ctx,
-		`
-		SELECT
-		    j.id, j.company, j.title, j.url, j.status, j.applied_at, j.updated_at
-		FROM 
-		    job_applications j
-		ORDER BY j.updated_at DESC
-		LIMIT ? OFFSET ?`,
-		opts.PerPage,
-		opts.Page*opts.PerPage,
-	)
+	rows, err := tx.QueryContext(ctx, jobGetLimitQuery, opts.PerPage, opts.Page*opts.PerPage)
 	if err != nil {
 		tx.Rollback()
 		return nil, 0, err
 	}
-	defer rows.Close()
 	jobs, err := scanJobApplications(rows)
 	if err != nil {
 		tx.Rollback()
 		return nil, 0, err
 	}
-	row := tx.QueryRowContext(
-		ctx,
-		`SELECT COUNT(*) FROM job_applications`,
-	)
+	row := tx.QueryRowContext(ctx, jobCountQuery)
 	var total int
 	if err = row.Scan(&total); err != nil {
 		tx.Rollback()
@@ -79,6 +61,17 @@ func (s *JobApplicationStore) Get(ctx context.Context, opts LimitOpts) ([]types.
 	}
 	return jobs, total, tx.Commit()
 }
+
+const jobGetLimitQuery = `
+SELECT
+	j.id, j.company, j.title, j.url, j.status, j.applied_at, j.updated_at
+FROM 
+	job_applications j
+ORDER BY j.updated_at DESC
+LIMIT ? OFFSET ?
+`
+
+const jobCountQuery = `SELECT COUNT(*) FROM job_applications`
 
 func (s *JobApplicationStore) Filter(ctx context.Context, opts LimitOpts, company string, status types.JobApplicationStatus) ([]types.JobApplication, int, error) {
 	query := `SELECT
@@ -116,26 +109,17 @@ func (s *JobApplicationStore) Filter(ctx context.Context, opts LimitOpts, compan
 	queryArgs = append(queryArgs, opts.PerPage, opts.Page*opts.PerPage)
 
 	tx, err := s.Database.DB().BeginTx(ctx, nil)
-	rows, err := tx.QueryContext(
-		ctx,
-		query,
-		queryArgs...,
-	)
+	rows, err := tx.QueryContext(ctx, query, queryArgs...)
 	if err != nil {
 		tx.Rollback()
 		return nil, 0, err
 	}
-	defer rows.Close()
 	jobs, err := scanJobApplications(rows)
 	if err != nil {
 		tx.Rollback()
 		return nil, 0, err
 	}
-	row := tx.QueryRowContext(
-		ctx,
-		totalQuery,
-		totalQueryArgs...,
-	)
+	row := tx.QueryRowContext(ctx, totalQuery, totalQueryArgs...)
 	var total int
 	if err = row.Scan(&total); err != nil {
 		tx.Rollback()
@@ -145,6 +129,7 @@ func (s *JobApplicationStore) Filter(ctx context.Context, opts LimitOpts, compan
 }
 
 func scanJobApplications(rows *sql.Rows) ([]types.JobApplication, error) {
+	defer rows.Close()
 	var jobs []types.JobApplication
 	for rows.Next() {
 		var job types.JobApplication
@@ -172,13 +157,7 @@ func (s *JobApplicationStore) Insert(ctx context.Context, rec types.JobApplicati
 	if err != nil {
 		return err
 	}
-	res, err := tx.ExecContext(
-		ctx,
-		`INSERT INTO job_applications (company, title, url) VALUES (?, ?, ?)`,
-		rec.Company,
-		rec.Title,
-		rec.URL,
-	)
+	res, err := tx.ExecContext(ctx, jobInsertQuery, rec.Company, rec.Title, rec.URL)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -188,65 +167,32 @@ func (s *JobApplicationStore) Insert(ctx context.Context, rec types.JobApplicati
 		tx.Rollback()
 		return err
 	}
-	_, err = tx.ExecContext(
-		ctx,
-		`INSERT INTO job_application_status_histories (job_application_id) VALUES (?)`,
-		id,
-	)
-	if err != nil {
+	if _, err = tx.ExecContext(ctx, jobInsertStatusHistory, id); err != nil {
 		tx.Rollback()
 		return err
 	}
 	return tx.Commit()
 }
 
+const jobInsertQuery = `INSERT INTO job_applications (company, title, url) VALUES (?, ?, ?)`
+
+const jobInsertStatusHistory = `INSERT INTO job_application_status_histories (job_application_id) VALUES (?)`
+
 func (s *JobApplicationStore) Update(ctx context.Context, rec types.JobApplication) (time.Time, error) {
 	tx, err := s.Database.DB().BeginTx(ctx, nil)
 	if err != nil {
 		return time.Time{}, err
 	}
-	_, err = tx.ExecContext(
-		ctx,
-		`UPDATE job_applications SET company = ?, title = ?, url = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-		rec.Company,
-		rec.Title,
-		rec.URL,
-		strings.ToLower(rec.Status.String()),
-		rec.ID,
-	)
-	if err != nil {
+	statusString := rec.Status.String()
+	if _, err = tx.ExecContext(ctx, jobUpdateQuery, rec.Company, rec.Title, rec.URL, statusString, rec.ID); err != nil {
 		tx.Rollback()
 		return time.Time{}, err
 	}
-	_, err = tx.ExecContext(
-		ctx,
-		`INSERT INTO job_application_status_histories (job_application_id, status)
-                SELECT ?, ?
-                WHERE NOT EXISTS (
-                    SELECT 1
-                    FROM (
-                             SELECT status
-                             FROM job_application_status_histories
-                             WHERE job_application_id = ?
-                             ORDER BY created_at DESC
-                             LIMIT 1
-                         )
-                    WHERE status = ?
-                )`,
-		rec.ID,
-		strings.ToLower(rec.Status.String()),
-		rec.ID,
-		strings.ToLower(rec.Status.String()),
-	)
-	if err != nil {
+	if _, err = tx.ExecContext(ctx, jobInsertStatusHistoryQuery, rec.ID, statusString, rec.ID, statusString); err != nil {
 		tx.Rollback()
 		return time.Time{}, err
 	}
-	row := tx.QueryRowContext(
-		ctx,
-		`SELECT updated_at FROM job_applications WHERE id = ?`,
-		rec.ID,
-	)
+	row := tx.QueryRowContext(ctx, jobGetUpdatedAtQuery, rec.ID)
 	var updatedAt time.Time
 	if err = row.Scan(&updatedAt); err != nil {
 		tx.Rollback()
@@ -255,11 +201,22 @@ func (s *JobApplicationStore) Update(ctx context.Context, rec types.JobApplicati
 	return updatedAt, tx.Commit()
 }
 
-func (s *JobApplicationStore) Delete(ctx context.Context, id int) error {
-	_, err := s.Database.DB().ExecContext(
-		ctx,
-		`DELETE FROM job_applications WHERE id = ?`,
-		id,
-	)
-	return err
-}
+const jobUpdateQuery = `UPDATE job_applications SET company = ?, title = ?, url = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+
+const jobInsertStatusHistoryQuery = `
+INSERT INTO job_application_status_histories (job_application_id, status)
+SELECT ?, ?
+WHERE NOT EXISTS (
+	SELECT 1
+	FROM (
+			 SELECT status
+			 FROM job_application_status_histories
+			 WHERE job_application_id = ?
+			 ORDER BY created_at DESC
+			 LIMIT 1
+		 )
+	WHERE status = ?
+)
+`
+
+const jobGetUpdatedAtQuery = `SELECT updated_at FROM job_applications WHERE id = ?`

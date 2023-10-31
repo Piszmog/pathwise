@@ -11,73 +11,26 @@ type JobApplicationNoteStore struct {
 	Database db.Database
 }
 
-func (s *JobApplicationNoteStore) GetByID(ctx context.Context, id int) (types.JobApplicationNote, error) {
-	row := s.Database.DB().QueryRowContext(
-		ctx,
-		`
-		SELECT
-		    n.id, n.job_application_id, n.note, n.created_at
-		FROM 
-		    job_application_notes n
-		WHERE
-		    n.id = ?`,
-		id,
-	)
-	return scanJobApplicationNote(row)
-}
-
-func scanJobApplicationNote(row *sql.Row) (types.JobApplicationNote, error) {
-	var note types.JobApplicationNote
-	err := row.Scan(
-		&note.ID,
-		&note.JobApplicationID,
-		&note.Note,
-		&note.CreatedAt,
-	)
-	return note, err
-}
-
-func (s *JobApplicationNoteStore) Get(ctx context.Context, opts LimitOpts) ([]types.JobApplicationNote, error) {
-	rows, err := s.Database.DB().QueryContext(
-		ctx,
-		`
-		SELECT
-		    n.id, n.job_application_id, n.note, n.created_at
-		FROM 
-		    job_application_notes n
-		ORDER BY n.created_at DESC
-		LIMIT ? OFFSET ?`,
-		opts.PerPage,
-		opts.Page*opts.PerPage,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	return scanJobApplicationNotes(rows)
-}
-
 func (s *JobApplicationNoteStore) GetAllByID(ctx context.Context, id int) ([]types.JobApplicationNote, error) {
-	rows, err := s.Database.DB().QueryContext(
-		ctx,
-		`
-		SELECT
-		    n.id, n.job_application_id, n.note, n.created_at
-		FROM 
-		    job_application_notes n
-		WHERE
-		    n.job_application_id = ?
-		ORDER BY n.created_at DESC`,
-		id,
-	)
+	rows, err := s.Database.DB().QueryContext(ctx, noteGetAllByIDQuery, id)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 	return scanJobApplicationNotes(rows)
 }
+
+const noteGetAllByIDQuery = `
+SELECT
+	n.id, n.job_application_id, n.note, n.created_at
+FROM 
+	job_application_notes n
+WHERE
+	n.job_application_id = ?
+ORDER BY n.created_at DESC
+`
 
 func scanJobApplicationNotes(rows *sql.Rows) ([]types.JobApplicationNote, error) {
+	defer rows.Close()
 	var notes []types.JobApplicationNote
 	for rows.Next() {
 		var note types.JobApplicationNote
@@ -100,12 +53,7 @@ func (s *JobApplicationNoteStore) Insert(ctx context.Context, rec types.JobAppli
 	if err != nil {
 		return types.JobApplicationNote{}, err
 	}
-	res, err := tx.ExecContext(
-		ctx,
-		`INSERT INTO job_application_notes (job_application_id, note) VALUES (?, ?)`,
-		rec.JobApplicationID,
-		rec.Note,
-	)
+	res, err := tx.ExecContext(ctx, noteInsertQuery, rec.JobApplicationID, rec.Note)
 	if err != nil {
 		tx.Rollback()
 		return types.JobApplicationNote{}, err
@@ -115,12 +63,7 @@ func (s *JobApplicationNoteStore) Insert(ctx context.Context, rec types.JobAppli
 		tx.Rollback()
 		return types.JobApplicationNote{}, err
 	}
-	row := tx.QueryRowContext(
-		ctx,
-		`SELECT id, job_application_id, note, created_at FROM job_application_notes WHERE id = ?`,
-		id,
-	)
-	note, err := scanJobApplicationNote(row)
+	note, err := scanJobApplicationNote(tx.QueryRowContext(ctx, noteGetByIDQuery, id))
 	if err != nil {
 		tx.Rollback()
 		return types.JobApplicationNote{}, err
@@ -128,21 +71,24 @@ func (s *JobApplicationNoteStore) Insert(ctx context.Context, rec types.JobAppli
 	return note, tx.Commit()
 }
 
-func (s *JobApplicationNoteStore) Update(ctx context.Context, rec types.JobApplicationNote) error {
-	_, err := s.Database.DB().ExecContext(
-		ctx,
-		`UPDATE job_application_notes SET note = ? WHERE id = ?`,
-		rec.Note,
-		rec.ID,
-	)
-	return err
-}
+const noteInsertQuery = `INSERT INTO job_application_notes (job_application_id, note) VALUES (?, ?)`
 
-func (s *JobApplicationNoteStore) Delete(ctx context.Context, id int) error {
-	_, err := s.Database.DB().ExecContext(
-		ctx,
-		`DELETE FROM job_application_notes WHERE id = ?`,
-		id,
+const noteGetByIDQuery = `
+SELECT
+	n.id, n.job_application_id, n.note, n.created_at
+FROM 
+	job_application_notes n
+WHERE
+	n.id = ?
+`
+
+func scanJobApplicationNote(row *sql.Row) (types.JobApplicationNote, error) {
+	var note types.JobApplicationNote
+	err := row.Scan(
+		&note.ID,
+		&note.JobApplicationID,
+		&note.Note,
+		&note.CreatedAt,
 	)
-	return err
+	return note, err
 }

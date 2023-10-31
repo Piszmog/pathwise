@@ -11,10 +11,7 @@ import (
 	"net/http"
 )
 
-//go:embed assets/*
-var assets embed.FS
-
-func New(logger *slog.Logger, database db.Database) http.Handler {
+func New(logger *slog.Logger, database db.Database, assets embed.FS) http.Handler {
 	h := &handler.Handler{
 		Logger:                           logger,
 		JobApplicationStore:              &store.JobApplicationStore{Database: database},
