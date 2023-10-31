@@ -38,7 +38,12 @@ type DatabaseOpts struct {
 }
 
 func Init(database Database) error {
-	_, err := database.DB().Exec(
+	_, err := database.DB().Exec(`PRAGMA foreign_keys = ON`)
+	if err != nil {
+		return err
+	}
+
+	_, err = database.DB().Exec(
 		`CREATE TABLE IF NOT EXISTS job_applications (
             id INTEGER PRIMARY KEY,
             company TEXT NOT NULL,
