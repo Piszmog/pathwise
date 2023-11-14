@@ -1,13 +1,13 @@
 package types
 
 type SelectOpts struct {
+	Options     []SelectOption
+	Err         error
 	Name        string
 	Label       string
 	Placeholder string
 	Value       string
-	Options     []SelectOption
 	Required    bool
-	Err         error
 }
 
 type SelectOption struct {
@@ -67,8 +67,8 @@ type StatsOpts struct {
 }
 
 type NewTimelineEntry struct {
-	SwapOOB string
 	Entry   JobApplicationTimelineEntry
+	SwapOOB string
 }
 
 type FilterOpts struct {

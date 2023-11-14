@@ -6,14 +6,14 @@ import (
 )
 
 type JobApplication struct {
-	ID        int
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	AppliedAt time.Time
 	Company   string
 	Title     string
-	Status    JobApplicationStatus
 	URL       string
-	AppliedAt time.Time
+	Status    JobApplicationStatus
+	ID        int
 }
 
 func (j JobApplication) RecordID() int {
@@ -47,11 +47,11 @@ var jobApplicationTimelineTypeMap = map[string]JobApplicationTimelineType{
 }
 
 type JobApplicationStatusHistory struct {
-	ID               int
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
-	JobApplicationID int
 	Status           JobApplicationStatus
+	ID               int
+	JobApplicationID int
 }
 
 func (j JobApplicationStatusHistory) RecordID() int {
@@ -67,11 +67,11 @@ func (j JobApplicationStatusHistory) Created() time.Time {
 }
 
 type JobApplicationNote struct {
-	ID               int
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
-	JobApplicationID int
 	Note             string
+	ID               int
+	JobApplicationID int
 }
 
 func (j JobApplicationNote) RecordID() int {
