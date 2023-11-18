@@ -2,15 +2,18 @@ package handler
 
 import (
 	"context"
-	"github.com/Piszmog/pathwise/components"
-	"github.com/Piszmog/pathwise/db/store"
-	"github.com/Piszmog/pathwise/types"
-	"github.com/Piszmog/pathwise/utils"
-	"github.com/gorilla/mux"
 	"log/slog"
 	"net/http"
 	"sort"
 	"strconv"
+	"time"
+
+	"github.com/Piszmog/pathwise/components"
+	"github.com/Piszmog/pathwise/db/store"
+	"github.com/Piszmog/pathwise/types"
+	"github.com/Piszmog/pathwise/utils"
+	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 )
 
 const (
@@ -26,6 +29,8 @@ type Handler struct {
 	JobApplicationNoteStore          *store.JobApplicationNoteStore
 	JobApplicationStatusHistoryStore *store.JobApplicationStatusHistoryStore
 	StatsStore                       *store.StatsStore
+	UserStore                        *store.UserStore
+	SessionsStore                    *store.SessionStore
 }
 
 func (h *Handler) Main(w http.ResponseWriter, r *http.Request) {
@@ -137,12 +142,22 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	userIDStr := r.Header.Get("USER-ID")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		h.Logger.Error("failed to parse user id", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	job := types.JobApplication{
 		Company: company,
 		Title:   title,
 		URL:     url,
+		UserID:  userID,
 	}
-	if err := h.JobApplicationStore.Insert(r.Context(), job); err != nil {
+	if err = h.JobApplicationStore.Insert(r.Context(), job); err != nil {
 		h.Logger.Error("failed to insert job", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -311,4 +326,106 @@ func getFilterOpts(r *http.Request) types.FilterOpts {
 		Company: queries.Get("company"),
 		Status:  types.ToJobApplicationStatus(queries.Get("status")),
 	}
+}
+
+func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
+	components.Signup().Render(r.Context(), w)
+}
+
+func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		h.Logger.Error("failed to parse form", "error", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+	confirmPassword := r.FormValue("confirmPassword")
+	if email == "" || password == "" || confirmPassword == "" {
+		h.Logger.Error("missing required form values", "email", email)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if password != confirmPassword {
+		h.Logger.Error("passwords do not match", "email", email)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	hashedPassword, err := utils.HashPassword([]byte(password))
+	if err != nil {
+		h.Logger.Error("failed to hash password", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	user := types.User{
+		Email:    email,
+		Password: string(hashedPassword),
+	}
+	if err := h.UserStore.Insert(r.Context(), user); err != nil {
+		h.Logger.Error("failed to insert user", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("HX-Redirect", "/signin")
+	http.Redirect(w, r, "/signin", http.StatusSeeOther)
+}
+
+func (h *Handler) Signin(w http.ResponseWriter, r *http.Request) {
+	components.Signin().Render(r.Context(), w)
+}
+
+func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+	if email == "" || password == "" {
+		h.Logger.Error("missing required form values", "email", email)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	user, err := h.UserStore.Get(r.Context(), email)
+	if err != nil {
+		h.Logger.Error("failed to get user", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	if user.ID == 0 {
+		h.Logger.Error("user does not exist", "email", email)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	if err = utils.CheckPasswordHash([]byte(user.Password), []byte(password)); err != nil {
+		h.Logger.Error("failed to compare password and hash", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	session, err := h.newSession(r.Context(), user.ID)
+	if err != nil {
+		h.Logger.Error("failed to create session", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session",
+		Value:    session.Token,
+		Expires:  session.ExpiresAt,
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	w.Header().Set("HX-Redirect", "/")
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func (h *Handler) newSession(ctx context.Context, userId int) (types.Session, error) {
+	token := uuid.New().String()
+	session := types.Session{
+		UserID:    userId,
+		Token:     token,
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+	}
+	if err := h.SessionsStore.Insert(ctx, session); err != nil {
+		return session, err
+	}
+	return session, nil
 }

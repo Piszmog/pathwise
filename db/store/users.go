@@ -1,0 +1,39 @@
+package store
+
+import (
+	"context"
+	"database/sql"
+
+	"github.com/Piszmog/pathwise/db"
+	"github.com/Piszmog/pathwise/types"
+)
+
+type UserStore struct {
+	Database db.Database
+}
+
+func (s *UserStore) Insert(ctx context.Context, user types.User) error {
+	_, err := s.Database.DB().ExecContext(ctx, userInsertQuery, user.Email, user.Password)
+	return err
+}
+
+const userInsertQuery = `INSERT INTO users (email, password) VALUES (?, ?)`
+
+func (s *UserStore) Get(ctx context.Context, email string) (types.User, error) {
+	row := s.Database.DB().QueryRowContext(ctx, userGetQuery, email)
+	return scanUser(row)
+}
+
+const userGetQuery = `SELECT id, created_at, updated_at, email, password FROM users WHERE email = ?`
+
+func scanUser(row *sql.Row) (types.User, error) {
+	var user types.User
+	err := row.Scan(
+		&user.ID,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+		&user.Email,
+		&user.Password,
+	)
+	return user, err
+}

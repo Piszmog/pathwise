@@ -157,7 +157,7 @@ func (s *JobApplicationStore) Insert(ctx context.Context, rec types.JobApplicati
 	if err != nil {
 		return err
 	}
-	res, err := tx.ExecContext(ctx, jobInsertQuery, rec.Company, rec.Title, rec.URL)
+	res, err := tx.ExecContext(ctx, jobInsertQuery, rec.Company, rec.Title, rec.URL, rec.UserID)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -174,7 +174,7 @@ func (s *JobApplicationStore) Insert(ctx context.Context, rec types.JobApplicati
 	return tx.Commit()
 }
 
-const jobInsertQuery = `INSERT INTO job_applications (company, title, url) VALUES (?, ?, ?)`
+const jobInsertQuery = `INSERT INTO job_applications (company, title, url, user_id) VALUES (?, ?, ?, ?)`
 
 const jobInsertStatusHistory = `INSERT INTO job_application_status_histories (job_application_id) VALUES (?)`
 

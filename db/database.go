@@ -44,6 +44,41 @@ func Init(database Database) error {
 	}
 
 	_, err = database.DB().Exec(
+		`CREATE TABLE IF NOT EXISTS users (
+			id INTEGER PRIMARY KEY,
+			email TEXT NOT NULL UNIQUE,
+			password TEXT NOT NULL,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+		)`,
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = database.DB().Exec(
+		`CREATE TABLE IF NOT EXISTS sessions (
+			id INTEGER PRIMARY KEY,
+			user_id INTEGER NOT NULL UNIQUE,
+			token TEXT NOT NULL,
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			expires_at DATETIME NOT NULL,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+		)`,
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = database.DB().Exec(
+		`CREATE INDEX IF NOT EXISTS sessions_token_idx ON sessions (token)`,
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = database.DB().Exec(
 		`CREATE TABLE IF NOT EXISTS job_applications (
             id INTEGER PRIMARY KEY,
             company TEXT NOT NULL,
@@ -52,7 +87,9 @@ func Init(database Database) error {
             status TEXT NOT NULL DEFAULT 'applied',
             applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			user_id INTEGER NOT NULL,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )`,
 	)
 	if err != nil {

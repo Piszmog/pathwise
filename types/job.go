@@ -14,6 +14,7 @@ type JobApplication struct {
 	URL       string
 	Status    JobApplicationStatus
 	ID        int
+	UserID    int
 }
 
 func (j JobApplication) RecordID() int {
