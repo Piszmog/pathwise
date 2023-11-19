@@ -2,10 +2,11 @@ package store
 
 import (
 	"context"
-	"github.com/Piszmog/pathwise/db"
-	"github.com/Piszmog/pathwise/types"
 	"math"
 	"strconv"
+
+	"github.com/Piszmog/pathwise/db"
+	"github.com/Piszmog/pathwise/types"
 )
 
 type StatsStore struct {

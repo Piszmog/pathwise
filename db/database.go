@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
+
 	_ "github.com/libsql/libsql-client-go/libsql"
 )
 

@@ -3,9 +3,10 @@ package store
 import (
 	"context"
 	"database/sql"
+	"time"
+
 	"github.com/Piszmog/pathwise/db"
 	"github.com/Piszmog/pathwise/types"
-	"time"
 )
 
 type JobApplicationStore struct {

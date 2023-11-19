@@ -16,12 +16,15 @@ type AuthMiddleware struct {
 
 func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		isHxRequest := r.Header.Get("HX-Request") == "true"
 		cookie, err := r.Cookie("session")
 		if err != nil {
 			if err == http.ErrNoCookie {
 				m.Logger.Error("no session cookie", "err", err)
 				w.Header().Set("HX-Redirect", "/signin")
-				http.Redirect(w, r, "/signin", http.StatusSeeOther)
+				if !isHxRequest {
+					http.Redirect(w, r, "/signin", http.StatusSeeOther)
+				}
 				return
 			}
 			m.Logger.Error("failed to get session cookie", "err", err)
@@ -33,7 +36,9 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 		if err != nil {
 			m.Logger.Error("failed to get session", "err", err)
 			w.Header().Set("HX-Redirect", "/signin")
-			http.Redirect(w, r, "/signin", http.StatusSeeOther)
+			if !isHxRequest {
+				http.Redirect(w, r, "/signin", http.StatusSeeOther)
+			}
 			return
 		}
 
@@ -44,7 +49,9 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 				m.Logger.Error("failed to delete session", "err", err)
 			}
 			w.Header().Set("HX-Redirect", "/signin")
-			http.Redirect(w, r, "/signin", http.StatusSeeOther)
+			if !isHxRequest {
+				http.Redirect(w, r, "/signin", http.StatusSeeOther)
+			}
 			return
 		}
 

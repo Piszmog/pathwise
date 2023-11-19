@@ -2,13 +2,14 @@ package router
 
 import (
 	"embed"
+	"log/slog"
+	"net/http"
+
 	"github.com/Piszmog/pathwise/db"
 	"github.com/Piszmog/pathwise/db/store"
 	"github.com/Piszmog/pathwise/server/handler"
 	"github.com/Piszmog/pathwise/server/middleware"
 	"github.com/gorilla/mux"
-	"log/slog"
-	"net/http"
 )
 
 func New(logger *slog.Logger, database db.Database, assets embed.FS, sessionStore *store.SessionStore) http.Handler {

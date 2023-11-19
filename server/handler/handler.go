@@ -367,7 +367,6 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("HX-Redirect", "/signin")
-	http.Redirect(w, r, "/signin", http.StatusSeeOther)
 }
 
 func (h *Handler) Signin(w http.ResponseWriter, r *http.Request) {
@@ -414,10 +413,14 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.Header().Set("HX-Redirect", "/")
-	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (h *Handler) newSession(ctx context.Context, userId int) (types.Session, error) {
+	err := h.SessionsStore.Delete(ctx, userId)
+	if err != nil {
+		return types.Session{}, err
+	}
+
 	token := uuid.New().String()
 	session := types.Session{
 		UserID:    userId,

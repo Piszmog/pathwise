@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+
 	"github.com/Piszmog/pathwise/db"
 	"github.com/Piszmog/pathwise/types"
 )
