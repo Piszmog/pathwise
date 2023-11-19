@@ -382,7 +382,7 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	user, err := h.UserStore.Get(r.Context(), email)
+	user, err := h.UserStore.GetByEmail(r.Context(), email)
 	if err != nil {
 		h.Logger.Error("failed to get user", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -459,4 +459,23 @@ func (h *Handler) Signout(w http.ResponseWriter, r *http.Request) {
 	})
 
 	http.Redirect(w, r, "/signin", http.StatusSeeOther)
+}
+
+func (h *Handler) Settings(w http.ResponseWriter, r *http.Request) {
+	userIDStr := r.Header.Get("USER-ID")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		h.Logger.Error("failed to parse user id", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	user, err := h.UserStore.GetByID(r.Context(), int64(userID))
+	if err != nil {
+		h.Logger.Error("failed to get user", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	components.Settings(user).Render(r.Context(), w)
 }

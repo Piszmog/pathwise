@@ -48,6 +48,7 @@ func New(logger *slog.Logger, database db.Database, assets embed.FS, sessionStor
 	protected.HandleFunc("/jobs/{id}", h.UpdateJob).Methods(http.MethodPatch)
 	protected.HandleFunc("/jobs/{id}/notes", h.AddNote).Methods(http.MethodPost)
 	protected.HandleFunc("/signout", h.Signout).Methods(http.MethodGet)
+	protected.HandleFunc("/settings", h.Settings).Methods(http.MethodGet)
 
 	return r
 }

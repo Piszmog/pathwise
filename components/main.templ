@@ -15,7 +15,7 @@ templ Main(j []types.JobApplication, s types.StatsOpts, paginationOpts types.Pag
 templ body(j []types.JobApplication, s types.StatsOpts, paginationOpts types.PaginationOpts, filterOpts types.FilterOpts) {
 	<body>
 		<main>
-			@header("Job Applications")
+			@header(true)
 			@stats(s, "")
 			@mainContent(j, paginationOpts, filterOpts)
 			@drawer("new-job", "New Job Application") {
