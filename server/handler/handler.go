@@ -367,6 +367,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("HX-Redirect", "/signin")
+	http.Redirect(w, r, "/signin", http.StatusSeeOther)
 }
 
 func (h *Handler) Signin(w http.ResponseWriter, r *http.Request) {
@@ -431,4 +432,31 @@ func (h *Handler) newSession(ctx context.Context, userId int) (types.Session, er
 		return session, err
 	}
 	return session, nil
+}
+
+func (h *Handler) Signout(w http.ResponseWriter, r *http.Request) {
+	userIDStr := r.Header.Get("USER-ID")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		h.Logger.Error("failed to parse user id", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = h.SessionsStore.Delete(r.Context(), userID)
+	if err != nil {
+		h.Logger.Error("failed to delete session", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+	})
+
+	http.Redirect(w, r, "/signin", http.StatusSeeOther)
 }
