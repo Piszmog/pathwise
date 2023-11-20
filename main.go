@@ -18,7 +18,25 @@ var assets embed.FS
 func main() {
 	l := logger.New(os.Getenv("LOG_LEVEL"))
 
-	database, err := db.New(db.DatabaseTypeFile, db.DatabaseOpts{URL: "./db.sqlite3"})
+	databaseType := getDatabaseType()
+
+	var database db.Database
+	var err error
+	switch databaseType {
+	case db.DatabaseTypeFile:
+		l.Info("using file database")
+		database, err = db.New(db.DatabaseTypeFile, db.DatabaseOpts{URL: "./db.sqlite3"})
+	case db.DatabaseTypeTurso:
+		l.Info("using turso database")
+		database, err = db.New(
+			db.DatabaseTypeTurso,
+			db.DatabaseOpts{URL: os.Getenv("DB_URL"), Token: os.Getenv("DB_TOKEN")},
+		)
+	default:
+		l.Error("unknown database type", "type", databaseType)
+		return
+	}
+
 	if err != nil {
 		l.Error("failed to create database", "error", err)
 		return
@@ -40,4 +58,12 @@ func main() {
 	r := router.New(l, database, assets, sessionStore)
 
 	server.New(l, ":8080", server.WithHandler(r)).StartAndWait()
+}
+
+func getDatabaseType() db.DatabaseType {
+	dbType := os.Getenv("DB_TYPE")
+	if dbType == "" {
+		return db.DatabaseTypeFile
+	}
+	return db.DatabaseType(dbType)
 }

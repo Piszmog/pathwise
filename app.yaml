@@ -1,0 +1,11 @@
+runtime: go121
+
+env_variables:
+  DB_TYPE: turso
+  DB_URL: pathwise
+  DB_TOKEN: ${secrets.DB_TOKEN}
+
+handlers:
+  - url: .*
+    script: auto
+    secure: always
