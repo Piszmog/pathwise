@@ -26,10 +26,8 @@ go.work
 # Google App Engine generated folder
 appengine-generated/
 
-/components/*.go
 .idea
 *.iml
-/assets/css
 *.sqlite3
 /tmp
 
@@ -59,6 +57,4 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
-db.sqlite3
 Makefile
-tmp/
