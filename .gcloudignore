@@ -58,3 +58,6 @@ Network Trash Folder
 Temporary Items
 .apdisk
 Makefile
+.git
+.github
+version.txt
