@@ -44,20 +44,24 @@ func scanJobApplication(row *sql.Row) (types.JobApplication, error) {
 
 func (s *JobApplicationStore) Get(ctx context.Context, opts LimitOpts) ([]types.JobApplication, int, error) {
 	tx, err := s.Database.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	rows, err := tx.QueryContext(ctx, jobGetLimitQuery, opts.PerPage, opts.Page*opts.PerPage)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return nil, 0, err
 	}
 	jobs, err := scanJobApplications(rows)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return nil, 0, err
 	}
 	row := tx.QueryRowContext(ctx, jobCountQuery)
 	var total int
 	if err = row.Scan(&total); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return nil, 0, err
 	}
 	return jobs, total, tx.Commit()
@@ -110,20 +114,24 @@ func (s *JobApplicationStore) Filter(ctx context.Context, opts LimitOpts, compan
 	queryArgs = append(queryArgs, opts.PerPage, opts.Page*opts.PerPage)
 
 	tx, err := s.Database.DB().BeginTx(ctx, nil)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	rows, err := tx.QueryContext(ctx, query, queryArgs...)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return nil, 0, err
 	}
 	jobs, err := scanJobApplications(rows)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return nil, 0, err
 	}
 	row := tx.QueryRowContext(ctx, totalQuery, totalQueryArgs...)
 	var total int
 	if err = row.Scan(&total); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return nil, 0, err
 	}
 	return jobs, total, tx.Commit()
@@ -160,16 +168,16 @@ func (s *JobApplicationStore) Insert(ctx context.Context, rec types.JobApplicati
 	}
 	res, err := tx.ExecContext(ctx, jobInsertQuery, rec.Company, rec.Title, rec.URL, rec.UserID)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 	if _, err = tx.ExecContext(ctx, jobInsertStatusHistory, id); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 	return tx.Commit()
@@ -186,17 +194,17 @@ func (s *JobApplicationStore) Update(ctx context.Context, rec types.JobApplicati
 	}
 	statusString := rec.Status.String()
 	if _, err = tx.ExecContext(ctx, jobUpdateQuery, rec.Company, rec.Title, rec.URL, statusString, rec.ID); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return time.Time{}, err
 	}
 	if _, err = tx.ExecContext(ctx, jobInsertStatusHistoryQuery, rec.ID, statusString, rec.ID, statusString); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return time.Time{}, err
 	}
 	row := tx.QueryRowContext(ctx, jobGetUpdatedAtQuery, rec.ID)
 	var updatedAt time.Time
 	if err = row.Scan(&updatedAt); err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return time.Time{}, err
 	}
 	return updatedAt, tx.Commit()

@@ -56,17 +56,17 @@ func (s *JobApplicationNoteStore) Insert(ctx context.Context, rec types.JobAppli
 	}
 	res, err := tx.ExecContext(ctx, noteInsertQuery, rec.JobApplicationID, rec.Note)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return types.JobApplicationNote{}, err
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return types.JobApplicationNote{}, err
 	}
 	note, err := scanJobApplicationNote(tx.QueryRowContext(ctx, noteGetByIDQuery, id))
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return types.JobApplicationNote{}, err
 	}
 	return note, tx.Commit()

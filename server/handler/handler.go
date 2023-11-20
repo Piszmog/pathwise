@@ -58,7 +58,7 @@ func (h *Handler) Main(w http.ResponseWriter, r *http.Request) {
 		},
 		types.FilterOpts{},
 	)
-	m.Render(r.Context(), w)
+	_ = m.Render(r.Context(), w)
 }
 
 func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +76,7 @@ func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	components.Jobs(
+	_ = components.Jobs(
 		jobs,
 		types.PaginationOpts{Page: page, PerPage: perPage, Total: total},
 		filterOpts,
@@ -104,8 +104,7 @@ func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	details := components.JobDetails(job, timelineEntries)
-	details.Render(r.Context(), w)
+	_ = components.JobDetails(job, timelineEntries).Render(r.Context(), w)
 }
 
 func (h *Handler) getTimelineEntries(ctx context.Context, id int) ([]types.JobApplicationTimelineEntry, error) {
@@ -134,7 +133,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		h.Logger.Error("failed to parse form", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 	company := r.FormValue("company")
@@ -143,7 +142,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 	if company == "" || title == "" || url == "" {
 		h.Logger.Warn("missing required form values", "company", company, "title", title, "url", url)
 		w.WriteHeader(http.StatusBadRequest)
-		components.Alert(types.AlertTypeError, "Missing company, title, or url", "Please enter a company, title, and url.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Missing company, title, or url", "Please enter a company, title, and url.").Render(r.Context(), w)
 		return
 	}
 
@@ -152,7 +151,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("failed to parse user id", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 
@@ -165,7 +164,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 	if err = h.JobApplicationStore.Insert(r.Context(), job); err != nil {
 		h.Logger.Error("failed to insert job", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 
@@ -173,7 +172,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("failed to get jobs", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 
@@ -181,11 +180,11 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("failed to get stats", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 
-	components.AddJob(
+	_ = components.AddJob(
 		jobs,
 		stats,
 		types.PaginationOpts{Page: defaultPage, PerPage: defaultPerPage, Total: total},
@@ -199,13 +198,13 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("failed to parse id", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 	if err = r.ParseForm(); err != nil {
 		h.Logger.Error("failed to parse form", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 	company := r.FormValue("company")
@@ -215,7 +214,7 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	if company == "" || title == "" || url == "" || status == "" {
 		h.Logger.Warn("missing required form values", "company", company, "title", title, "url", url, "status", status)
 		w.WriteHeader(http.StatusBadRequest)
-		components.Alert(types.AlertTypeError, "Missing company, title, url, or status", "Please enter a company, title, url, and status.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Missing company, title, url, or status", "Please enter a company, title, url, and status.").Render(r.Context(), w)
 		return
 	}
 	previousStatus := r.FormValue("previousStatus")
@@ -233,7 +232,7 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("failed to update job", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 	job.UpdatedAt = updatedAt
@@ -245,7 +244,7 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			h.Logger.Error("failed to get stats", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
-			components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+			_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 			return
 		}
 		stats = &updatedStats
@@ -254,7 +253,7 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			h.Logger.Error("failed to get latest status", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
-			components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+			_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 			return
 		}
 		if latestStatus.ID > 0 {
@@ -265,7 +264,7 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	components.UpdateJob(job, stats, newTimelineEntry).Render(r.Context(), w)
+	_ = components.UpdateJob(job, stats, newTimelineEntry).Render(r.Context(), w)
 }
 
 func newTimelineID(entryType types.JobApplicationTimelineType, entryID string) string {
@@ -309,7 +308,7 @@ func (h *Handler) AddNote(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	components.TimelineEntry(n, false).Render(r.Context(), w)
+	_ = components.TimelineEntry(n, false).Render(r.Context(), w)
 }
 
 func getPageOpts(r *http.Request) (int, int, error) {
@@ -343,14 +342,14 @@ func getFilterOpts(r *http.Request) types.FilterOpts {
 }
 
 func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
-	components.Signup().Render(r.Context(), w)
+	_ = components.Signup().Render(r.Context(), w)
 }
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		h.Logger.Error("failed to parse form", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 	email := r.FormValue("email")
@@ -359,20 +358,20 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if email == "" || password == "" || confirmPassword == "" {
 		h.Logger.Debug("missing required form values", "email", email)
 		w.WriteHeader(http.StatusBadRequest)
-		components.Alert(types.AlertTypeError, "Missing email or password", "Please enter your email and password.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Missing email or password", "Please enter your email and password.").Render(r.Context(), w)
 		return
 	}
 	if password != confirmPassword {
 		h.Logger.Debug("passwords do not match", "email", email)
 		w.WriteHeader(http.StatusBadRequest)
-		components.Alert(types.AlertTypeError, "Passwords do not match", "Please enter matching passwords.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Passwords do not match", "Please enter matching passwords.").Render(r.Context(), w)
 		return
 	}
 
 	if !isValidPassword(password) {
 		h.Logger.Debug("password does not meet requirements", "email", email)
 		w.WriteHeader(http.StatusBadRequest)
-		components.Alert(types.AlertTypeError, "Password does not meet requirements", "Password must be at least 12 characters long.", "Password must contain at least one uppercase letter.", "Password must contain at least one lowercase letter.", "Password must contain at least one number.", "Password must contain at least one special character (!@#$%^&*).").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Password does not meet requirements", "Password must be at least 12 characters long.", "Password must contain at least one uppercase letter.", "Password must contain at least one lowercase letter.", "Password must contain at least one number.", "Password must contain at least one special character (!@#$%^&*).").Render(r.Context(), w)
 		return
 	}
 
@@ -380,7 +379,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("failed to hash password", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 	user := types.User{
@@ -390,7 +389,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if err := h.UserStore.Insert(r.Context(), user); err != nil {
 		h.Logger.Error("failed to insert user", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 	w.Header().Set("HX-Redirect", "/signin")
@@ -418,7 +417,7 @@ func isValidPassword(password string) bool {
 }
 
 func (h *Handler) Signin(w http.ResponseWriter, r *http.Request) {
-	components.Signin().Render(r.Context(), w)
+	_ = components.Signin().Render(r.Context(), w)
 }
 
 func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
@@ -427,7 +426,7 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 	if email == "" || password == "" {
 		h.Logger.Debug("missing required form values", "email", email)
 		w.WriteHeader(http.StatusBadRequest)
-		components.Alert(types.AlertTypeError, "Missing emil or password", "Please enter your email and password.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Missing emil or password", "Please enter your email and password.").Render(r.Context(), w)
 		return
 	}
 	user, err := h.UserStore.GetByEmail(r.Context(), email)
@@ -435,18 +434,18 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 		if err == sql.ErrNoRows {
 			h.Logger.Debug("user not found", "email", email)
 			w.WriteHeader(http.StatusUnauthorized)
-			components.Alert(types.AlertTypeError, "Incorrect email or password", "Double check your email and password and try again.").Render(r.Context(), w)
+			_ = components.Alert(types.AlertTypeError, "Incorrect email or password", "Double check your email and password and try again.").Render(r.Context(), w)
 		} else {
 			h.Logger.Error("failed to get user", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
-			components.Alert(types.AlertTypeWarning, "Something went wrong", "Try again later.").Render(r.Context(), w)
+			_ = components.Alert(types.AlertTypeWarning, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		}
 		return
 	}
 	if err = utils.CheckPasswordHash([]byte(user.Password), []byte(password)); err != nil {
 		h.Logger.Debug("failed to compare password and hash", "error", err)
 		w.WriteHeader(http.StatusForbidden)
-		components.Alert(types.AlertTypeError, "Incorrect email or password", "Double check your email and password and try again.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Incorrect email or password", "Double check your email and password and try again.").Render(r.Context(), w)
 		return
 	}
 
@@ -461,7 +460,7 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("failed to create session", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeWarning, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeWarning, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
@@ -538,7 +537,7 @@ func (h *Handler) Settings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	components.Settings(user).Render(r.Context(), w)
+	_ = components.Settings(user).Render(r.Context(), w)
 }
 
 func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
@@ -547,7 +546,7 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("failed to parse user id", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 
@@ -555,14 +554,14 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("failed to get user", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 
 	if err = r.ParseForm(); err != nil {
 		h.Logger.Error("failed to parse form", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 
@@ -573,35 +572,35 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	if currentPassword == "" || newPassword == "" || confirmPassword == "" {
 		h.Logger.Debug("missing required form values")
 		w.WriteHeader(http.StatusBadRequest)
-		components.Alert(types.AlertTypeError, "Missing current password, new password, or confirm new password", "Please enter your current password, new password, and confirm new password.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Missing current password, new password, or confirm new password", "Please enter your current password, new password, and confirm new password.").Render(r.Context(), w)
 		return
 	}
 
 	if newPassword != confirmPassword {
 		h.Logger.Debug("passwords do not match", "newPassword", newPassword, "confirmNewPassword", confirmPassword)
 		w.WriteHeader(http.StatusBadRequest)
-		components.Alert(types.AlertTypeError, "Passwords do not match", "Please enter matching passwords.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Passwords do not match", "Please enter matching passwords.").Render(r.Context(), w)
 		return
 	}
 
 	if currentPassword == newPassword {
 		h.Logger.Debug("current password and new password are the same")
 		w.WriteHeader(http.StatusBadRequest)
-		components.Alert(types.AlertTypeError, "New password cannot be the same as current password", "Please enter a new password.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "New password cannot be the same as current password", "Please enter a new password.").Render(r.Context(), w)
 		return
 	}
 
 	if !isValidPassword(newPassword) {
 		h.Logger.Debug("password does not meet requirements")
 		w.WriteHeader(http.StatusBadRequest)
-		components.Alert(types.AlertTypeError, "Password does not meet requirements", "Password must be at least 12 characters long.", "Password must contain at least one uppercase letter.", "Password must contain at least one lowercase letter.", "Password must contain at least one number.", "Password must contain at least one special character (!@#$%^&*).").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Password does not meet requirements", "Password must be at least 12 characters long.", "Password must contain at least one uppercase letter.", "Password must contain at least one lowercase letter.", "Password must contain at least one number.", "Password must contain at least one special character (!@#$%^&*).").Render(r.Context(), w)
 		return
 	}
 
 	if err = utils.CheckPasswordHash([]byte(user.Password), []byte(currentPassword)); err != nil {
 		h.Logger.Debug("failed to compare password and hash", "error", err)
 		w.WriteHeader(http.StatusForbidden)
-		components.Alert(types.AlertTypeError, "Incorrect password", "Double check your password and try again.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Incorrect password", "Double check your password and try again.").Render(r.Context(), w)
 		return
 	}
 
@@ -609,14 +608,14 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("failed to hash password", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 
 	if err = h.UserStore.UpdatePassword(r.Context(), int64(userID), string(hashedPassword)); err != nil {
 		h.Logger.Error("failed to update password", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 
@@ -624,7 +623,7 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("failed to delete sessions", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 
@@ -645,7 +644,7 @@ func (h *Handler) LogoutSessions(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("failed to parse user id", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 
@@ -653,7 +652,7 @@ func (h *Handler) LogoutSessions(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("failed to delete sessions", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 
@@ -674,7 +673,7 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("failed to parse user id", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 
@@ -682,7 +681,7 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("failed to delete user", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 
