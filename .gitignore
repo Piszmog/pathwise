@@ -28,9 +28,9 @@ appengine-generated/
 /components/*.go
 .idea
 *.iml
-/assets/css
+assets/css/
 *.sqlite3
-/tmp
+tmp/
 
 # General
 .DS_Store
@@ -58,6 +58,3 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
-
-db.sqlite3
-tmp/
