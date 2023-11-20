@@ -81,3 +81,11 @@ type PaginationOpts struct {
 	PerPage int
 	Total   int
 }
+
+type AlertType string
+
+const (
+	AlertTypeError   AlertType = "error"
+	AlertTypeSuccess AlertType = "success"
+	AlertTypeWarning AlertType = "warning"
+)
