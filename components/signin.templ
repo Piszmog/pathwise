@@ -4,11 +4,19 @@ templ Signin() {
 	<!DOCTYPE html>
 	<html>
 		@Head()
-		@signin()
+		<main>
+			@signin()
+		</main>
 	</html>
 }
 
 templ signin() {
+	<style type="text/css">
+		form.htmx-request {
+			opacity: 0.5;
+			transition: opacity 300ms linear;
+		}
+	</style>
 	<div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
 		<div class="sm:mx-auto sm:w-full sm:max-w-sm">
 			<h2 class="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">Sign in to your account</h2>
@@ -18,8 +26,8 @@ templ signin() {
  				class="space-y-6"
  				id="signin-form"
  				hx-post="/signin"
- 				hx-target-4*="#login-error"
- 				hx-target-5*="#login-error"
+ 				hx-ext="response-targets"
+ 				hx-target-error="#login-error"
 			>
 				<div id="login-error"></div>
 				<div>

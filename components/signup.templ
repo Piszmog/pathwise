@@ -4,11 +4,19 @@ templ Signup() {
 	<!DOCTYPE html>
 	<html>
 		@Head()
-		@signup()
+		<main>
+			@signup()
+		</main>
 	</html>
 }
 
 templ signup() {
+	<style type="text/css">
+		form.htmx-request {
+			opacity: 0.5;
+			transition: opacity 300ms linear;
+		}
+	</style>
 	<div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
 		<div class="sm:mx-auto sm:w-full sm:max-w-sm">
 			<h2 class="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">Register an account</h2>
@@ -18,7 +26,10 @@ templ signup() {
  				class="space-y-6"
  				id="registration-form"
  				hx-post="/signup"
+ 				hx-ext="response-targets"
+ 				hx-target-error="#signup-error"
 			>
+				<div id="signup-error"></div>
 				<div>
 					<label for="email" class="block text-sm font-medium leading-6 text-gray-900">Email address</label>
 					<div class="mt-2">
@@ -28,13 +39,33 @@ templ signup() {
 				<div>
 					<label for="password" class="block text-sm font-medium leading-6 text-gray-900">Password</label>
 					<div class="mt-2">
-						<input id="password" name="password" type="password" autocomplete="current-password" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"/>
+						<input
+ 							id="password"
+ 							name="password"
+ 							type="password"
+ 							autocomplete="password"
+ 							minLength="12"
+ 							pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{12,}"
+ 							title="Must contain at least one number, one uppercase letter, one special character (!@#$%^&*), and at least 12 or more characters"
+ 							required
+ 							class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+						/>
 					</div>
 				</div>
 				<div>
-					<label for="password" class="block text-sm font-medium leading-6 text-gray-900">Confirm Password</label>
+					<label for="confirmPassword" class="block text-sm font-medium leading-6 text-gray-900">Confirm Password</label>
 					<div class="mt-2">
-						<input id="password" name="confirmPassword" type="password" autocomplete="current-password" required class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"/>
+						<input
+ 							id="confirmPassword"
+ 							name="confirmPassword"
+ 							type="password"
+ 							autocomplete="confirmPassword"
+ 							minLength="12"
+ 							pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{12,}"
+ 							title="Must contain at least one number, one uppercase letter, one special character (!@#$%^&*), and at least 12 or more characters"
+ 							required
+ 							class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+						/>
 					</div>
 				</div>
 				<div>

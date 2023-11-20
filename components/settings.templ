@@ -6,12 +6,20 @@ templ Settings(user types.User) {
 	<!DOCTYPE html>
 	<html>
 		@Head()
-		@header(false)
-		@settings(user)
+		<main>
+			@header(false)
+			@settings(user)
+		</main>
 	</html>
 }
 
 templ settings(user types.User) {
+	<style type="text/css">
+		form.htmx-request {
+			opacity: 0.5;
+			transition: opacity 300ms linear;
+		}
+	</style>
 	<div class="divide-y divide">
 		<div class="grid grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
 			<div>

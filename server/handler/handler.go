@@ -2,8 +2,10 @@ package handler
 
 import (
 	"context"
+	"database/sql"
 	"log/slog"
 	"net/http"
+	"regexp"
 	"sort"
 	"strconv"
 	"time"
@@ -336,25 +338,37 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		h.Logger.Error("failed to parse form", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
+		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 	confirmPassword := r.FormValue("confirmPassword")
 	if email == "" || password == "" || confirmPassword == "" {
-		h.Logger.Error("missing required form values", "email", email)
+		h.Logger.Debug("missing required form values", "email", email)
 		w.WriteHeader(http.StatusBadRequest)
+		components.Alert(types.AlertTypeError, "Missing email or password", "Please enter your email and password.").Render(r.Context(), w)
 		return
 	}
 	if password != confirmPassword {
-		h.Logger.Error("passwords do not match", "email", email)
+		h.Logger.Debug("passwords do not match", "email", email)
 		w.WriteHeader(http.StatusBadRequest)
+		components.Alert(types.AlertTypeError, "Passwords do not match", "Please enter matching passwords.").Render(r.Context(), w)
 		return
 	}
+
+	if !isValidPassword(password) {
+		h.Logger.Debug("password does not meet requirements", "email", email)
+		w.WriteHeader(http.StatusBadRequest)
+		components.Alert(types.AlertTypeError, "Password does not meet requirements", "Password must be at least 12 characters long.", "Password must contain at least one uppercase letter.", "Password must contain at least one lowercase letter.", "Password must contain at least one number.", "Password must contain at least one special character (!@#$%^&*).").Render(r.Context(), w)
+		return
+	}
+
 	hashedPassword, err := utils.HashPassword([]byte(password))
 	if err != nil {
 		h.Logger.Error("failed to hash password", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
+		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 	user := types.User{
@@ -364,10 +378,31 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if err := h.UserStore.Insert(r.Context(), user); err != nil {
 		h.Logger.Error("failed to insert user", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
+		components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 	w.Header().Set("HX-Redirect", "/signin")
-	http.Redirect(w, r, "/signin", http.StatusSeeOther)
+}
+
+var (
+	upperCase   = regexp.MustCompile(`[A-Z]`)
+	lowerCase   = regexp.MustCompile(`[a-z]`)
+	number      = regexp.MustCompile(`\d`)
+	specialChar = regexp.MustCompile(`[!@#$%^&*]`)
+)
+
+func isValidPassword(password string) bool {
+	if len(password) < 12 {
+		return false
+	}
+
+	// Check for at least one occurrence of each character class
+	hasUpper := upperCase.MatchString(password)
+	hasLower := lowerCase.MatchString(password)
+	hasNumber := number.MatchString(password)
+	hasSpecial := specialChar.MatchString(password)
+
+	return hasUpper && hasLower && hasNumber && hasSpecial
 }
 
 func (h *Handler) Signin(w http.ResponseWriter, r *http.Request) {
@@ -378,24 +413,28 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 	if email == "" || password == "" {
-		h.Logger.Error("missing required form values", "email", email)
+		h.Logger.Debug("missing required form values", "email", email)
 		w.WriteHeader(http.StatusBadRequest)
+		components.Alert(types.AlertTypeError, "Missing emil or password", "Please enter your email and password.").Render(r.Context(), w)
 		return
 	}
 	user, err := h.UserStore.GetByEmail(r.Context(), email)
 	if err != nil {
-		h.Logger.Error("failed to get user", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	if user.ID == 0 {
-		h.Logger.Error("user does not exist", "email", email)
-		w.WriteHeader(http.StatusUnauthorized)
+		if err == sql.ErrNoRows {
+			h.Logger.Debug("user not found", "email", email)
+			w.WriteHeader(http.StatusUnauthorized)
+			components.Alert(types.AlertTypeError, "Incorrect email or password", "Double check your email and password and try again.").Render(r.Context(), w)
+		} else {
+			h.Logger.Error("failed to get user", "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			components.Alert(types.AlertTypeWarning, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		}
 		return
 	}
 	if err = utils.CheckPasswordHash([]byte(user.Password), []byte(password)); err != nil {
-		h.Logger.Error("failed to compare password and hash", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		h.Logger.Debug("failed to compare password and hash", "error", err)
+		w.WriteHeader(http.StatusForbidden)
+		components.Alert(types.AlertTypeError, "Incorrect email or password", "Double check your email and password and try again.").Render(r.Context(), w)
 		return
 	}
 
@@ -403,6 +442,7 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.Logger.Error("failed to create session", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
+		components.Alert(types.AlertTypeWarning, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
 	http.SetCookie(w, &http.Cookie{
