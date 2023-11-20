@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"database/sql"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -34,7 +35,9 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 
 		session, err := m.SessionStore.Get(r.Context(), cookie.Value)
 		if err != nil {
-			m.Logger.Error("failed to get session", "err", err)
+			if err != sql.ErrNoRows {
+				m.Logger.Error("failed to get session", "err", err)
+			}
 			w.Header().Set("HX-Redirect", "/signin")
 			if !isHxRequest {
 				http.Redirect(w, r, "/signin", http.StatusSeeOther)
