@@ -60,20 +60,14 @@ func Init(database Database) error {
 	_, err = database.DB().Exec(
 		`CREATE TABLE IF NOT EXISTS sessions (
 			id INTEGER PRIMARY KEY,
-			user_id INTEGER NOT NULL UNIQUE,
-			token TEXT NOT NULL,
+			user_id INTEGER NOT NULL,
+			token TEXT NOT NULL UNIQUE,
+			user_agent TEXT NOT NULL,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			expires_at DATETIME NOT NULL,
 			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 		)`,
-	)
-	if err != nil {
-		return err
-	}
-
-	_, err = database.DB().Exec(
-		`CREATE INDEX IF NOT EXISTS sessions_token_idx ON sessions (token)`,
 	)
 	if err != nil {
 		return err

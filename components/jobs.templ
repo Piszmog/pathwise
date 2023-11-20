@@ -66,7 +66,10 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
  		hx-patch={ "/jobs/" + strconv.Itoa(j.ID) }
  		hx-target={ "#" + utils.JobRowMetadata(j.ID) }
  		hx-swap="outerHTML"
+ 		hx-ext="response-targets"
+ 		hx-target-error="#job-form-error"
 	>
+		<div id="job-form-error"></div>
 		<input type="hidden" name="firstTimelineEntryID" value={ strconv.Itoa(utils.GetFirstElementID(timelineEntries)) }/>
 		<input type="hidden" name="firstTimelineEntryType" value={ string(utils.GetFirstElementType(timelineEntries)) }/>
 		<div class="mb-5 flex items-center gap-x-2 text-xs leading-5 text-gray-500">
@@ -172,7 +175,10 @@ templ jobApplicationForm() {
  		hx-on::after-request="afterRequest(this)"
  		hx-target="#jobs"
  		hx-swap="outerHTML"
+ 		hx-ext="response-targets"
+ 		hx-target-error="#new-job-form-error"
 	>
+		<div id="new-job-form-error"></div>
 		<div class="grid grid-cols-1 gap-x-6 gap-y-8">
 			<div>
 				<label for="company" class="block text-sm font-medium leading-6 text-gray-900">Company</label>

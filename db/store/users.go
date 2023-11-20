@@ -44,3 +44,17 @@ func scanUser(row *sql.Row) (types.User, error) {
 	)
 	return user, err
 }
+
+func (s *UserStore) Delete(ctx context.Context, id int64) error {
+	_, err := s.Database.DB().ExecContext(ctx, userDeleteQuery, id)
+	return err
+}
+
+const userDeleteQuery = `DELETE FROM users WHERE id = ?`
+
+func (s *UserStore) UpdatePassword(ctx context.Context, id int64, password string) error {
+	_, err := s.Database.DB().ExecContext(ctx, userUpdatePasswordQuery, password, id)
+	return err
+}
+
+const userUpdatePasswordQuery = `UPDATE users SET password = ? WHERE id = ?`

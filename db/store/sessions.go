@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/Piszmog/pathwise/db"
@@ -14,18 +15,27 @@ type SessionStore struct {
 }
 
 func (s *SessionStore) Insert(ctx context.Context, session types.Session) error {
-	_, err := s.Database.DB().ExecContext(ctx, sessionInsertQuery, session.UserID, session.Token, session.ExpiresAt)
+	if session.UserID == 0 {
+		return fmt.Errorf("user id cannot be 0")
+	} else if session.Token == "" {
+		return fmt.Errorf("token cannot be empty")
+	} else if session.ExpiresAt.IsZero() {
+		return fmt.Errorf("expires at cannot be zero")
+	} else if session.UserAgent == "" {
+		return fmt.Errorf("user agent cannot be empty")
+	}
+	_, err := s.Database.DB().ExecContext(ctx, sessionInsertQuery, session.UserID, session.UserAgent, session.Token, session.ExpiresAt)
 	return err
 }
 
-const sessionInsertQuery = `INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)`
+const sessionInsertQuery = `INSERT INTO sessions (user_id, user_agent, token, expires_at) VALUES (?, ?, ?, ?)`
 
 func (s *SessionStore) Get(ctx context.Context, token string) (types.Session, error) {
 	row := s.Database.DB().QueryRowContext(ctx, sessionGetQuery, token)
 	return scanSession(row)
 }
 
-const sessionGetQuery = `SELECT id, created_at, updated_at, expires_at, token, user_id FROM sessions WHERE token = ?`
+const sessionGetQuery = `SELECT id, created_at, updated_at, expires_at, token, user_agent, user_id FROM sessions WHERE token = ?`
 
 func scanSession(row *sql.Row) (types.Session, error) {
 	var session types.Session
@@ -35,17 +45,25 @@ func scanSession(row *sql.Row) (types.Session, error) {
 		&session.UpdatedAt,
 		&session.ExpiresAt,
 		&session.Token,
+		&session.UserAgent,
 		&session.UserID,
 	)
 	return session, err
 }
 
-func (s *SessionStore) Delete(ctx context.Context, userId int) error {
+func (s *SessionStore) DeleteByUserID(ctx context.Context, userId int) error {
 	_, err := s.Database.DB().ExecContext(ctx, sessionDeleteQuery, userId)
 	return err
 }
 
 const sessionDeleteQuery = `DELETE FROM sessions WHERE user_id = ?`
+
+func (s *SessionStore) DeleteByToken(ctx context.Context, token string) error {
+	_, err := s.Database.DB().ExecContext(ctx, sessionDeleteByTokenQuery, token)
+	return err
+}
+
+const sessionDeleteByTokenQuery = `DELETE FROM sessions WHERE token = ?`
 
 func (s *SessionStore) DeleteExpired(ctx context.Context) error {
 	_, err := s.Database.DB().ExecContext(ctx, sessionDeleteExpiredQuery, time.Now())

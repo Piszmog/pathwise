@@ -44,7 +44,7 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 
 		if session.ExpiresAt.Before(time.Now()) {
 			m.Logger.Debug("session expired", "session", session)
-			err = m.SessionStore.Delete(r.Context(), session.UserID)
+			err = m.SessionStore.DeleteByToken(r.Context(), cookie.Value)
 			if err != nil {
 				m.Logger.Error("failed to delete session", "err", err)
 			}

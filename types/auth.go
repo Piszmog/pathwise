@@ -15,6 +15,7 @@ type Session struct {
 	UpdatedAt time.Time
 	ExpiresAt time.Time
 	Token     string
+	UserAgent string
 	UserID    int
 	ID        int
 }
