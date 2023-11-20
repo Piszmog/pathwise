@@ -16,6 +16,8 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: v1.54
+      - run: go install github.com/a-h/templ/cmd/templ@latest
+      - run: templ generate -path ./components
   test:
     name: Test
     runs-on: ubuntu-latest
