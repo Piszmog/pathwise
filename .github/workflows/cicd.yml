@@ -32,8 +32,8 @@ jobs:
       - run: templ generate -path ./components
       - name: Test
         run: go test -race ./...
-  tag:
-    name: Tag
+  release:
+    name: Release
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -50,6 +50,12 @@ jobs:
         with:
           version: ${{ env.VERSION }}
           token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ env.VERSION }}
+          tag_name: ${{ env.VERSION }}
+          generate_release_notes: true
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
@@ -57,7 +63,7 @@ jobs:
       contents: 'read'
       id-token: 'write'
     needs:
-      - tag
+      - release
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
