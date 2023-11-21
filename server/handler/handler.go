@@ -451,14 +451,17 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var cookieValue string
 	cookie, err := r.Cookie("session")
 	if err != nil {
 		if err != http.ErrNoCookie {
 			h.Logger.Error("failed to get session cookie", "error", err)
 		}
+	} else {
+		cookieValue = cookie.Value
 	}
 
-	session, err := h.newSession(r.Context(), user.ID, r.UserAgent(), cookie.Value)
+	session, err := h.newSession(r.Context(), user.ID, r.UserAgent(), cookieValue)
 	if err != nil {
 		h.Logger.Error("failed to create session", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -477,7 +480,6 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) newSession(ctx context.Context, userId int, userAgent string, currentToken string) (types.Session, error) {
-	h.Logger.Info("creating new session", "userId", userId, "userAgent", userAgent, "currentToken", currentToken)
 	if currentToken != "" {
 		err := h.SessionsStore.DeleteByToken(ctx, currentToken)
 		if err != nil {
