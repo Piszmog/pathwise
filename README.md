@@ -11,6 +11,8 @@ Job hunting can be difficult. There are many things to track. Such as,
 
 This web application is designed to help you track your job applications.
 
+A [desktop version](https://github.com/Piszmog/job-app-tracker) of the application is available as well.
+
 ## License
 
 See [LICENSE](./LICENSE) for details.
