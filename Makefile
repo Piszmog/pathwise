@@ -9,10 +9,10 @@ generate-templ-watch:
 	@templ generate -path ./components -watch
 generate-tailwind:
 	@echo "Generating tailwind files..."
-	@tailwindcss -i ./styles/input.css -o ./assets/css/output.css --minify
+	@tailwindcss -i ./styles/input.css -o ./assets/css/output@dev.css --minify
 generate-tailwind-watch:
 	@echo "Generating tailwind files..."
-	@tailwindcss -i ./styles/input.css -o ./assets/css/output.css --minify --watch
+	@tailwindcss -i ./styles/input.css -o ./assets/css/output@dev.css --minify --watch
 air:
 	@echo "Running air..."
 	@air

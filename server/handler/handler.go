@@ -450,6 +450,7 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 		_ = components.Alert(types.AlertTypeError, "Incorrect email or password", "Double check your email and password and try again.").Render(r.Context(), w)
 		return
 	}
+	h.Logger.Info("getting session", "user", user, "userAgent", r.UserAgent())
 
 	cookie, err := r.Cookie("session")
 	if err != nil {
