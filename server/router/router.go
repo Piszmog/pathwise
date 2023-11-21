@@ -33,6 +33,9 @@ func New(logger *slog.Logger, database db.Database, assets embed.FS, sessionStor
 
 	cache := middleware.CacheControlMiddleware{Version: version}
 	r.PathPrefix("/assets/").Handler(cache.Middleware(http.FileServer(http.FS(assets))))
+	r.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/assets/img/favicon.ico", http.StatusSeeOther)
+	})
 	r.HandleFunc("/signup", h.Signup).Methods(http.MethodGet)
 	r.HandleFunc("/signup", h.Register).Methods(http.MethodPost)
 	r.HandleFunc("/signin", h.Signin).Methods(http.MethodGet)
