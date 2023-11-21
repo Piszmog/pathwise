@@ -2,10 +2,10 @@ package components
 
 import "github.com/Piszmog/pathwise/types"
 
-templ Settings(user types.User) {
+templ Settings(version string, user types.User) {
 	<!DOCTYPE html>
 	<html>
-		@Head()
+		@Head(version)
 		<main>
 			@header(false)
 			@settings(user)

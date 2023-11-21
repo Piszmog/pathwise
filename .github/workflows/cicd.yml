@@ -64,7 +64,9 @@ jobs:
         with:
           go-version: 1.21.x
       - name: Get Version
-        run: echo "VERSION=$(cat version.txt | sed 's/\./-/g')" >> $GITHUB_ENV
+        run: echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
+      - name: Get Version
+        run: echo "VERSION_GCP=$(cat version.txt | sed 's/\./-/g')" >> $GITHUB_ENV
       - run: go mod download
       - run: go install github.com/a-h/templ/cmd/templ@latest
       - name: Generate Templ Files
@@ -75,6 +77,10 @@ jobs:
           chmod +x tailwindcss-linux-x64
           mv tailwindcss-linux-x64 tailwindcss
           ./tailwindcss -i ./styles/input.css -o ./assets/css/output@${{ env.VERSION }}.css --minify
+      - name: Replace version
+        run: sed -i 's/\${version}/'"$VERSION"'/' app.yaml
+        env:
+          VERSION: ${{ env.VERSION }}
       - name: Replace token secret
         run: sed -i 's/\${secrets.DB_TOKEN}/'"$DB_TOKEN"'/' app.yaml
         env:
@@ -87,4 +93,4 @@ jobs:
       - id: 'deploy'
         uses: 'google-github-actions/deploy-appengine@v1'
         with:
-          version: ${{ env.VERSION }} 
+          version: ${{ env.VERSION_GCP }} 

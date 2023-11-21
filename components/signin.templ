@@ -1,9 +1,9 @@
 package components
 
-templ Signin() {
+templ Signin(version string) {
 	<!DOCTYPE html>
 	<html>
-		@Head()
+		@Head(version)
 		<main>
 			@signin()
 		</main>

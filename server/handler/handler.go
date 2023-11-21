@@ -33,6 +33,7 @@ type Handler struct {
 	StatsStore                       *store.StatsStore
 	UserStore                        *store.UserStore
 	SessionsStore                    *store.SessionStore
+	Version                          string
 }
 
 func (h *Handler) Main(w http.ResponseWriter, r *http.Request) {
@@ -49,6 +50,7 @@ func (h *Handler) Main(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	m := components.Main(
+		h.Version,
 		jobs,
 		statsOpts,
 		types.PaginationOpts{
@@ -342,7 +344,7 @@ func getFilterOpts(r *http.Request) types.FilterOpts {
 }
 
 func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
-	_ = components.Signup().Render(r.Context(), w)
+	_ = components.Signup(h.Version).Render(r.Context(), w)
 }
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
@@ -417,7 +419,7 @@ func isValidPassword(password string) bool {
 }
 
 func (h *Handler) Signin(w http.ResponseWriter, r *http.Request) {
-	_ = components.Signin().Render(r.Context(), w)
+	_ = components.Signin(h.Version).Render(r.Context(), w)
 }
 
 func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
@@ -537,7 +539,7 @@ func (h *Handler) Settings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = components.Settings(user).Render(r.Context(), w)
+	_ = components.Settings(h.Version, user).Render(r.Context(), w)
 }
 
 func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {

@@ -4,6 +4,7 @@ import (
 	"embed"
 	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/Piszmog/pathwise/db"
 	"github.com/Piszmog/pathwise/db/store"
@@ -13,7 +14,9 @@ import (
 )
 
 func New(logger *slog.Logger, database db.Database, assets embed.FS, sessionStore *store.SessionStore) http.Handler {
+	version := getVersion()
 	h := &handler.Handler{
+		Version:                          version,
 		Logger:                           logger,
 		JobApplicationStore:              &store.JobApplicationStore{Database: database},
 		JobApplicationNoteStore:          &store.JobApplicationNoteStore{Database: database},
@@ -54,4 +57,12 @@ func New(logger *slog.Logger, database db.Database, assets embed.FS, sessionStor
 	protected.HandleFunc("/settings/deleteAccount", h.DeleteAccount).Methods(http.MethodPost)
 
 	return r
+}
+
+func getVersion() string {
+	version := os.Getenv("VERSION")
+	if version == "" {
+		version = "dev"
+	}
+	return version
 }
