@@ -4,6 +4,7 @@ env_variables:
   DB_TYPE: turso
   DB_URL: pathwise-piszmog
   DB_TOKEN: ${secrets.DB_TOKEN}
+  VERSION: ${version}
 
 handlers:
   - url: .*
