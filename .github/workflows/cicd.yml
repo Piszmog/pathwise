@@ -88,8 +88,8 @@ jobs:
       - id: 'auth'
         uses: 'google-github-actions/auth@v1'
         with:
-          workload_identity_provider: 'projects/811165903449/locations/global/workloadIdentityPools/gh-pool/providers/gh-provider'
-          service_account: 'gh-service-account@pathwise-405720.iam.gserviceaccount.com'
+          workload_identity_provider: ${{ secrets.GCP_WIP }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       - id: 'deploy'
         uses: 'google-github-actions/deploy-appengine@v1'
         with:
