@@ -450,7 +450,6 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 		_ = components.Alert(types.AlertTypeError, "Incorrect email or password", "Double check your email and password and try again.").Render(r.Context(), w)
 		return
 	}
-	h.Logger.Info("getting session", "user", user, "userAgent", r.UserAgent())
 
 	cookie, err := r.Cookie("session")
 	if err != nil {
@@ -478,6 +477,7 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) newSession(ctx context.Context, userId int, userAgent string, currentToken string) (types.Session, error) {
+	h.Logger.Info("creating new session", "userId", userId, "userAgent", userAgent, "currentToken", currentToken)
 	if currentToken != "" {
 		err := h.SessionsStore.DeleteByToken(ctx, currentToken)
 		if err != nil {
