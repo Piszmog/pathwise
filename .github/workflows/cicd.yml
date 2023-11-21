@@ -83,7 +83,7 @@ jobs:
         uses: 'google-github-actions/auth@v1'
         with:
           workload_identity_provider: 'projects/811165903449/locations/global/workloadIdentityPools/gh-pool/providers/gh-provider'
-          service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
+          service_account: 'gh-service-account@pathwise-405720.iam.gserviceaccount.com'
       - id: 'deploy'
         uses: 'google-github-actions/deploy-appengine@v1'
         with:
