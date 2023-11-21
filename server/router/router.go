@@ -31,7 +31,8 @@ func New(logger *slog.Logger, database db.Database, assets embed.FS, sessionStor
 	r.Use(loggingMiddleware.Middleware)
 	// TODO: CORS
 
-	r.PathPrefix("/assets/").Handler(http.FileServer(http.FS(assets)))
+	cache := middleware.CacheControlMiddleware{Version: version}
+	r.PathPrefix("/assets/").Handler(cache.Middleware(http.FileServer(http.FS(assets))))
 	r.HandleFunc("/signup", h.Signup).Methods(http.MethodGet)
 	r.HandleFunc("/signup", h.Register).Methods(http.MethodPost)
 	r.HandleFunc("/signin", h.Signin).Methods(http.MethodGet)
