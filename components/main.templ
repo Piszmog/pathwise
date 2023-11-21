@@ -6,7 +6,7 @@ import (
 
 templ Main(version string, j []types.JobApplication, s types.StatsOpts, paginationOpts types.PaginationOpts, filterOpts types.FilterOpts) {
 	<!DOCTYPE html>
-	<html>
+	<html lang="en">
 		@Head(version)
 		@body(j, s, paginationOpts, filterOpts)
 	</html>
