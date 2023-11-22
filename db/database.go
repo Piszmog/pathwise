@@ -92,6 +92,13 @@ func Init(database Database) error {
 	}
 
 	_, err = database.DB().Exec(
+		`CREATE INDEX IF NOT EXISTS job_applications_user_id_idx ON job_applications(user_id)`,
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = database.DB().Exec(
 		`CREATE TABLE IF NOT EXISTS job_application_notes (
             id INTEGER PRIMARY KEY,
             job_application_id INTEGER NOT NULL,
