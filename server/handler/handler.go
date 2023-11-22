@@ -211,6 +211,15 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
+	userIDStr := r.Header.Get("USER-ID")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		h.Logger.Error("failed to parse user id", "error", err)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -219,6 +228,22 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
 		return
 	}
+
+	job, err := h.JobApplicationStore.GetByIDAndUserID(r.Context(), id, userID)
+	if err != nil {
+		h.Logger.Error("failed to get job", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		return
+	}
+
+	if job.UserID != userID {
+		h.Logger.Warn("user does not own job", "userID", userID, "jobUserID", job.UserID)
+		w.WriteHeader(http.StatusForbidden)
+		_ = components.Alert(types.AlertTypeError, "You do not have permission to update this job", "Try again later.").Render(r.Context(), w)
+		return
+	}
+
 	if err = r.ParseForm(); err != nil {
 		h.Logger.Error("failed to parse form", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -239,13 +264,10 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	firstTimelineEntryID := r.FormValue("firstTimelineEntryID")
 	firstTimelineEntryType := r.FormValue("firstTimelineEntryType")
 
-	job := types.JobApplication{
-		ID:      id,
-		Company: company,
-		Title:   title,
-		URL:     url,
-		Status:  types.ToJobApplicationStatus(status),
-	}
+	job.Company = company
+	job.Title = title
+	job.URL = url
+	job.Status = types.ToJobApplicationStatus(status)
 	updatedAt, err := h.JobApplicationStore.Update(r.Context(), job)
 	if err != nil {
 		h.Logger.Error("failed to update job", "error", err)
@@ -254,15 +276,6 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	job.UpdatedAt = updatedAt
-
-	userIDStr := r.Header.Get("USER-ID")
-	userID, err := strconv.Atoi(userIDStr)
-	if err != nil {
-		h.Logger.Error("failed to parse user id", "error", err)
-		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 
 	var stats *types.StatsOpts
 	var newTimelineEntry types.NewTimelineEntry
@@ -306,6 +319,14 @@ func newTimelineID(entryType types.JobApplicationTimelineType, entryID string) s
 }
 
 func (h *Handler) AddNote(w http.ResponseWriter, r *http.Request) {
+	userIDStr := r.Header.Get("USER-ID")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		h.Logger.Error("failed to parse user id", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
@@ -313,6 +334,20 @@ func (h *Handler) AddNote(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	job, err := h.JobApplicationStore.GetByIDAndUserID(r.Context(), id, userID)
+	if err != nil {
+		h.Logger.Error("failed to get job", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if job.UserID != userID {
+		h.Logger.Warn("user does not own job", "userID", userID, "jobUserID", job.UserID)
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
 	if err = r.ParseForm(); err != nil {
 		h.Logger.Error("failed to parse form", "error", err)
 		w.WriteHeader(http.StatusBadRequest)

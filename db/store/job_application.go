@@ -19,11 +19,24 @@ func (s *JobApplicationStore) GetByID(ctx context.Context, id int) (types.JobApp
 
 const jobGetByIDQuery = `
 SELECT
-	j.id, j.company, j.title, j.url, j.status, j.applied_at, j.updated_at
+	j.id, j.company, j.title, j.url, j.status, j.applied_at, j.updated_at, j.user_id
 FROM 
 	job_applications j
 WHERE
 	j.id = ?
+`
+
+func (s *JobApplicationStore) GetByIDAndUserID(ctx context.Context, id, userID int) (types.JobApplication, error) {
+	return scanJobApplication(s.Database.DB().QueryRowContext(ctx, jobGetByIDAndUserIDQuery, id, userID))
+}
+
+const jobGetByIDAndUserIDQuery = `
+SELECT
+	j.id, j.company, j.title, j.url, j.status, j.applied_at, j.updated_at, j.user_id
+FROM
+	job_applications j
+WHERE
+	j.id = ? AND j.user_id = ?
 `
 
 func scanJobApplication(row *sql.Row) (types.JobApplication, error) {
@@ -37,6 +50,7 @@ func scanJobApplication(row *sql.Row) (types.JobApplication, error) {
 		&status,
 		&job.AppliedAt,
 		&job.UpdatedAt,
+		&job.UserID,
 	)
 	job.Status = types.ToJobApplicationStatus(status)
 	return job, err
