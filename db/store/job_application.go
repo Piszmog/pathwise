@@ -42,13 +42,13 @@ func scanJobApplication(row *sql.Row) (types.JobApplication, error) {
 	return job, err
 }
 
-func (s *JobApplicationStore) Get(ctx context.Context, opts LimitOpts) ([]types.JobApplication, int, error) {
+func (s *JobApplicationStore) Get(ctx context.Context, userID int, opts LimitOpts) ([]types.JobApplication, int, error) {
 	tx, err := s.Database.DB().BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	rows, err := tx.QueryContext(ctx, jobGetLimitQuery, opts.PerPage, opts.Page*opts.PerPage)
+	rows, err := tx.QueryContext(ctx, jobGetLimitQuery, userID, opts.PerPage, opts.Page*opts.PerPage)
 	if err != nil {
 		_ = tx.Rollback()
 		return nil, 0, err
@@ -72,37 +72,36 @@ SELECT
 	j.id, j.company, j.title, j.url, j.status, j.applied_at, j.updated_at
 FROM 
 	job_applications j
+WHERE
+	j.user_id = ?
 ORDER BY j.updated_at DESC
 LIMIT ? OFFSET ?
 `
 
 const jobCountQuery = `SELECT COUNT(*) FROM job_applications`
 
-func (s *JobApplicationStore) Filter(ctx context.Context, opts LimitOpts, company string, status types.JobApplicationStatus) ([]types.JobApplication, int, error) {
+func (s *JobApplicationStore) Filter(ctx context.Context, opts LimitOpts, userID int, company string, status types.JobApplicationStatus) ([]types.JobApplication, int, error) {
 	query := `SELECT
 		    j.id, j.company, j.title, j.url, j.status, j.applied_at, j.updated_at
 		FROM 
-		    job_applications j`
-	totalQuery := `SELECT COUNT(*) FROM job_applications`
+		    job_applications j
+		WHERE
+		    j.user_id = ?`
+	totalQuery := `SELECT COUNT(*) FROM job_applications WHERE user_id = ?`
 	if company != "" || status != "" {
-		query += ` WHERE`
-		totalQuery += ` WHERE`
 		if company != "" {
-			query += ` j.company LIKE ?`
-			totalQuery += ` company LIKE ?`
+			query += ` AND j.company LIKE ?`
+			totalQuery += ` AND company LIKE ?`
 		}
 		if status != "" {
-			if company != "" {
-				query += ` AND`
-				totalQuery += ` AND`
-			}
-			query += ` j.status LIKE ?`
-			totalQuery += ` status LIKE ?`
+			query += ` AND j.status LIKE ?`
+			totalQuery += ` AND status LIKE ?`
 		}
 	}
 	query += ` ORDER BY j.updated_at DESC LIMIT ? OFFSET ?`
-	var queryArgs []interface{}
-	var totalQueryArgs []interface{}
+
+	queryArgs := []interface{}{userID}
+	totalQueryArgs := []interface{}{userID}
 	if company != "" {
 		queryArgs = append(queryArgs, "%"+company+"%")
 		totalQueryArgs = append(totalQueryArgs, "%"+company+"%")

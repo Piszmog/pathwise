@@ -37,13 +37,21 @@ type Handler struct {
 }
 
 func (h *Handler) Main(w http.ResponseWriter, r *http.Request) {
-	jobs, total, err := h.JobApplicationStore.Get(r.Context(), defaultLimitOpts)
+	userIDStr := r.Header.Get("USER-ID")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		h.Logger.Error("failed to parse user id", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	jobs, total, err := h.JobApplicationStore.Get(r.Context(), userID, defaultLimitOpts)
 	if err != nil {
 		h.Logger.Error("failed to get jobs", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	statsOpts, err := h.StatsStore.Get(r.Context())
+	statsOpts, err := h.StatsStore.Get(r.Context(), userID)
 	if err != nil {
 		h.Logger.Error("failed to get stats", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -64,6 +72,14 @@ func (h *Handler) Main(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
+	userIDStr := r.Header.Get("USER-ID")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		h.Logger.Error("failed to parse user id", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	page, perPage, err := getPageOpts(r)
 	if err != nil {
 		h.Logger.Error("failed to get page opts", "error", err)
@@ -72,7 +88,7 @@ func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	}
 	filterOpts := getFilterOpts(r)
 
-	jobs, total, err := h.JobApplicationStore.Filter(r.Context(), store.LimitOpts{Page: page, PerPage: perPage}, filterOpts.Company, filterOpts.Status)
+	jobs, total, err := h.JobApplicationStore.Filter(r.Context(), store.LimitOpts{Page: page, PerPage: perPage}, userID, filterOpts.Company, filterOpts.Status)
 	if err != nil {
 		h.Logger.Error("failed to get jobs", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -170,7 +186,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jobs, total, err := h.JobApplicationStore.Get(r.Context(), defaultLimitOpts)
+	jobs, total, err := h.JobApplicationStore.Get(r.Context(), userID, defaultLimitOpts)
 	if err != nil {
 		h.Logger.Error("failed to get jobs", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -178,7 +194,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stats, err := h.StatsStore.Get(r.Context())
+	stats, err := h.StatsStore.Get(r.Context(), userID)
 	if err != nil {
 		h.Logger.Error("failed to get stats", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -239,10 +255,19 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	}
 	job.UpdatedAt = updatedAt
 
+	userIDStr := r.Header.Get("USER-ID")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		h.Logger.Error("failed to parse user id", "error", err)
+		_ = components.Alert(types.AlertTypeError, "Something went wrong", "Try again later.").Render(r.Context(), w)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	var stats *types.StatsOpts
 	var newTimelineEntry types.NewTimelineEntry
 	if previousStatus != status {
-		updatedStats, err := h.StatsStore.Get(r.Context())
+		updatedStats, err := h.StatsStore.Get(r.Context(), userID)
 		if err != nil {
 			h.Logger.Error("failed to get stats", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
