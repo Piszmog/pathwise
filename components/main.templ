@@ -8,11 +8,11 @@ templ Main(version string, j []types.JobApplication, s types.StatsOpts, paginati
 	<!DOCTYPE html>
 	<html lang="en">
 		@Head(version)
-		@body(j, s, paginationOpts, filterOpts)
+		@body(version, j, s, paginationOpts, filterOpts)
 	</html>
 }
 
-templ body(j []types.JobApplication, s types.StatsOpts, paginationOpts types.PaginationOpts, filterOpts types.FilterOpts) {
+templ body(version string, j []types.JobApplication, s types.StatsOpts, paginationOpts types.PaginationOpts, filterOpts types.FilterOpts) {
 	<body>
 		<main>
 			<style type="text/css">
@@ -27,6 +27,7 @@ templ body(j []types.JobApplication, s types.StatsOpts, paginationOpts types.Pag
 			@drawer("new-job", "New Job Application") {
 				@jobApplicationForm()
 			}
+			@footer(version)
 		</main>
 	</body>
 }
