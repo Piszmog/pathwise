@@ -57,7 +57,12 @@ func main() {
 
 	r := router.New(l, database, assets, sessionStore)
 
-	server.New(l, ":8080", server.WithHandler(r)).StartAndWait()
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	server.New(l, ":"+port, server.WithHandler(r)).StartAndWait()
 }
 
 func getDatabaseType() db.DatabaseType {
