@@ -69,4 +69,5 @@ jobs:
       - id: 'deploy'
         uses: 'google-github-actions/deploy-appengine@v1'
         with:
-          version: ${{ env.VERSION_GCP }} 
+          version: ${{ env.VERSION_GCP }}
+          flags: --no-cache
