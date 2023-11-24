@@ -25,10 +25,11 @@ func main() {
 	switch databaseType {
 	case db.DatabaseTypeFile:
 		l.Info("using file database")
-		database, err = db.New(db.DatabaseTypeFile, db.DatabaseOpts{URL: "./db.sqlite3"})
+		database, err = db.New(l, db.DatabaseTypeFile, db.DatabaseOpts{URL: "./db.sqlite3"})
 	case db.DatabaseTypeTurso:
 		l.Info("using turso database")
 		database, err = db.New(
+			l,
 			db.DatabaseTypeTurso,
 			db.DatabaseOpts{URL: os.Getenv("DB_URL"), Token: os.Getenv("DB_TOKEN")},
 		)

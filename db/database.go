@@ -3,23 +3,25 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 
 	_ "github.com/libsql/libsql-client-go/libsql"
 )
 
 type Database interface {
 	DB() *sql.DB
+	Logger() *slog.Logger
 	Close() error
 }
 
-func New(dbType DatabaseType, opts DatabaseOpts) (Database, error) {
+func New(logger *slog.Logger, dbType DatabaseType, opts DatabaseOpts) (Database, error) {
 	switch dbType {
 	case DatabaseTypeFile:
-		return newFileDB(opts.URL)
+		return newFileDB(logger, opts.URL)
 	case DatabaseTypeTurso:
-		return newTursoDB(opts.URL, opts.Token)
+		return newTursoDB(logger, opts.URL, opts.Token)
 	case DatabaseTypeURL:
-		return newURLDB(opts.URL)
+		return newURLDB(logger, opts.URL)
 	default:
 		return nil, fmt.Errorf("unknown database type: %s", dbType)
 	}
@@ -99,6 +101,10 @@ func Init(database Database) error {
 	}
 
 	_, err = database.DB().Exec(
+		`CREATE INDEX IF NOT EXISTS job_applications_user_id_updated_at_idx ON job_applications(user_id, updated_at)`,
+	)
+
+	_, err = database.DB().Exec(
 		`CREATE TABLE IF NOT EXISTS job_application_notes (
             id INTEGER PRIMARY KEY,
             job_application_id INTEGER NOT NULL,
@@ -123,5 +129,13 @@ func Init(database Database) error {
 	if err != nil {
 		return err
 	}
+
+	_, err = database.DB().Exec(
+		`CREATE INDEX IF NOT EXISTS status_job_application_id_created_at_idx ON job_application_status_histories(status, job_application_id, created_at)`,
+	)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

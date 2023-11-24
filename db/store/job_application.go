@@ -72,7 +72,7 @@ func (s *JobApplicationStore) Get(ctx context.Context, userID int, opts LimitOpt
 		_ = tx.Rollback()
 		return nil, 0, err
 	}
-	row := tx.QueryRowContext(ctx, jobCountQuery)
+	row := tx.QueryRowContext(ctx, jobCountQuery, userID)
 	var total int
 	if err = row.Scan(&total); err != nil {
 		_ = tx.Rollback()
@@ -92,7 +92,7 @@ ORDER BY j.updated_at DESC
 LIMIT ? OFFSET ?
 `
 
-const jobCountQuery = `SELECT COUNT(*) FROM job_applications`
+const jobCountQuery = `SELECT COUNT(*) FROM job_applications WHERE user_id = ?`
 
 func (s *JobApplicationStore) Filter(ctx context.Context, opts LimitOpts, userID int, company string, status types.JobApplicationStatus) ([]types.JobApplication, int, error) {
 	query := `SELECT
