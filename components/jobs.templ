@@ -7,6 +7,12 @@ import (
 	"github.com/Piszmog/pathwise/utils"
 )
 
+templ loadingJobs() {
+	<div hx-get="/jobs" hx-trigger="load">
+		@Jobs(nil, types.PaginationOpts{}, types.FilterOpts{})
+	</div>
+}
+
 templ Jobs(jobs []types.JobApplication, paginationOpts types.PaginationOpts, filterOpts types.FilterOpts) {
 	<div id="jobs">
 		@jobList(jobs)

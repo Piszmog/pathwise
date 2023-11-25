@@ -49,6 +49,7 @@ func New(logger *slog.Logger, database db.Database, assets embed.FS, sessionStor
 	protected.Use(authMiddleware.Middleware)
 
 	protected.HandleFunc("/", h.Main).Methods(http.MethodGet)
+	protected.HandleFunc("/stats", h.GetStats).Methods(http.MethodGet)
 	protected.HandleFunc("/jobs", h.AddJob).Methods(http.MethodPost)
 	protected.HandleFunc("/jobs", h.GetJobs).Methods(http.MethodGet)
 	protected.HandleFunc("/jobs/{id}", h.JobDetails).Methods(http.MethodGet)

@@ -37,38 +37,7 @@ type Handler struct {
 }
 
 func (h *Handler) Main(w http.ResponseWriter, r *http.Request) {
-	userIDStr := r.Header.Get("USER-ID")
-	userID, err := strconv.Atoi(userIDStr)
-	if err != nil {
-		h.Logger.Error("failed to parse user id", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	jobs, total, err := h.JobApplicationStore.Get(r.Context(), userID, defaultLimitOpts)
-	if err != nil {
-		h.Logger.Error("failed to get jobs", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	statsOpts, err := h.StatsStore.Get(r.Context(), userID)
-	if err != nil {
-		h.Logger.Error("failed to get stats", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	m := components.Main(
-		h.Version,
-		jobs,
-		statsOpts,
-		types.PaginationOpts{
-			Page:    defaultPage,
-			PerPage: defaultPerPage,
-			Total:   total,
-		},
-		types.FilterOpts{},
-	)
-	_ = m.Render(r.Context(), w)
+	_ = components.Main(h.Version).Render(r.Context(), w)
 }
 
 func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
@@ -99,6 +68,33 @@ func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 		types.PaginationOpts{Page: page, PerPage: perPage, Total: total},
 		filterOpts,
 	).Render(r.Context(), w)
+}
+
+func getFilterOpts(r *http.Request) types.FilterOpts {
+	queries := r.URL.Query()
+	return types.FilterOpts{
+		Company: queries.Get("company"),
+		Status:  types.ToJobApplicationStatus(queries.Get("status")),
+	}
+}
+
+func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) {
+	userIDStr := r.Header.Get("USER-ID")
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil {
+		h.Logger.Error("failed to parse user id", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	statsOpts, err := h.StatsStore.Get(r.Context(), userID)
+	if err != nil {
+		h.Logger.Error("failed to get stats", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	_ = components.Stats(statsOpts, false, "").Render(r.Context(), w)
 }
 
 func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
@@ -393,14 +389,6 @@ func getPageOpts(r *http.Request) (int, int, error) {
 		}
 	}
 	return page, perPage, nil
-}
-
-func getFilterOpts(r *http.Request) types.FilterOpts {
-	queries := r.URL.Query()
-	return types.FilterOpts{
-		Company: queries.Get("company"),
-		Status:  types.ToJobApplicationStatus(queries.Get("status")),
-	}
 }
 
 func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {

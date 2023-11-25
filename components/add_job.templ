@@ -3,6 +3,6 @@ package components
 import "github.com/Piszmog/pathwise/types"
 
 templ AddJob(jobs []types.JobApplication, s types.StatsOpts, paginationOpts types.PaginationOpts, filterOpts types.FilterOpts) {
-	@stats(s, "true")
+	@Stats(s, false, "true")
 	@Jobs(jobs, paginationOpts, filterOpts)
 }
