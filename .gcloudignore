@@ -62,3 +62,4 @@ Makefile
 .github
 version.txt
 tailwindcss
+components/*.templ
