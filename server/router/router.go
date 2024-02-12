@@ -10,6 +10,7 @@ import (
 	"github.com/Piszmog/pathwise/db/store"
 	"github.com/Piszmog/pathwise/server/handler"
 	"github.com/Piszmog/pathwise/server/middleware"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -28,7 +29,7 @@ func New(logger *slog.Logger, database db.Database, assets embed.FS, sessionStor
 
 	r := mux.NewRouter()
 	loggingMiddleware := middleware.LoggingMiddleware{Logger: logger}
-	r.Use(loggingMiddleware.Middleware)
+	r.Use(loggingMiddleware.Middleware, handlers.CompressHandler)
 	// TODO: CORS
 
 	cache := middleware.CacheControlMiddleware{Version: version}
