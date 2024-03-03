@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta name="description" content="Hello world" />
+	<title>Pathwise</title>
+	<script src="/assets/js/htmx@1.9.10.min.js"></script>
+	<link href="/assets/css/output@{{ crate::VERSION }}.css" rel="stylesheet" />
+</head>
+
+<body class="flex flex-col min-h-screen">
+	<main class="flex-grow">
+		{% block content %}{% endblock %}
+	</main>
+</body>
+
+</html>

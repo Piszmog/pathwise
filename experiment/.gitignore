@@ -1,0 +1,5 @@
+/target
+db.sqlite
+.idea
+*.iml
+assets/css
