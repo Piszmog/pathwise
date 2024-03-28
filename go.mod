@@ -1,9 +1,9 @@
 module github.com/Piszmog/pathwise
 
-go 1.21
+go 1.22
 
 require (
-	github.com/a-h/templ v0.2.543
+	github.com/a-h/templ v0.2.648
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/handlers v1.5.2
 	github.com/gorilla/mux v1.8.1
