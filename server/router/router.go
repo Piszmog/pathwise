@@ -10,8 +10,6 @@ import (
 	"github.com/Piszmog/pathwise/db/store"
 	"github.com/Piszmog/pathwise/server/handler"
 	"github.com/Piszmog/pathwise/server/middleware"
-	"github.com/gorilla/handlers"
-	"github.com/gorilla/mux"
 )
 
 func New(logger *slog.Logger, database db.Database, assets embed.FS, sessionStore *store.SessionStore) http.Handler {
@@ -27,42 +25,39 @@ func New(logger *slog.Logger, database db.Database, assets embed.FS, sessionStor
 		SessionsStore:                    sessionStore,
 	}
 
-	r := mux.NewRouter()
-	loggingMiddleware := middleware.LoggingMiddleware{Logger: logger}
-	r.Use(loggingMiddleware.Middleware, handlers.CompressHandler)
-	// TODO: CORS
-
+	router := http.NewServeMux()
 	cache := middleware.CacheControlMiddleware{Version: version}
-	r.PathPrefix("/assets/").Handler(cache.Middleware(http.FileServer(http.FS(assets))))
-	r.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+	router.Handle(http.MethodGet+" /assets/", cache.Middleware(http.FileServer(http.FS(assets))))
+	router.HandleFunc(http.MethodGet+" /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/assets/img/favicon.ico", http.StatusSeeOther)
 	})
-	r.HandleFunc("/signup", h.Signup).Methods(http.MethodGet)
-	r.HandleFunc("/signup", h.Register).Methods(http.MethodPost)
-	r.HandleFunc("/signin", h.Signin).Methods(http.MethodGet)
-	r.HandleFunc("/signin", h.Authenticate).Methods(http.MethodPost)
+	router.HandleFunc(http.MethodGet+" /signup", h.Signup)
+	router.HandleFunc(http.MethodPost+" /signup", h.Register)
+	router.HandleFunc(http.MethodGet+" /signin", h.Signin)
+	router.HandleFunc(http.MethodPost+" /signin", h.Authenticate)
 
-	protected := r.NewRoute().Subrouter()
+	protected := http.NewServeMux()
 	authMiddleware := middleware.AuthMiddleware{
 		Logger:       logger,
 		SessionStore: sessionStore,
 	}
-	protected.Use(authMiddleware.Middleware)
+	protected.HandleFunc(http.MethodGet+" /", h.Main)
+	protected.HandleFunc(http.MethodGet+" /stats", h.GetStats)
+	protected.HandleFunc(http.MethodPost+" /jobs", h.AddJob)
+	protected.HandleFunc(http.MethodGet+" /jobs", h.GetJobs)
+	protected.HandleFunc(http.MethodGet+" /jobs/{id}", h.JobDetails)
+	protected.HandleFunc(http.MethodPatch+" /jobs/{id}", h.UpdateJob)
+	protected.HandleFunc(http.MethodPost+" /jobs/{id}/notes", h.AddNote)
+	protected.HandleFunc(http.MethodGet+" /signout", h.Signout)
+	protected.HandleFunc(http.MethodGet+" /settings", h.Settings)
+	protected.HandleFunc(http.MethodPost+" /settings/changePassword", h.ChangePassword)
+	protected.HandleFunc(http.MethodPost+" /settings/logoutSessions", h.LogoutSessions)
+	protected.HandleFunc(http.MethodPost+" /settings/deleteAccount", h.DeleteAccount)
 
-	protected.HandleFunc("/", h.Main).Methods(http.MethodGet)
-	protected.HandleFunc("/stats", h.GetStats).Methods(http.MethodGet)
-	protected.HandleFunc("/jobs", h.AddJob).Methods(http.MethodPost)
-	protected.HandleFunc("/jobs", h.GetJobs).Methods(http.MethodGet)
-	protected.HandleFunc("/jobs/{id}", h.JobDetails).Methods(http.MethodGet)
-	protected.HandleFunc("/jobs/{id}", h.UpdateJob).Methods(http.MethodPatch)
-	protected.HandleFunc("/jobs/{id}/notes", h.AddNote).Methods(http.MethodPost)
-	protected.HandleFunc("/signout", h.Signout).Methods(http.MethodGet)
-	protected.HandleFunc("/settings", h.Settings).Methods(http.MethodGet)
-	protected.HandleFunc("/settings/changePassword", h.ChangePassword).Methods(http.MethodPost)
-	protected.HandleFunc("/settings/logoutSessions", h.LogoutSessions).Methods(http.MethodPost)
-	protected.HandleFunc("/settings/deleteAccount", h.DeleteAccount).Methods(http.MethodPost)
+	router.Handle("/", authMiddleware.Middleware(protected))
 
-	return r
+	loggingMiddleware := middleware.LoggingMiddleware{Logger: logger}
+	return loggingMiddleware.Middleware(router)
 }
 
 func getVersion() string {

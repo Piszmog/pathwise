@@ -15,7 +15,6 @@ import (
 	"github.com/Piszmog/pathwise/types"
 	"github.com/Piszmog/pathwise/utils"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
 )
 
 const (
@@ -98,8 +97,7 @@ func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		h.Logger.Error("failed to parse id", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -216,8 +214,7 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		h.Logger.Error("failed to parse id", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -323,8 +320,7 @@ func (h *Handler) AddNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
+	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		h.Logger.Error("failed to parse id", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
