@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
-	_ "github.com/libsql/libsql-client-go/libsql"
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
 type Database interface {
