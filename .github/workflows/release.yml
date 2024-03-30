@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - run: |
+          echo "::notice::Releasing ${{ github.event.inputs.version }}"
       - name: Create Tag
         uses: negz/create-tag@v1
         with:
