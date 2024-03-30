@@ -138,6 +138,7 @@ jobs:
           workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ secrets.GCP_WORKLOAD_POOL_ID }}/providers/${{ secrets.GCP_WORKLOAD_PROVIDER_ID }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_NAME }}@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com
       - id: 'deploy'
-        uses: 'google-github-actions/deploy-appengine@v2'
+        uses: 'google-github-actions/deploy-appengine@v1'
         with:
           version: ${{ env.VERSION_GCP }}
+          flags: --no-cache
