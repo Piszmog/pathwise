@@ -1,21 +1,18 @@
 package router
 
 import (
-	"embed"
 	"log/slog"
 	"net/http"
-	"os"
 
 	"github.com/Piszmog/pathwise/db"
 	"github.com/Piszmog/pathwise/db/store"
+	"github.com/Piszmog/pathwise/dist"
 	"github.com/Piszmog/pathwise/server/handler"
 	"github.com/Piszmog/pathwise/server/middleware"
 )
 
-func New(logger *slog.Logger, database db.Database, assets embed.FS, sessionStore *store.SessionStore) http.Handler {
-	version := getVersion()
+func New(logger *slog.Logger, database db.Database, sessionStore *store.SessionStore) http.Handler {
 	h := &handler.Handler{
-		Version:                          version,
 		Logger:                           logger,
 		JobApplicationStore:              &store.JobApplicationStore{Database: database},
 		JobApplicationNoteStore:          &store.JobApplicationNoteStore{Database: database},
@@ -26,8 +23,7 @@ func New(logger *slog.Logger, database db.Database, assets embed.FS, sessionStor
 	}
 
 	router := http.NewServeMux()
-	cache := middleware.CacheControlMiddleware{Version: version}
-	router.Handle(http.MethodGet+" /assets/", cache.Middleware(http.FileServer(http.FS(assets))))
+	router.Handle(http.MethodGet+" /assets/", middleware.Cache(http.FileServer(http.FS(dist.AssetsDir))))
 	router.HandleFunc(http.MethodGet+" /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/assets/img/favicon.ico", http.StatusSeeOther)
 	})
@@ -58,12 +54,4 @@ func New(logger *slog.Logger, database db.Database, assets embed.FS, sessionStor
 
 	loggingMiddleware := middleware.LoggingMiddleware{Logger: logger}
 	return loggingMiddleware.Middleware(router)
-}
-
-func getVersion() string {
-	version := os.Getenv("VERSION")
-	if version == "" {
-		version = "dev"
-	}
-	return version
 }

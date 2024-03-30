@@ -23,7 +23,7 @@ tmp_dir = "tmp"
   post_cmd = []
   pre_cmd = [
     "templ generate -path ./components",
-    "tailwindcss -i ./styles/input.css -o ./assets/css/output@dev.css",
+    "tailwindcss -i ./styles/input.css -o ./dist/assets/css/output@dev.css",
   ]
   rerun = true
   rerun_delay = 500

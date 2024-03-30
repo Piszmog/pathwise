@@ -1,14 +1,14 @@
 package components
 
-templ Main(version string) {
+templ Main() {
 	<!DOCTYPE html>
 	<html lang="en">
-		@Head(version)
-		@body(version)
+		@Head()
+		@body()
 	</html>
 }
 
-templ body(version string) {
+templ body() {
 	<body>
 		<main>
 			<style type="text/css">
@@ -23,7 +23,7 @@ templ body(version string) {
 			@drawer("new-job", "New Job Application") {
 				@jobApplicationForm()
 			}
-			@footer(version)
+			@footer()
 		</main>
 	</body>
 }

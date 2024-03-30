@@ -2,10 +2,7 @@ package db
 
 import (
 	"database/sql"
-	"fmt"
 	"log/slog"
-
-	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
 type Database interface {
@@ -14,26 +11,13 @@ type Database interface {
 	Close() error
 }
 
-func New(logger *slog.Logger, dbType DatabaseType, opts DatabaseOpts) (Database, error) {
-	switch dbType {
-	case DatabaseTypeFile:
-		return newFileDB(logger, opts.URL)
-	case DatabaseTypeTurso:
-		return newTursoDB(logger, opts.URL, opts.Token)
-	case DatabaseTypeURL:
-		return newURLDB(logger, opts.URL)
-	default:
-		return nil, fmt.Errorf("unknown database type: %s", dbType)
+func New(logger *slog.Logger, opts DatabaseOpts) (Database, error) {
+	if opts.Token == "" {
+		return newLocalDB(logger, opts.URL)
+	} else {
+		return newRemoteDB(logger, opts.URL, opts.Token)
 	}
 }
-
-type DatabaseType string
-
-const (
-	DatabaseTypeFile  DatabaseType = "file"
-	DatabaseTypeTurso DatabaseType = "turso"
-	DatabaseTypeURL   DatabaseType = "url"
-)
 
 type DatabaseOpts struct {
 	URL   string

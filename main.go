@@ -1,7 +1,6 @@
 package main
 
 import (
-	"embed"
 	"os"
 
 	"github.com/Piszmog/pathwise/auth"
@@ -12,31 +11,18 @@ import (
 	"github.com/Piszmog/pathwise/server/router"
 )
 
-//go:embed assets/*
-var assets embed.FS
-
 func main() {
 	l := logger.New(os.Getenv("LOG_LEVEL"))
 
-	databaseType := getDatabaseType()
-
-	var database db.Database
-	var err error
-	switch databaseType {
-	case db.DatabaseTypeFile:
-		l.Info("using file database")
-		database, err = db.New(l, db.DatabaseTypeFile, db.DatabaseOpts{URL: "./db.sqlite3"})
-	case db.DatabaseTypeTurso:
-		l.Info("using turso database")
-		database, err = db.New(
-			l,
-			db.DatabaseTypeTurso,
-			db.DatabaseOpts{URL: os.Getenv("DB_URL"), Token: os.Getenv("DB_TOKEN")},
-		)
-	default:
-		l.Error("unknown database type", "type", databaseType)
-		return
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		dbURL = "./db.sqlite3"
 	}
+
+	database, err := db.New(
+		l,
+		db.DatabaseOpts{URL: dbURL, Token: os.Getenv("DB_TOKEN")},
+	)
 
 	if err != nil {
 		l.Error("failed to create database", "error", err)
@@ -56,7 +42,7 @@ func main() {
 	}
 	go sessionJanitor.Run()
 
-	r := router.New(l, database, assets, sessionStore)
+	r := router.New(l, database, sessionStore)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -64,12 +50,4 @@ func main() {
 	}
 
 	server.New(l, ":"+port, server.WithHandler(r)).StartAndWait()
-}
-
-func getDatabaseType() db.DatabaseType {
-	dbType := os.Getenv("DB_TYPE")
-	if dbType == "" {
-		return db.DatabaseTypeFile
-	}
-	return db.DatabaseType(dbType)
 }

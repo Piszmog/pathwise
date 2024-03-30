@@ -1,14 +1,14 @@
 package middleware
 
-import "net/http"
+import (
+	"net/http"
 
-type CacheControlMiddleware struct {
-	Version string
-}
+	"github.com/Piszmog/pathwise/version"
+)
 
-func (m *CacheControlMiddleware) Middleware(next http.Handler) http.Handler {
+func Cache(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if m.Version == "dev" {
+		if version.Value == "dev" {
 			w.Header().Set("Cache-Control", "no-cache")
 		} else {
 			w.Header().Set("Cache-Control", "public, max-age=31536000")

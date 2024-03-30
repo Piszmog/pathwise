@@ -1,6 +1,8 @@
 package components
 
-templ Head(version string) {
+import "github.com/Piszmog/pathwise/version"
+
+templ Head() {
 	<head>
 		<meta charset="UTF-8"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -8,6 +10,6 @@ templ Head(version string) {
 		<title>Pathwise</title>
 		<script src="/assets/js/htmx@1.9.8.min.js"></script>
 		<script src="/assets/js/ext-response-targets@1.9.8.min.js"></script>
-		<link href={ "/assets/css/output@" + version + ".css" } rel="stylesheet"/>
+		<link href={ "/assets/css/output@" + version.Value + ".css" } rel="stylesheet"/>
 	</head>
 }

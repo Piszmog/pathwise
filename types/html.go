@@ -1,12 +1,12 @@
 package types
 
 type SelectOpts struct {
-	Options     []SelectOption
-	Err         error
 	Name        string
 	Label       string
 	Placeholder string
 	Value       string
+	Err         error
+	Options     []SelectOption
 	Required    bool
 }
 

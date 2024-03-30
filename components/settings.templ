@@ -2,14 +2,14 @@ package components
 
 import "github.com/Piszmog/pathwise/types"
 
-templ Settings(version string, user types.User) {
+templ Settings(user types.User) {
 	<!DOCTYPE html>
 	<html lang="en">
-		@Head(version)
+		@Head()
 		<main>
 			@header(false)
 			@settings(user)
-			@footer(version)
+			@footer()
 		</main>
 	</html>
 }
@@ -44,12 +44,12 @@ templ settings(user types.User) {
 				<p class="mt-1 text-sm leading-6 text-gray-400">Update your password associated with your account.</p>
 			</div>
 			<form
- 				id="change-password-form"
- 				class="md:col-span-2"
- 				hx-post="/settings/changePassword"
- 				hx-ext="response-targets"
- 				hx-target-error="#change-password-error"
- 				hx-on::after-request="this.reset()"
+				id="change-password-form"
+				class="md:col-span-2"
+				hx-post="/settings/changePassword"
+				hx-ext="response-targets"
+				hx-target-error="#change-password-error"
+				hx-on::after-request="this.reset()"
 			>
 				<div id="change-password-error"></div>
 				<div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
@@ -57,12 +57,12 @@ templ settings(user types.User) {
 						<label for="currentPassword" class="block text-sm font-medium leading-6 text-gray-900">Current password</label>
 						<div class="mt-2">
 							<input
- 								id="currentPassword"
- 								name="currentPassword"
- 								type="password"
- 								autocomplete="currentPassword"
- 								required
- 								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+								id="currentPassword"
+								name="currentPassword"
+								type="password"
+								autocomplete="currentPassword"
+								required
+								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
 							/>
 						</div>
 					</div>
@@ -70,15 +70,15 @@ templ settings(user types.User) {
 						<label for="newPassword" class="block text-sm font-medium leading-6 text-gray-900">New password</label>
 						<div class="mt-2">
 							<input
- 								id="newPassword"
- 								name="newPassword"
- 								type="password"
- 								autocomplete="newPassword"
- 								minLength="12"
- 								pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{12,}"
- 								title="Must contain at least one number, one uppercase letter, one special character (!@#$%^&*), and at least 12 or more characters"
- 								required
- 								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+								id="newPassword"
+								name="newPassword"
+								type="password"
+								autocomplete="newPassword"
+								minLength="12"
+								pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{12,}"
+								title="Must contain at least one number, one uppercase letter, one special character (!@#$%^&*), and at least 12 or more characters"
+								required
+								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
 							/>
 						</div>
 					</div>
@@ -86,15 +86,15 @@ templ settings(user types.User) {
 						<label for="confirmPassword" class="block text-sm font-medium leading-6 text-gray-900">Confirm password</label>
 						<div class="mt-2">
 							<input
- 								id="confirmPassword"
- 								name="confirmPassword"
- 								type="password"
- 								autocomplete="confirmPassword"
- 								minLength="12"
- 								pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{12,}"
- 								title="Must contain at least one number, one uppercase letter, one special character (!@#$%^&*), and at least 12 or more characters"
- 								required
- 								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+								id="confirmPassword"
+								name="confirmPassword"
+								type="password"
+								autocomplete="confirmPassword"
+								minLength="12"
+								pattern="(?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{12,}"
+								title="Must contain at least one number, one uppercase letter, one special character (!@#$%^&*), and at least 12 or more characters"
+								required
+								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
 							/>
 						</div>
 					</div>
@@ -110,12 +110,12 @@ templ settings(user types.User) {
 				<p class="mt-1 text-sm leading-6 text-gray-400">Please enter your password to confirm you would like to log out of your other sessions across all of your devices.</p>
 			</div>
 			<form
- 				id="logout-account-form"
- 				class="md:col-span-2"
- 				hx-post="/settings/logoutSessions"
- 				hx-ext="response-targets"
- 				hx-target-error="#logout-account-error"
- 				hx-on::after-request="this.reset()"
+				id="logout-account-form"
+				class="md:col-span-2"
+				hx-post="/settings/logoutSessions"
+				hx-ext="response-targets"
+				hx-target-error="#logout-account-error"
+				hx-on::after-request="this.reset()"
 			>
 				<div id="logout-account-error"></div>
 				<div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
@@ -137,12 +137,12 @@ templ settings(user types.User) {
 				<p class="mt-1 text-sm leading-6 text-gray-400">No longer want to use our service? You can delete your account here. This action is not reversible. All information related to this account will be deleted permanently.</p>
 			</div>
 			<form
- 				id="delete-account-form"
- 				class="md:col-span-2"
- 				hx-post="/settings/deleteAccount"
- 				hx-ext="response-targets"
- 				hx-target-error="#delete-account-error"
- 				hx-on::after-request="this.reset()"
+				id="delete-account-form"
+				class="md:col-span-2"
+				hx-post="/settings/deleteAccount"
+				hx-ext="response-targets"
+				hx-target-error="#delete-account-error"
+				hx-on::after-request="this.reset()"
 			>
 				<div id="delete-account-error"></div>
 				<div class="grid grid-cols-1 gap-x-6 gap-y-8 sm:max-w-xl sm:grid-cols-6">
