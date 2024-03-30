@@ -37,6 +37,7 @@ jobs:
         run: go test -race ./...
   docker-publish:
     name: Publish Docker
+    runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs:
       - lint
