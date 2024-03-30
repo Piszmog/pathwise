@@ -35,6 +35,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    needs:
+      - release
     steps:
       - uses: actions/checkout@v4
       - uses: docker/login-action@v3
@@ -61,6 +63,8 @@ jobs:
     permissions:
       contents: 'read'
       id-token: 'write'
+    needs:
+      - release
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
