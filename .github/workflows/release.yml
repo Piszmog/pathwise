@@ -112,6 +112,8 @@ jobs:
       # For service account, grant access to principal
       #   - New principals:  principalSet://iam.googleapis.com/projects/<project number>/locations/global/workloadIdentityPools/<pool id>/attribute.repository/<github owner>/<github repo>
       #   - Role: Workload Identity User
+      #
+      # Enable App Engine Admin API
       - id: 'auth'
         uses: 'google-github-actions/auth@v2'
         with:
