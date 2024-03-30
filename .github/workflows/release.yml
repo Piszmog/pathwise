@@ -99,26 +99,6 @@ jobs:
       # Service Account User
       # Storage Admin
       #
-      # - appengine
-      #   - applications.get
-      #   - operations.get
-      #   - services.list
-      #   - services.update
-      #   - versions.create
-      #   - versions.get
-      #   - versions.list
-      # - cloudbuild
-      #   - builds.create
-      #   - builds.get
-      # - iam
-      #   - serviceAccounts.actAs
-      # - storage
-      #   - buckets.get
-      #   - objects.create
-      #   - objects.delete
-      #   - objects.get
-      #   - objects.list
-      #
       # Create a Workload Identity Pool
       # Create a provider for pool
       # - ODIC
@@ -137,8 +117,6 @@ jobs:
         with:
           workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ secrets.GCP_WORKLOAD_POOL_ID }}/providers/${{ secrets.GCP_WORKLOAD_PROVIDER_ID }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_NAME }}@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com
-      - run: |
-          gcloud components install app-engine-go
       - id: 'deploy'
         uses: 'google-github-actions/deploy-appengine@v2'
         with:
