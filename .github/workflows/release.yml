@@ -128,6 +128,10 @@ jobs:
       #   - google.subject: assertion.sub
       #   - attribute.actor: assertion.actor
       #   - attribute.repository: assertion.repository
+      #
+      # For service account, grant access to principal
+      #   - New principals:  principalSet://iam.googleapis.com/projects/<project number>/locations/global/workloadIdentityPools/<pool id>/attribute.repository/<github owner>/<github repo>
+      #   - Role: Workload Identity User
       - id: 'auth'
         uses: 'google-github-actions/auth@v2'
         with:
@@ -137,4 +141,3 @@ jobs:
         uses: 'google-github-actions/deploy-appengine@v2'
         with:
           version: ${{ env.VERSION_GCP }}
-          flags: --no-cache
