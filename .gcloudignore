@@ -63,3 +63,8 @@ Makefile
 version.txt
 tailwindcss
 components/*.templ
+Dockerfile
+README.md
+tailwind.config.js
+LICENSE
+styles/
