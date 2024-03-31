@@ -98,6 +98,7 @@ jobs:
       # Cloud Build Editor
       # Service Account User
       # Storage Admin
+      # Artifact Registry Reader
       #
       # Create a Workload Identity Pool
       # Create a provider for pool
@@ -119,14 +120,7 @@ jobs:
         with:
           workload_identity_provider: projects/${{ secrets.GCP_PROJECT_NUMBER }}/locations/global/workloadIdentityPools/${{ secrets.GCP_WORKLOAD_POOL_ID }}/providers/${{ secrets.GCP_WORKLOAD_PROVIDER_ID }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_NAME }}@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com
-      - name: Setup Cloud SDK
-        uses: 'google-github-actions/setup-gcloud@v2'
-        with:
-          version: '>= 416.0.0'
-          install_components: 'app-engine-go'
       - id: 'deploy'
         uses: 'google-github-actions/deploy-appengine@v2'
-        env:
-          CLOUDSDK_APP_CLOUD_BUILD_TIMEOUT: 600
         with:
           version: ${{ env.VERSION_GCP }}
