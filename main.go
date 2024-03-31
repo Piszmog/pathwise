@@ -9,6 +9,7 @@ import (
 	"github.com/Piszmog/pathwise/logger"
 	"github.com/Piszmog/pathwise/server"
 	"github.com/Piszmog/pathwise/server/router"
+	"github.com/Piszmog/pathwise/version"
 )
 
 func main() {
@@ -33,6 +34,11 @@ func main() {
 	if err = db.Init(database); err != nil {
 		l.Error("failed to initialize database", "error", err)
 		return
+	}
+
+	v := os.Getenv("VERSION")
+	if v != "" {
+		version.Value = v
 	}
 
 	sessionStore := &store.SessionStore{Database: database}
