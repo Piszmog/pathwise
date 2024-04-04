@@ -35,17 +35,14 @@ func (s *SessionStore) Get(ctx context.Context, token string) (types.Session, er
 	return scanSession(row)
 }
 
-const sessionGetQuery = `SELECT id, created_at, updated_at, expires_at, token, user_agent, user_id FROM sessions WHERE token = ?`
+const sessionGetQuery = `SELECT created_at, expires_at, token, user_id FROM sessions WHERE token = ?`
 
 func scanSession(row *sql.Row) (types.Session, error) {
 	var session types.Session
 	err := row.Scan(
-		&session.ID,
 		&session.CreatedAt,
-		&session.UpdatedAt,
 		&session.ExpiresAt,
 		&session.Token,
-		&session.UserAgent,
 		&session.UserID,
 	)
 	return session, err

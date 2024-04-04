@@ -24,21 +24,19 @@ func (s *UserStore) GetByEmail(ctx context.Context, email string) (types.User, e
 	return scanUser(row)
 }
 
-const userGetQuery = `SELECT id, created_at, updated_at, email, password FROM users WHERE email = ?`
+const userGetQuery = `SELECT id, email, password FROM users WHERE email = ?`
 
 func (s *UserStore) GetByID(ctx context.Context, id int64) (types.User, error) {
 	row := s.Database.DB().QueryRowContext(ctx, userGetByIDQuery, id)
 	return scanUser(row)
 }
 
-const userGetByIDQuery = `SELECT id, created_at, updated_at, email, password FROM users WHERE id = ?`
+const userGetByIDQuery = `SELECT id, email, password FROM users WHERE id = ?`
 
 func scanUser(row *sql.Row) (types.User, error) {
 	var user types.User
 	err := row.Scan(
 		&user.ID,
-		&user.CreatedAt,
-		&user.UpdatedAt,
 		&user.Email,
 		&user.Password,
 	)
