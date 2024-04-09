@@ -4,32 +4,32 @@ import (
 	"strconv"
 )
 
-templ note(id int) {
+templ note(id int64) {
 	<form
- 		id="note-form"
- 		class="relative flex-auto"
- 		hx-post={ "/jobs/" + strconv.Itoa(id) + "/notes" }
- 		hx-on::after-request="this.reset()"
- 		hx-target="#timeline-list"
- 		hx-swap="afterbegin"
+		id="note-form"
+		class="relative flex-auto"
+		hx-post={ "/jobs/" + strconv.FormatInt(id, 10) + "/notes" }
+		hx-on::after-request="this.reset()"
+		hx-target="#timeline-list"
+		hx-swap="afterbegin"
 	>
 		<div
- 			class="overflow-hidden rounded-lg pb-12 shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-blue-600"
+			class="overflow-hidden rounded-lg pb-12 shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-blue-600"
 		>
 			<label for="note" class="sr-only">Add a note</label>
 			<textarea
- 				rows="2"
- 				name="note"
- 				id="note"
- 				class="block w-full resize-none border-0 bg-transparent py-1.5 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
- 				placeholder="Add a note..."
- 				required
+				rows="2"
+				name="note"
+				id="note"
+				class="block w-full resize-none border-0 bg-transparent py-1.5 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+				placeholder="Add a note..."
+				required
 			></textarea>
 		</div>
 		<div class="absolute inset-x-0 bottom-0 flex justify-between py-2 pl-3 pr-2">
 			<button
- 				type="submit"
- 				class="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+				type="submit"
+				class="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
 			>
 				Add
 			</button>

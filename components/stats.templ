@@ -1,6 +1,7 @@
 package components
 
 import "github.com/Piszmog/pathwise/types"
+import "strconv"
 
 templ loadingStats() {
 	<div hx-get="/stats" hx-trigger="load">
@@ -35,31 +36,31 @@ templ Stats(s types.StatsOpts, isLoading bool, oob string) {
 templ statsBreakdown(s types.StatsOpts, isLoading bool) {
 	<dl class="mx-auto grid grid-cols-1 gap-px bg-gray-900/5 sm:grid-cols-5 lg:grid-cols-5">
 		<div
- 			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
+			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
 		>
 			<dt class="text-sm font-medium leading-6 text-gray-500">Total Applications</dt>
 			<dd class="w-full flex-none text-2xl font-medium leading-10 tracking-tight text-gray-900">
-				{ s.TotalApplications }
+				{ strconv.FormatInt(s.TotalApplications, 10) }
 			</dd>
 		</div>
 		<div
- 			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
+			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
 		>
 			<dt class="text-sm font-medium leading-6 text-gray-500">Total Companies</dt>
 			<dd class="w-full flex-none text-2xl font-medium leading-10 tracking-tight text-gray-900">
-				{ s.TotalCompanies }
+				{ strconv.FormatInt(s.TotalCompanies,10) }
 			</dd>
 		</div>
 		<div
- 			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
+			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
 		>
 			<dt class="text-sm font-medium leading-6 text-gray-500">Average time to hear back</dt>
 			<dd class="w-full flex-none text-2xl font-medium leading-10 tracking-tight text-gray-900">
-				{ s.AverageTimeToHearBackInDays } days
+				{ strconv.FormatInt(s.AverageTimeToHearBackInDays,10) } days
 			</dd>
 		</div>
 		<div
- 			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
+			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
 		>
 			<dt class="text-sm font-medium leading-6 text-gray-500">Interview Rate</dt>
 			<dd class="w-full flex-none text-2xl font-medium leading-10 tracking-tight text-gray-900">
@@ -67,7 +68,7 @@ templ statsBreakdown(s types.StatsOpts, isLoading bool) {
 			</dd>
 		</div>
 		<div
- 			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
+			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
 		>
 			<dt class="text-sm font-medium leading-6 text-gray-500">Rejection Rate</dt>
 			<dd class="w-full flex-none text-2xl font-medium leading-10 tracking-tight text-gray-900">

@@ -11,32 +11,32 @@ templ pagination(paginationOpts types.PaginationOpts, filterOpts types.FilterOpt
 		<div class="hidden sm:block">
 			<p class="text-sm text-gray-700">
 				Showing
-				<span class="font-medium">{ strconv.Itoa(utils.GetActualMin(paginationOpts.Page * paginationOpts.PerPage + 1, paginationOpts.Total)) }</span>
+				<span class="font-medium">{ strconv.FormatInt(utils.GetActualMin(paginationOpts.Page * paginationOpts.PerPage + 1, paginationOpts.Total), 10) }</span>
 				to
-				<span class="font-medium">{ strconv.Itoa(utils.GetActualMax((paginationOpts.Page+1) * paginationOpts.PerPage, paginationOpts.Total)) }</span>
+				<span class="font-medium">{ strconv.FormatInt(utils.GetActualMax((paginationOpts.Page+1) * paginationOpts.PerPage, paginationOpts.Total), 10) }</span>
 				of
-				<span class="font-medium">{ strconv.Itoa(paginationOpts.Total) }</span>
+				<span class="font-medium">{ strconv.FormatInt(paginationOpts.Total,10) }</span>
 				results
 			</p>
 		</div>
 		<div class="flex flex-1 justify-between sm:justify-end">
 			<button
- 				type="button"
- 				class="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
- 				disabled?={ paginationOpts.Page == 0 }
- 				hx-get={ "/jobs?page=" + strconv.Itoa(paginationOpts.Page-1) + "&per_page=" + strconv.Itoa(paginationOpts.PerPage) + "&company=" + filterOpts.Company + "&status=" + filterOpts.Status.String() }
- 				hx-target="#jobs"
- 				hx-trigger="click"
+				type="button"
+				class="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+				disabled?={ paginationOpts.Page == 0 }
+				hx-get={ "/jobs?page=" + strconv.FormatInt(paginationOpts.Page-1, 10) + "&per_page=" + strconv.FormatInt(paginationOpts.PerPage, 10) + "&company=" + filterOpts.Company + "&status=" + filterOpts.Status.String() }
+				hx-target="#jobs"
+				hx-trigger="click"
 			>
 				Previous
 			</button>
 			<button
- 				type="button"
- 				class="relative ml-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
- 				disabled?={ paginationOpts.Total <= (paginationOpts.Page+1) * paginationOpts.PerPage }
- 				hx-get={ "/jobs?page=" + strconv.Itoa(paginationOpts.Page+1) + "&per_page=" + strconv.Itoa(paginationOpts.PerPage) + "&company=" + filterOpts.Company + "&status=" + filterOpts.Status.String() }
- 				hx-target="#jobs"
- 				hx-trigger="click"
+				type="button"
+				class="relative ml-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+				disabled?={ paginationOpts.Total <= (paginationOpts.Page+1) * paginationOpts.PerPage }
+				hx-get={ "/jobs?page=" + strconv.FormatInt(paginationOpts.Page+1, 10) + "&per_page=" + strconv.FormatInt(paginationOpts.PerPage, 10) + "&company=" + filterOpts.Company + "&status=" + filterOpts.Status.String() }
+				hx-target="#jobs"
+				hx-trigger="click"
 			>
 				Next
 			</button>

@@ -13,16 +13,16 @@ type JobApplication struct {
 	Title     string
 	URL       string
 	Status    JobApplicationStatus
-	ID        int
-	UserID    int
+	ID        int64
+	UserID    int64
 }
 
-func (j JobApplication) RecordID() int {
+func (j JobApplication) RecordID() int64 {
 	return j.ID
 }
 
 type JobApplicationTimelineEntry interface {
-	RecordID() int
+	RecordID() int64
 	Type() JobApplicationTimelineType
 	Created() time.Time
 }
@@ -51,11 +51,11 @@ type JobApplicationStatusHistory struct {
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 	Status           JobApplicationStatus
-	ID               int
-	JobApplicationID int
+	ID               int64
+	JobApplicationID int64
 }
 
-func (j JobApplicationStatusHistory) RecordID() int {
+func (j JobApplicationStatusHistory) RecordID() int64 {
 	return j.ID
 }
 
@@ -71,11 +71,11 @@ type JobApplicationNote struct {
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 	Note             string
-	ID               int
-	JobApplicationID int
+	ID               int64
+	JobApplicationID int64
 }
 
-func (j JobApplicationNote) RecordID() int {
+func (j JobApplicationNote) RecordID() int64 {
 	return j.ID
 }
 

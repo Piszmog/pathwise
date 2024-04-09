@@ -4,7 +4,7 @@ import (
 	"github.com/Piszmog/pathwise/types"
 )
 
-func GetFirstElementID[T types.Record](vals []T) int {
+func GetFirstElementID[T types.Record](vals []T) int64 {
 	if len(vals) == 0 {
 		return 0
 	}

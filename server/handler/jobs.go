@@ -1,0 +1,188 @@
+package handler
+
+import (
+	"context"
+	"net/http"
+	"strconv"
+
+	"github.com/Piszmog/pathwise/components"
+	"github.com/Piszmog/pathwise/db/queries"
+	"github.com/Piszmog/pathwise/types"
+)
+
+func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserID(r)
+	if err != nil {
+		h.Logger.Error("failed to parse user id", "error", err)
+		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Something went wrong", "Bad request."))
+		return
+	}
+
+	page, perPage, err := getPageOpts(r)
+	if err != nil {
+		h.Logger.Error("failed to get page opts", "error", err)
+		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Something went wrong", "Bad request."))
+		return
+	}
+	filterOpts := getFilterOpts(r)
+
+	jobs, total, err := h.filterJobs(r.Context(), userID, filterOpts, page, perPage)
+	if err != nil {
+		h.Logger.Error("failed to get jobs", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	h.html(r.Context(), w, http.StatusOK, components.Jobs(
+		jobs,
+		types.PaginationOpts{Page: page, PerPage: perPage, Total: total},
+		filterOpts,
+	))
+}
+
+func getFilterOpts(r *http.Request) types.FilterOpts {
+	queries := r.URL.Query()
+	return types.FilterOpts{
+		Company: queries.Get("company"),
+		Status:  types.ToJobApplicationStatus(queries.Get("status")),
+	}
+}
+
+func getPageOpts(r *http.Request) (int64, int64, error) {
+	queries := r.URL.Query()
+	pageQuery := queries.Get("page")
+	perPageQuery := queries.Get("per_page")
+	page := defaultPage
+	var err error
+	if pageQuery != "" {
+		page, err = strconv.ParseInt(pageQuery, 10, 64)
+		if err != nil {
+			return 0, 0, err
+		}
+	}
+	perPage := defaultPerPage
+	if perPageQuery != "" {
+		perPage, err = strconv.ParseInt(perPageQuery, 10, 64)
+		if err != nil {
+			return 0, 0, err
+		}
+	}
+	return page, perPage, nil
+}
+
+func (h Handler) filterJobs(ctx context.Context, userID int64, filterOpts types.FilterOpts, page int64, perPage int64) ([]types.JobApplication, int64, error) {
+	offset := page * perPage
+	if filterOpts.Company != "" && filterOpts.Status != "" {
+		return h.getJobApplictionsByUserIDAndCompanyAndStatus(ctx, userID, filterOpts.Company, filterOpts.Status, perPage, offset)
+	} else if filterOpts.Company != "" && filterOpts.Status == "" {
+		return h.getJobApplicationsByUserIDAndStatus(ctx, userID, filterOpts.Status, perPage, offset)
+	} else {
+		return h.getJobApplicationsByUserID(ctx, userID, perPage, offset)
+	}
+}
+
+func (h *Handler) getJobApplictionsByUserIDAndCompanyAndStatus(ctx context.Context, userID int64, company string, status types.JobApplicationStatus, perPage, offset int64) ([]types.JobApplication, int64, error) {
+	j, err := h.Database.Queries().GetJobApplicationsByUserIDAndCompanyAndStatus(
+		ctx,
+		queries.GetJobApplicationsByUserIDAndCompanyAndStatusParams{
+			UserID:  userID,
+			Company: company,
+			Status:  status.String(),
+			Limit:   perPage,
+			Offset:  offset,
+		},
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	jobs := make([]types.JobApplication, len(j))
+	for i, job := range j {
+		jobs[i] = types.JobApplication{
+			ID:        job.ID,
+			Company:   job.Company,
+			Title:     job.Title,
+			URL:       job.Url,
+			Status:    types.ToJobApplicationStatus(job.Status),
+			AppliedAt: job.AppliedAt,
+			UpdatedAt: job.UpdatedAt,
+		}
+	}
+
+	total, err := h.Database.Queries().CountJobApplicationsByUserIDAndCompanyAndStatus(ctx, queries.CountJobApplicationsByUserIDAndCompanyAndStatusParams{
+		UserID:  userID,
+		Company: company,
+		Status:  status.String(),
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	return jobs, total, nil
+}
+
+func (h *Handler) getJobApplicationsByUserIDAndStatus(ctx context.Context, userID int64, status types.JobApplicationStatus, perPage, offset int64) ([]types.JobApplication, int64, error) {
+	j, err := h.Database.Queries().GetJobApplicationsByUserIDAndStatus(
+		ctx,
+		queries.GetJobApplicationsByUserIDAndStatusParams{
+			UserID: userID,
+			Status: status.String(),
+			Limit:  perPage,
+			Offset: offset,
+		},
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	jobs := make([]types.JobApplication, len(j))
+	for i, job := range j {
+		jobs[i] = types.JobApplication{
+			ID:        job.ID,
+			Company:   job.Company,
+			Title:     job.Title,
+			URL:       job.Url,
+			Status:    types.ToJobApplicationStatus(job.Status),
+			AppliedAt: job.AppliedAt,
+			UpdatedAt: job.UpdatedAt,
+		}
+	}
+	total, err := h.Database.Queries().CountJobApplicationsByUserIDAndStatus(ctx, queries.CountJobApplicationsByUserIDAndStatusParams{
+		UserID: userID,
+		Status: status.String(),
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return jobs, total, nil
+}
+
+func (h *Handler) getJobApplicationsByUserID(ctx context.Context, userID int64, perPage, offset int64) ([]types.JobApplication, int64, error) {
+	j, err := h.Database.Queries().GetJobApplicationsByUserID(
+		ctx,
+		queries.GetJobApplicationsByUserIDParams{
+			UserID: userID,
+			Limit:  perPage,
+			Offset: offset,
+		},
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	jobs := make([]types.JobApplication, len(j))
+	for i, job := range j {
+		jobs[i] = types.JobApplication{
+			ID:        job.ID,
+			Company:   job.Company,
+			Title:     job.Title,
+			URL:       job.Url,
+			Status:    types.ToJobApplicationStatus(job.Status),
+			AppliedAt: job.AppliedAt,
+			UpdatedAt: job.UpdatedAt,
+		}
+	}
+	total, err := h.Database.Queries().CountJobApplicationsByUserID(ctx, userID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return jobs, total, nil
+}

@@ -2,17 +2,26 @@ package db
 
 import (
 	"database/sql"
-	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	"log/slog"
+
+	"github.com/Piszmog/pathwise/db/queries"
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
 
 type RemoteDB struct {
-	logger *slog.Logger
-	db     *sql.DB
+	logger  *slog.Logger
+	db      *sql.DB
+	queries *queries.Queries
 }
+
+var _ Database = (*RemoteDB)(nil)
 
 func (d *RemoteDB) DB() *sql.DB {
 	return d.db
+}
+
+func (d *RemoteDB) Queries() *queries.Queries {
+	return d.queries
 }
 
 func (d *RemoteDB) Logger() *slog.Logger {
@@ -28,5 +37,5 @@ func newRemoteDB(logger *slog.Logger, name string, token string) (*RemoteDB, err
 	if err != nil {
 		return nil, err
 	}
-	return &RemoteDB{logger: logger, db: db}, nil
+	return &RemoteDB{logger: logger, db: db, queries: queries.New(db)}, nil
 }

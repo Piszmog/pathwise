@@ -7,12 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Piszmog/pathwise/db/store"
+	"github.com/Piszmog/pathwise/db"
+	"github.com/Piszmog/pathwise/db/queries"
 )
 
 type AuthMiddleware struct {
-	Logger       *slog.Logger
-	SessionStore *store.SessionStore
+	Logger   *slog.Logger
+	Database db.Database
 }
 
 func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
@@ -33,7 +34,7 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		session, err := m.SessionStore.Get(r.Context(), cookie.Value)
+		session, err := m.Database.Queries().GetSessionByToken(r.Context(), cookie.Value)
 		if err != nil {
 			if err != sql.ErrNoRows {
 				m.Logger.Error("failed to get session", "err", err)
@@ -47,7 +48,7 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 
 		if session.ExpiresAt.Before(time.Now()) {
 			m.Logger.Debug("session expired", "session", session)
-			err = m.SessionStore.DeleteByToken(r.Context(), cookie.Value)
+			err = m.Database.Queries().DeleteSessionByToken(r.Context(), cookie.Value)
 			if err != nil {
 				m.Logger.Error("failed to delete session", "err", err)
 			}
@@ -60,7 +61,7 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 
 		if session.ExpiresAt.Sub(session.CreatedAt) < 5 {
 			m.Logger.Debug("refreshing session", "session", session)
-			err = m.SessionStore.Refresh(r.Context(), session.Token, session.ExpiresAt.Add(24*7))
+			err = m.Database.Queries().UpdateSessionExpiresAt(r.Context(), queries.UpdateSessionExpiresAtParams{Token: session.Token, ExpiresAt: session.ExpiresAt.Add(24 * 7)})
 			if err != nil {
 				m.Logger.Error("failed to refresh session", "err", err)
 			} else {
@@ -74,7 +75,7 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 			}
 		}
 
-		r.Header.Set("USER-ID", strconv.Itoa(session.UserID))
+		r.Header.Set("USER-ID", strconv.FormatInt(session.UserID, 10))
 
 		next.ServeHTTP(w, r)
 	})

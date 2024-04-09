@@ -5,21 +5,15 @@ import (
 	"net/http"
 
 	"github.com/Piszmog/pathwise/db"
-	"github.com/Piszmog/pathwise/db/store"
 	"github.com/Piszmog/pathwise/dist"
 	"github.com/Piszmog/pathwise/server/handler"
 	"github.com/Piszmog/pathwise/server/middleware"
 )
 
-func New(logger *slog.Logger, database db.Database, sessionStore *store.SessionStore) http.Handler {
+func New(logger *slog.Logger, database db.Database) http.Handler {
 	h := &handler.Handler{
-		Logger:                           logger,
-		JobApplicationStore:              &store.JobApplicationStore{Database: database},
-		JobApplicationNoteStore:          &store.JobApplicationNoteStore{Database: database},
-		JobApplicationStatusHistoryStore: &store.JobApplicationStatusHistoryStore{Database: database},
-		StatsStore:                       &store.StatsStore{Database: database},
-		UserStore:                        &store.UserStore{Database: database},
-		SessionsStore:                    sessionStore,
+		Logger:   logger,
+		Database: database,
 	}
 
 	router := http.NewServeMux()
@@ -34,8 +28,8 @@ func New(logger *slog.Logger, database db.Database, sessionStore *store.SessionS
 
 	protected := http.NewServeMux()
 	authMiddleware := middleware.AuthMiddleware{
-		Logger:       logger,
-		SessionStore: sessionStore,
+		Logger:   logger,
+		Database: database,
 	}
 	protected.HandleFunc(http.MethodGet+" /", h.Main)
 	protected.HandleFunc(http.MethodGet+" /stats", h.GetStats)

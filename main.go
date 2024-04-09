@@ -3,9 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/Piszmog/pathwise/auth"
 	"github.com/Piszmog/pathwise/db"
-	"github.com/Piszmog/pathwise/db/store"
 	"github.com/Piszmog/pathwise/logger"
 	"github.com/Piszmog/pathwise/server"
 	"github.com/Piszmog/pathwise/server/router"
@@ -31,8 +29,8 @@ func main() {
 	}
 	defer database.Close()
 
-	if err = db.Init(database); err != nil {
-		l.Error("failed to initialize database", "error", err)
+	if err = db.Migrate(database); err != nil {
+		l.Error("failed to migrate database", "error", err)
 		return
 	}
 
@@ -41,14 +39,7 @@ func main() {
 		version.Value = v
 	}
 
-	sessionStore := &store.SessionStore{Database: database}
-	sessionJanitor := auth.SessionJanitor{
-		Logger: l,
-		Store:  sessionStore,
-	}
-	go sessionJanitor.Run()
-
-	r := router.New(l, database, sessionStore)
+	r := router.New(l, database)
 
 	port := os.Getenv("PORT")
 	if port == "" {
