@@ -14,8 +14,23 @@ WHERE
 UPDATE job_application_stats
 SET
 	total_applications = total_applications + 1,
-	total_companies = ?,
+	total_companies = total_companies + ?,
 	total_applied = total_applied + 1
+WHERE
+	user_id = ?;
+
+-- name: UpdateJobApplicationStats :exec
+UPDATE job_application_stats
+SET
+	total_accepted = total_accepted + ?,
+	total_applied = total_applied + ?,
+	total_canceled = total_canceled + ?,
+	total_declined = total_declined + ?,
+	total_interviewing = total_interviewing + ?,
+	total_offers = total_offers + ?,
+	total_rejected = total_rejected + ?,
+	total_watching = total_watching + ?,
+	total_widthdrawn = total_widthdrawn + ?
 WHERE
 	user_id = ?;
 

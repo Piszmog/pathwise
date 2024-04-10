@@ -126,6 +126,22 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 		return
 	}
+	companyCount, err := qtx.CountJobApplicationCompany(r.Context(), queries.CountJobApplicationCompanyParams{UserID: userID, Company: company})
+	if err != nil {
+		h.Logger.Error("failed to count company", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+	companyIncrement := int64(0)
+	if companyCount == 0 {
+		companyIncrement = 1
+	}
+	if err = qtx.IncrementNewJobApplication(r.Context(), queries.IncrementNewJobApplicationParams{UserID: userID, TotalCompanies: companyIncrement}); err != nil {
+		h.Logger.Error("failed to increment new job application", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
 	if err = tx.Commit(); err != nil {
 		h.Logger.Error("failed to commit transaction", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))

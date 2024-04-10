@@ -33,12 +33,12 @@ SELECT
 FROM 
 	job_applications j
 WHERE
-	j.user_id = ? AND j.company = ?
+	j.company = ? AND j.user_id = ?
 ORDER BY j.updated_at DESC
 LIMIT ? OFFSET ?;
 
 -- name: CountJobApplicationsByUserIDAndCompany :one
-SELECT COUNT(*) FROM job_applications WHERE user_id = ? AND company = ?;
+SELECT COUNT(*) FROM job_applications WHERE company = ? AND user_id = ?;
 
 -- name: GetJobApplicationsByUserIDAndStatus :many 
 SELECT
@@ -46,12 +46,12 @@ SELECT
 FROM 
 	job_applications j
 WHERE
-	j.user_id = ? AND j.status = ?
+	j.status = ? AND j.user_id = ?
 ORDER BY j.updated_at DESC
 LIMIT ? OFFSET ?;
 
 -- name: CountJobApplicationsByUserIDAndStatus :one
-SELECT COUNT(*) FROM job_applications WHERE user_id = ? AND status = ?;
+SELECT COUNT(*) FROM job_applications WHERE status = ? AND user_id = ?;
 
 -- name: GetJobApplicationsByUserIDAndCompanyAndStatus :many 
 SELECT
@@ -59,15 +59,18 @@ SELECT
 FROM 
 	job_applications j
 WHERE
-	j.user_id = ? AND j.company = ? AND j.status = ?
+	j.company = ? AND j.status = ? AND j.user_id = ?
 ORDER BY j.updated_at DESC
 LIMIT ? OFFSET ?;
 
 -- name: CountJobApplicationsByUserIDAndCompanyAndStatus :one
-SELECT COUNT(*) FROM job_applications WHERE user_id = ? AND company = ? AND status = ?;
+SELECT COUNT(*) FROM job_applications WHERE company = ? AND status = ? AND user_id = ?;
 
 -- name: GetJobApplicationUpdatedAt :one
 SELECT updated_at FROM job_applications WHERE id = ?;
+
+-- name: CountJobApplicationCompany :one
+SELECT COUNT(*) FROM job_applications WHERE company = ? AND user_id = ?;
 
 -- name: InsertJobApplication :one 
 INSERT INTO job_applications (company, title, url, user_id) 
