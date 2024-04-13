@@ -3,10 +3,10 @@ module github.com/Piszmog/pathwise
 go 1.22
 
 require (
-	github.com/a-h/templ v0.2.648
+	github.com/a-h/templ v0.2.663
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/google/uuid v1.6.0
-	github.com/tursodatabase/libsql-client-go v0.0.0-20240401075953-8e79a99d828a
+	github.com/tursodatabase/libsql-client-go v0.0.0-20240411070317-a1138d155304
 	golang.org/x/crypto v0.22.0
 	modernc.org/sqlite v1.29.6
 )
@@ -23,7 +23,7 @@ require (
 	github.com/ncruces/go-strftime v0.1.9 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	golang.org/x/exp v0.0.0-20240404231335-c0f41cb1a7a0 // indirect
+	golang.org/x/exp v0.0.0-20240409090435-93d18d7e34b8 // indirect
 	golang.org/x/sys v0.19.0 // indirect
 	modernc.org/gc/v3 v3.0.0-20240304020402-f0dba7c97c2b // indirect
 	modernc.org/libc v1.49.3 // indirect
