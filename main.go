@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 
 	"github.com/Piszmog/pathwise/db"
@@ -8,6 +9,7 @@ import (
 	"github.com/Piszmog/pathwise/server"
 	"github.com/Piszmog/pathwise/server/router"
 	"github.com/Piszmog/pathwise/version"
+	"github.com/golang-migrate/migrate/v4"
 )
 
 func main() {
@@ -29,7 +31,7 @@ func main() {
 	}
 	defer database.Close()
 
-	if err = db.Migrate(database); err != nil {
+	if err = db.Migrate(database); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		l.Error("failed to migrate database", "error", err)
 		return
 	}

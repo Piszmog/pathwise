@@ -50,8 +50,14 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		Email:    email,
 		Password: string(hashedPassword),
 	}
-	if err := h.Database.Queries().InsertUser(r.Context(), user); err != nil {
+	userID, err := h.Database.Queries().InsertUser(r.Context(), user)
+	if err != nil {
 		h.Logger.Error("failed to insert user", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+	if err = h.Database.Queries().InsertNewJobApplicationStat(r.Context(), userID); err != nil {
+		h.Logger.Error("failed to insert new job application stat", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 		return
 	}

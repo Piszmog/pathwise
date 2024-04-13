@@ -51,7 +51,6 @@ func Migrate(db Database) error {
 	if err != nil {
 		return fmt.Errorf("failed to create migration: %w", err)
 	}
-	defer m.Close()
 
 	return m.Up()
 }

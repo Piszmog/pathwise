@@ -1,5 +1,7 @@
--- name: InsertUser :exec
-INSERT INTO users (email, password) VALUES (?, ?);
+-- name: InsertUser :one
+INSERT INTO users (email, password)
+VALUES (?, ?)
+RETURNING id;
 
 -- name: GetUserByEmail :one
 SELECT email, password, id FROM users WHERE email = ?;

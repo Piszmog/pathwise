@@ -71,17 +71,58 @@ func getPageOpts(r *http.Request) (int64, int64, error) {
 }
 
 func (h Handler) filterJobs(ctx context.Context, userID int64, filterOpts types.FilterOpts, page int64, perPage int64) ([]types.JobApplication, int64, error) {
+	h.Logger.Debug("filtering jobs", "filterOpts", filterOpts)
 	offset := page * perPage
 	if filterOpts.Company != "" && filterOpts.Status != "" {
-		return h.getJobApplictionsByUserIDAndCompanyAndStatus(ctx, userID, filterOpts.Company, filterOpts.Status, perPage, offset)
+		return h.getJobApplictionsByUserIDAndCompanyAndStatus(ctx, userID, "%"+filterOpts.Company+"%", filterOpts.Status, perPage, offset)
 	} else if filterOpts.Company != "" && filterOpts.Status == "" {
+		return h.getJobApplicationsByUserIDAndCompany(ctx, userID, "%"+filterOpts.Company+"%", perPage, offset)
+	} else if filterOpts.Company == "" && filterOpts.Status != "" {
 		return h.getJobApplicationsByUserIDAndStatus(ctx, userID, filterOpts.Status, perPage, offset)
 	} else {
 		return h.getJobApplicationsByUserID(ctx, userID, perPage, offset)
 	}
 }
 
+func (h *Handler) getJobApplicationsByUserIDAndCompany(ctx context.Context, userID int64, company string, perPage, offset int64) ([]types.JobApplication, int64, error) {
+	h.Logger.Debug("getting job applications by user id and company", "userID", userID, "company", company)
+	j, err := h.Database.Queries().GetJobApplicationsByUserIDAndCompany(
+		ctx,
+		queries.GetJobApplicationsByUserIDAndCompanyParams{
+			UserID:  userID,
+			Company: company,
+			Limit:   perPage,
+			Offset:  offset,
+		},
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	jobs := make([]types.JobApplication, len(j))
+	for i, job := range j {
+		jobs[i] = types.JobApplication{
+			ID:        job.ID,
+			Company:   job.Company,
+			Title:     job.Title,
+			URL:       job.Url,
+			Status:    types.ToJobApplicationStatus(job.Status),
+			AppliedAt: job.AppliedAt,
+			UpdatedAt: job.UpdatedAt,
+		}
+	}
+
+	total, err := h.Database.Queries().CountJobApplicationsByUserIDAndCompany(ctx, queries.CountJobApplicationsByUserIDAndCompanyParams{
+		UserID:  userID,
+		Company: company,
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	return jobs, total, nil
+}
+
 func (h *Handler) getJobApplictionsByUserIDAndCompanyAndStatus(ctx context.Context, userID int64, company string, status types.JobApplicationStatus, perPage, offset int64) ([]types.JobApplication, int64, error) {
+	h.Logger.Debug("getting job applications by user id, company, and status", "userID", userID, "company", company, "status", status)
 	j, err := h.Database.Queries().GetJobApplicationsByUserIDAndCompanyAndStatus(
 		ctx,
 		queries.GetJobApplicationsByUserIDAndCompanyAndStatusParams{
@@ -120,6 +161,7 @@ func (h *Handler) getJobApplictionsByUserIDAndCompanyAndStatus(ctx context.Conte
 }
 
 func (h *Handler) getJobApplicationsByUserIDAndStatus(ctx context.Context, userID int64, status types.JobApplicationStatus, perPage, offset int64) ([]types.JobApplication, int64, error) {
+	h.Logger.Debug("getting job applications by user id and status", "userID", userID, "status", status)
 	j, err := h.Database.Queries().GetJobApplicationsByUserIDAndStatus(
 		ctx,
 		queries.GetJobApplicationsByUserIDAndStatusParams{
@@ -156,6 +198,7 @@ func (h *Handler) getJobApplicationsByUserIDAndStatus(ctx context.Context, userI
 }
 
 func (h *Handler) getJobApplicationsByUserID(ctx context.Context, userID int64, perPage, offset int64) ([]types.JobApplication, int64, error) {
+	h.Logger.Debug("getting job applications by user id", "userID", userID)
 	j, err := h.Database.Queries().GetJobApplicationsByUserID(
 		ctx,
 		queries.GetJobApplicationsByUserIDParams{

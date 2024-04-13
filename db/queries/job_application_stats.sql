@@ -34,5 +34,5 @@ SET
 WHERE
 	user_id = ?;
 
--- name: CreateNewJobApplicationStat :exec
+-- name: InsertNewJobApplicationStat :exec
 INSERT INTO job_application_stats (user_id) VALUES (?);

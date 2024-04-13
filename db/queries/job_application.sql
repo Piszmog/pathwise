@@ -33,12 +33,12 @@ SELECT
 FROM 
 	job_applications j
 WHERE
-	j.company = ? AND j.user_id = ?
+	j.company LIKE ? AND j.user_id = ?
 ORDER BY j.updated_at DESC
 LIMIT ? OFFSET ?;
 
 -- name: CountJobApplicationsByUserIDAndCompany :one
-SELECT COUNT(*) FROM job_applications WHERE company = ? AND user_id = ?;
+SELECT COUNT(*) FROM job_applications WHERE company LIKE ? AND user_id = ?;
 
 -- name: GetJobApplicationsByUserIDAndStatus :many 
 SELECT
@@ -59,7 +59,7 @@ SELECT
 FROM 
 	job_applications j
 WHERE
-	j.company = ? AND j.status = ? AND j.user_id = ?
+	j.company LIKE ? AND j.status = ? AND j.user_id = ?
 ORDER BY j.updated_at DESC
 LIMIT ? OFFSET ?;
 

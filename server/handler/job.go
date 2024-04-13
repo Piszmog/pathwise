@@ -126,7 +126,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 		return
 	}
-	companyCount, err := qtx.CountJobApplicationCompany(r.Context(), queries.CountJobApplicationCompanyParams{UserID: userID, Company: company})
+	companyCount, err := h.Database.Queries().CountJobApplicationCompany(r.Context(), queries.CountJobApplicationCompanyParams{UserID: userID, Company: company})
 	if err != nil {
 		h.Logger.Error("failed to count company", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
