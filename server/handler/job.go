@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"sort"
 	"strconv"
@@ -105,7 +106,11 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 		return
 	}
-	defer tx.Rollback()
+	defer func() {
+		if txErr := tx.Rollback(); txErr != nil {
+			err = errors.Join(err, txErr)
+		}
+	}()
 
 	qtx := queries.New(tx)
 
@@ -217,7 +222,11 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 		return
 	}
-	defer tx.Rollback()
+	defer func() {
+		if txErr := tx.Rollback(); txErr != nil {
+			err = errors.Join(err, txErr)
+		}
+	}()
 
 	qtx := queries.New(tx)
 
