@@ -22,6 +22,7 @@ WHERE
 -- name: UpdateJobApplicationStat :exec
 UPDATE job_application_stats
 SET
+	total_companies = total_companies + ?,
 	total_accepted = total_accepted + ?,
 	total_applied = total_applied + ?,
 	total_canceled = total_canceled + ?,

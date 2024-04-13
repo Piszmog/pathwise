@@ -243,20 +243,46 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = qtx.InsertJobApplicationStatusHistoryWithStatus(r.Context(), queries.InsertJobApplicationStatusHistoryWithStatusParams{JobApplicationID: job.ID, Status: status})
-	if err != nil {
-		h.Logger.Error("failed to insert job status history", "error", err)
-		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
-		return
+	if types.ToJobApplicationStatus(job.Status) != types.ToJobApplicationStatus(status) {
+		err = qtx.InsertJobApplicationStatusHistoryWithStatus(r.Context(), queries.InsertJobApplicationStatusHistoryWithStatusParams{JobApplicationID: job.ID, Status: status})
+		if err != nil {
+			h.Logger.Error("failed to insert job status history", "error", err)
+			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+			return
+		}
 	}
 
 	statParams := getStatsDiff(types.JobApplicationStatus(previousStatus), types.JobApplicationStatus(status))
 	statParams.UserID = userID
 
-	if err = qtx.UpdateJobApplicationStat(r.Context(), statParams); err != nil {
-		h.Logger.Error("failed to update job application stat", "error", err)
-		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
-		return
+	if job.Company != company {
+		currentCompanyCount, err := h.Database.Queries().CountJobApplicationCompany(r.Context(), queries.CountJobApplicationCompanyParams{UserID: userID, Company: job.Company})
+		if err != nil {
+			h.Logger.Error("failed to count current company", "error", err)
+			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+			return
+		}
+		companyCount, err := h.Database.Queries().CountJobApplicationCompany(r.Context(), queries.CountJobApplicationCompanyParams{UserID: userID, Company: company})
+		if err != nil {
+			h.Logger.Error("failed to count company", "error", err)
+			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+			return
+		}
+
+		if currentCompanyCount > 1 && companyCount == 0 {
+			statParams.TotalCompanies = 1
+		} else if currentCompanyCount == 1 && companyCount > 0 {
+			statParams.TotalCompanies = -1
+		}
+	}
+
+	statChanged := hasChanged(statParams)
+	if statChanged {
+		if err = qtx.UpdateJobApplicationStat(r.Context(), statParams); err != nil {
+			h.Logger.Error("failed to update job application stat", "error", err)
+			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+			return
+		}
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -268,13 +294,6 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	var stats types.StatsOpts
 	var newTimelineEntry types.NewTimelineEntry
 	if previousStatus != status {
-		stats, err = h.getStats(r.Context(), userID)
-		if err != nil {
-			h.Logger.Error("failed to get stats", "error", err)
-			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
-			return
-		}
-
 		latestStatus, err := h.Database.Queries().GetLatestJobApplicationStatusHistoryByID(r.Context(), int64(id))
 		if err != nil {
 			h.Logger.Error("failed to get latest status", "error", err)
@@ -291,6 +310,14 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 					CreatedAt:        latestStatus.CreatedAt,
 				},
 			}
+		}
+	}
+	if statChanged {
+		stats, err = h.getStats(r.Context(), userID)
+		if err != nil {
+			h.Logger.Error("failed to get stats", "error", err)
+			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+			return
 		}
 	}
 
@@ -363,4 +390,8 @@ func getStatsDiff(currentStatus types.JobApplicationStatus, newStatus types.JobA
 		params.TotalWidthdrawn = 1
 	}
 	return params
+}
+
+func hasChanged(diff queries.UpdateJobApplicationStatParams) bool {
+	return diff.TotalAccepted != 0 || diff.TotalApplied != 0 || diff.TotalCanceled != 0 || diff.TotalDeclined != 0 || diff.TotalInterviewing != 0 || diff.TotalOffers != 0 || diff.TotalRejected != 0 || diff.TotalWatching != 0 || diff.TotalWidthdrawn != 0 || diff.TotalCompanies != 0
 }
