@@ -85,6 +85,10 @@ jobs:
           chmod +x tailwindcss-linux-x64
           mv tailwindcss-linux-x64 tailwindcss
           ./tailwindcss -i ./styles/input.css -o ./dist/assets/css/output@${{ github.event.inputs.version }}.css --minify
+      - uses: sqlc-dev/setup-sqlc@v3
+        with:
+          sqlc-version: '1.26.0' 
+      - run: sqlc generate
       - name: Replace version
         run: sed -i 's/\${version}/'"$VERSION"'/' app.yaml
         env:
