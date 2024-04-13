@@ -12,7 +12,7 @@ INSERT INTO job_application_notes (note, job_application_id)
 VALUES (?, ?)
 RETURNING created_at, note, job_application_id, id;
 
--- name: GetJobApplicationNotesByID :many
+-- name: GetJobApplicationNoteByID :many
 SELECT
 	 n.created_at, n.note, n.id, n.job_application_id
 FROM 

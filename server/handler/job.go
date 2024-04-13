@@ -46,7 +46,7 @@ func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) getTimelineEntries(ctx context.Context, id int64) ([]types.JobApplicationTimelineEntry, error) {
-	notes, err := h.Database.Queries().GetJobApplicationNotesByID(ctx, int64(id))
+	notes, err := h.Database.Queries().GetJobApplicationNotesByJobApplicationID(ctx, int64(id))
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 	if companyCount == 0 {
 		companyIncrement = 1
 	}
-	if err = qtx.IncrementNewJobApplication(r.Context(), queries.IncrementNewJobApplicationParams{UserID: userID, TotalCompanies: companyIncrement}); err != nil {
+	if err = qtx.IncrementNewJobApplicationStat(r.Context(), queries.IncrementNewJobApplicationStatParams{UserID: userID, TotalCompanies: companyIncrement}); err != nil {
 		h.Logger.Error("failed to increment new job application", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 		return
@@ -241,6 +241,15 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	statParams := getStatsDiff(types.JobApplicationStatus(previousStatus), types.JobApplicationStatus(status))
+	statParams.UserID = userID
+
+	if err = qtx.UpdateJobApplicationStat(r.Context(), statParams); err != nil {
+		h.Logger.Error("failed to update job application stat", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
 	if err = tx.Commit(); err != nil {
 		h.Logger.Error("failed to commit transaction", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
@@ -299,4 +308,50 @@ func newTimelineID(entryType types.JobApplicationTimelineType, entryID string) s
 	default:
 		return "unknown"
 	}
+}
+
+func getStatsDiff(currentStatus types.JobApplicationStatus, newStatus types.JobApplicationStatus) queries.UpdateJobApplicationStatParams {
+	params := queries.UpdateJobApplicationStatParams{}
+	switch currentStatus {
+	case types.JobApplicationStatusAccepted:
+		params.TotalAccepted = -1
+	case types.JobApplicationStatusApplied:
+		params.TotalApplied = -1
+	case types.JobApplicationStatusCanceled:
+		params.TotalCanceled = -1
+	case types.JobApplicationStatusDeclined:
+		params.TotalDeclined = -1
+	case types.JobApplicationStatusInterviewing:
+		params.TotalInterviewing = -1
+	case types.JobApplicationStatusOffered:
+		params.TotalOffers = -1
+	case types.JobApplicationStatusRejected:
+		params.TotalRejected = -1
+	case types.JobApplicationStatusWatching:
+		params.TotalWatching = -1
+	case types.JobApplicationStatusWithdrawn:
+		params.TotalWidthdrawn = -1
+	}
+
+	switch newStatus {
+	case types.JobApplicationStatusAccepted:
+		params.TotalAccepted = 1
+	case types.JobApplicationStatusApplied:
+		params.TotalApplied = 1
+	case types.JobApplicationStatusCanceled:
+		params.TotalCanceled = 1
+	case types.JobApplicationStatusDeclined:
+		params.TotalDeclined = 1
+	case types.JobApplicationStatusInterviewing:
+		params.TotalInterviewing = 1
+	case types.JobApplicationStatusOffered:
+		params.TotalOffers = 1
+	case types.JobApplicationStatusRejected:
+		params.TotalRejected = 1
+	case types.JobApplicationStatusWatching:
+		params.TotalWatching = 1
+	case types.JobApplicationStatusWithdrawn:
+		params.TotalWidthdrawn = 1
+	}
+	return params
 }

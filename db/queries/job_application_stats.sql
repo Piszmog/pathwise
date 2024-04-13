@@ -10,7 +10,7 @@ FROM
 WHERE
 	user_id = ?;
 
--- name: IncrementNewJobApplication :exec
+-- name: IncrementNewJobApplicationStat :exec
 UPDATE job_application_stats
 SET
 	total_applications = total_applications + 1,
@@ -19,7 +19,7 @@ SET
 WHERE
 	user_id = ?;
 
--- name: UpdateJobApplicationStats :exec
+-- name: UpdateJobApplicationStat :exec
 UPDATE job_application_stats
 SET
 	total_accepted = total_accepted + ?,
