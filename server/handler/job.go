@@ -252,11 +252,9 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 			return
 		}
-		h.Logger.Debug("Determining days hear", "applied", job.AppliedAt)
 		if histories == 1 {
 			daysSince = int(time.Since(job.AppliedAt).Hours() / 24)
 		}
-		h.Logger.Debug("days since", "days", daysSince)
 
 		err = qtx.InsertJobApplicationStatusHistoryWithStatus(r.Context(), queries.InsertJobApplicationStatusHistoryWithStatusParams{JobApplicationID: job.ID, Status: status})
 		if err != nil {
@@ -297,7 +295,6 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 
 	statChanged := hasChanged(statParams)
 	if statChanged {
-		h.Logger.Debug("updating stats", "stats", statParams)
 		if err = qtx.UpdateJobApplicationStat(r.Context(), statParams); err != nil {
 			h.Logger.Error("failed to update job application stat", "error", err)
 			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
