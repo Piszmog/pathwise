@@ -32,7 +32,8 @@ SET
 	total_offers = total_offers + ?,
 	total_rejected = total_rejected + ?,
 	total_watching = total_watching + ?,
-	total_widthdrawn = total_widthdrawn + ?
+	total_widthdrawn = total_widthdrawn + ?,
+	updated_at = CURRENT_TIMESTAMP
 WHERE
 	user_id = ?;
 
