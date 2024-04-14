@@ -15,7 +15,8 @@ UPDATE job_application_stats
 SET
 	total_applications = total_applications + 1,
 	total_companies = total_companies + ?,
-	total_applied = total_applied + 1
+	total_applied = total_applied + 1,
+	update_at = CURRENT_TIMESTAMP
 WHERE
 	user_id = ?;
 
