@@ -23,6 +23,7 @@ WHERE
 UPDATE job_application_stats
 SET
 	total_companies = total_companies + ?,
+	average_time_to_hear_back = (average_time_to_hear_back + ?)/2,
 	total_accepted = total_accepted + ?,
 	total_applied = total_applied + ?,
 	total_canceled = total_canceled + ?,

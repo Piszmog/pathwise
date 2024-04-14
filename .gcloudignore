@@ -68,4 +68,4 @@ README.md
 tailwind.config.js
 LICENSE
 styles/
-*.sql
+db/queries/*.sql

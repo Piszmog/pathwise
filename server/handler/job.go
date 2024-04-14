@@ -3,9 +3,11 @@ package handler
 import (
 	"context"
 	"errors"
+	"math"
 	"net/http"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/Piszmog/pathwise/components"
 	"github.com/Piszmog/pathwise/db/queries"
@@ -243,7 +245,19 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var daysSince int
 	if types.ToJobApplicationStatus(job.Status) != types.ToJobApplicationStatus(status) {
+		histories, err := h.Database.Queries().CountJobApplicationStatusHistoriesByJobApplicationID(r.Context(), job.ID)
+		if err != nil {
+			h.Logger.Error("failed to count job application status histories", "error", err)
+			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+			return
+		}
+		if histories == 0 {
+			daysSince = int(time.Since(job.AppliedAt) / 24)
+		}
+
+		// TODO: get average time to hear back
 		err = qtx.InsertJobApplicationStatusHistoryWithStatus(r.Context(), queries.InsertJobApplicationStatusHistoryWithStatusParams{JobApplicationID: job.ID, Status: status})
 		if err != nil {
 			h.Logger.Error("failed to insert job status history", "error", err)
@@ -274,6 +288,10 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		} else if currentCompanyCount == 1 && companyCount > 0 {
 			statParams.TotalCompanies = -1
 		}
+	}
+
+	if daysSince > 0 {
+		statParams.AverageTimeToHearBack = int64(daysSince)
 	}
 
 	statChanged := hasChanged(statParams)

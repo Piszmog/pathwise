@@ -37,7 +37,7 @@ func (h *Handler) getStats(ctx context.Context, userID int64) (types.StatsOpts, 
 	statsOpts := types.StatsOpts{
 		TotalApplications:           stats.TotalApplications,
 		TotalCompanies:              stats.TotalCompanies,
-		AverageTimeToHearBackInDays: stats.AverageTimeToHearBack.Int64,
+		AverageTimeToHearBackInDays: stats.AverageTimeToHearBack,
 		TotalInterviewingPercentage: toPercentage(stats.TotalInterviewing, stats.TotalApplications),
 		TotalRejectionsPercentage:   toPercentage(stats.TotalRejected, stats.TotalApplications),
 	}

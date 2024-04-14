@@ -24,3 +24,6 @@ VALUES (?);
 -- name: InsertJobApplicationStatusHistoryWithStatus :exec
 INSERT INTO job_application_status_histories (status, job_application_id)
 VALUES (?, ?);
+
+-- name: CountJobApplicationStatusHistoriesByJobApplicationID :one
+SELECT COUNT(*) FROM job_application_status_histories WHERE job_application_id = ?;
