@@ -252,11 +252,12 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 			return
 		}
-		if histories == 0 {
-			daysSince = int(time.Since(job.AppliedAt) / 24)
+		h.Logger.Debug("Determining days hear", "applied", job.AppliedAt)
+		if histories == 1 {
+			daysSince = int(time.Since(job.AppliedAt).Hours() / 24)
 		}
+		h.Logger.Debug("days since", "days", daysSince)
 
-		// TODO: get average time to hear back
 		err = qtx.InsertJobApplicationStatusHistoryWithStatus(r.Context(), queries.InsertJobApplicationStatusHistoryWithStatusParams{JobApplicationID: job.ID, Status: status})
 		if err != nil {
 			h.Logger.Error("failed to insert job status history", "error", err)
@@ -291,10 +292,12 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 
 	if daysSince > 0 {
 		statParams.AverageTimeToHearBack = int64(daysSince)
+		statParams.AverageTimeToHearBack_2 = int64(daysSince)
 	}
 
 	statChanged := hasChanged(statParams)
 	if statChanged {
+		h.Logger.Debug("updating stats", "stats", statParams)
 		if err = qtx.UpdateJobApplicationStat(r.Context(), statParams); err != nil {
 			h.Logger.Error("failed to update job application stat", "error", err)
 			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))

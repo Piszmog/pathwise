@@ -16,7 +16,7 @@ SET
 	total_applications = total_applications + 1,
 	total_companies = total_companies + ?,
 	total_applied = total_applied + 1,
-	update_at = CURRENT_TIMESTAMP
+	updated_at = CURRENT_TIMESTAMP
 WHERE
 	user_id = ?;
 
@@ -24,7 +24,11 @@ WHERE
 UPDATE job_application_stats
 SET
 	total_companies = total_companies + ?,
-	average_time_to_hear_back = (average_time_to_hear_back + ?)/2,
+	average_time_to_hear_back = 
+		CASE
+			WHEN average_time_to_hear_back > 0 THEN (average_time_to_hear_back + ?)/2
+			ELSE ?
+		END,
 	total_accepted = total_accepted + ?,
 	total_applied = total_applied + ?,
 	total_canceled = total_canceled + ?,
