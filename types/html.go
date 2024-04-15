@@ -59,11 +59,11 @@ var JobApplicationStatusSelectOptions = []SelectOption{
 }
 
 type StatsOpts struct {
-	TotalApplications           string
-	TotalCompanies              string
-	AverageTimeToHearBackInDays string
 	TotalInterviewingPercentage string
 	TotalRejectionsPercentage   string
+	TotalApplications           int64
+	TotalCompanies              int64
+	AverageTimeToHearBackInDays int64
 }
 
 type NewTimelineEntry struct {
@@ -77,9 +77,9 @@ type FilterOpts struct {
 }
 
 type PaginationOpts struct {
-	Page    int
-	PerPage int
-	Total   int
+	Page    int64
+	PerPage int64
+	Total   int64
 }
 
 type AlertType string

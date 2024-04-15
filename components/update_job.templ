@@ -2,9 +2,9 @@ package components
 
 import "github.com/Piszmog/pathwise/types"
 
-templ UpdateJob(j types.JobApplication, s *types.StatsOpts, newTimelineEntry types.NewTimelineEntry) {
-	if s != nil {
-		@Stats(*s, false, "true")
+templ UpdateJob(j types.JobApplication, s types.StatsOpts, newTimelineEntry types.NewTimelineEntry) {
+	if s.TotalCompanies > 0 {
+		@Stats(s, false, "true")
 	}
 	if newTimelineEntry.SwapOOB != "" {
 		<div hx-swap-oob={ newTimelineEntry.SwapOOB }>

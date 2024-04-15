@@ -2,18 +2,27 @@ package db
 
 import (
 	"database/sql"
-	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	"log/slog"
+
+	"github.com/Piszmog/pathwise/db/queries"
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	_ "modernc.org/sqlite"
 )
 
 type LocalDB struct {
-	logger *slog.Logger
-	db     *sql.DB
+	logger  *slog.Logger
+	db      *sql.DB
+	queries *queries.Queries
 }
+
+var _ Database = (*LocalDB)(nil)
 
 func (d *LocalDB) DB() *sql.DB {
 	return d.db
+}
+
+func (d *LocalDB) Queries() *queries.Queries {
+	return d.queries
 }
 
 func (d *LocalDB) Logger() *slog.Logger {
@@ -29,5 +38,5 @@ func newLocalDB(logger *slog.Logger, path string) (*LocalDB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &LocalDB{logger: logger, db: db}, nil
+	return &LocalDB{logger: logger, db: db, queries: queries.New(db)}, nil
 }
