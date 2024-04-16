@@ -24,6 +24,6 @@ func TestSignup(t *testing.T) {
 	}))
 }
 
-func TestSignUp_NavigationFromSignIn() {
+func TestSignUp_NavigationFromSignIn(t *testing.T) {
 
 }
