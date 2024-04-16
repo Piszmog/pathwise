@@ -181,7 +181,6 @@ func beforeEach(t *testing.T, contextOptions ...playwright.BrowserNewContextOpti
 	if len(contextOptions) == 1 {
 		opt = contextOptions[0]
 	}
-	fmt.Println("BeforeEach")
 	context, page = newBrowserContextAndPage(t, opt)
 }
 
