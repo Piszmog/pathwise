@@ -51,7 +51,11 @@ func TestMain(m *testing.M) {
 //   - launch browser depends on BROWSER env
 //   - init web-first assertions, alias as `expect`
 func beforeAll() {
-	var err error
+	err := playwright.Install()
+	if err != nil {
+		log.Fatalf("could not install Playwright: %v", err)
+	}
+
 	pw, err = playwright.Run()
 	if err != nil {
 		log.Fatalf("could not start Playwright: %v", err)
