@@ -23,3 +23,7 @@ func TestSignup(t *testing.T) {
 		Timeout: playwright.Float(10000),
 	}))
 }
+
+func TestSignUp_NavigationFromSignIn() {
+
+}
