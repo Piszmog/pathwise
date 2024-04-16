@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"bytes"
 	"net/http"
 	"regexp"
+	"sync"
 
 	"github.com/Piszmog/pathwise/components"
 	"github.com/Piszmog/pathwise/db/queries"
@@ -10,8 +12,21 @@ import (
 	"github.com/Piszmog/pathwise/utils"
 )
 
+var (
+	signupHTML []byte
+	signupOnce sync.Once
+)
+
 func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
-	h.html(r.Context(), w, http.StatusOK, components.Signup())
+	signupOnce.Do(func() {
+		var buf bytes.Buffer
+		if err := components.Signup().Render(r.Context(), &buf); err != nil {
+			h.Logger.Error("failed to render signup", "error", err)
+			return
+		}
+		signupHTML = buf.Bytes()
+	})
+	h.htmlStatic(w, http.StatusOK, signupHTML)
 }
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {

@@ -1,9 +1,11 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/Piszmog/pathwise/components"
@@ -13,8 +15,21 @@ import (
 	"github.com/google/uuid"
 )
 
+var (
+	signinHTML []byte
+	signinOnce sync.Once
+)
+
 func (h *Handler) Signin(w http.ResponseWriter, r *http.Request) {
-	h.html(r.Context(), w, http.StatusOK, components.Signin())
+	signinOnce.Do(func() {
+		var buf bytes.Buffer
+		if err := components.Signin().Render(r.Context(), &buf); err != nil {
+			h.Logger.Error("failed to render signin", "error", err)
+			return
+		}
+		signinHTML = buf.Bytes()
+	})
+	h.htmlStatic(w, http.StatusOK, signinHTML)
 }
 
 func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {

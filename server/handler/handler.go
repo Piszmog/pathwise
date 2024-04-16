@@ -29,6 +29,14 @@ func (h *Handler) html(ctx context.Context, w http.ResponseWriter, status int, t
 	}
 }
 
+func (h *Handler) htmlStatic(w http.ResponseWriter, status int, html []byte) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(status)
+	if _, err := w.Write(html); err != nil {
+		h.Logger.Error("Failed to write response", "error", err)
+	}
+}
+
 func getUserID(r *http.Request) (int64, error) {
 	userIDStr := r.Header.Get("USER-ID")
 	userID, err := strconv.ParseInt(userIDStr, 10, 64)
