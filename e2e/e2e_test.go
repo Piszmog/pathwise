@@ -4,6 +4,7 @@ package e2e_test
 
 import (
 	"bufio"
+	"database/sql"
 	"fmt"
 	"log"
 	"math/rand"
@@ -15,6 +16,8 @@ import (
 	"time"
 
 	"github.com/playwright-community/playwright-go"
+	_ "github.com/tursodatabase/libsql-client-go/libsql"
+	_ "modernc.org/sqlite"
 )
 
 // global variables, can be used in any tests
@@ -85,6 +88,9 @@ func beforeAll() {
 		log.Fatalf("could not start app: %v", err)
 	}
 	time.Sleep(time.Second * 5)
+	if err = seedDB(); err != nil {
+		log.Fatalf("could not seed db: %v", err)
+	}
 }
 
 func startApp() error {
@@ -148,6 +154,22 @@ func startApp() error {
 	return nil
 }
 
+func seedDB() error {
+	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	if err != nil {
+		return err
+	}
+	b, err := os.ReadFile("./testdata/seed.sql")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(string(b))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func getPort() int {
 	randomGenerator := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return randomGenerator.Intn(9001-3000) + 3000
@@ -172,7 +194,7 @@ func afterAll() {
 // so each test has isolated environment. Usage:
 //
 //	Func TestFoo(t *testing.T) {
-//	  BeforeEach(t)
+//	  beforeEach(t)
 //	  // your test code
 //	}
 func beforeEach(t *testing.T, contextOptions ...playwright.BrowserNewContextOptions) {
