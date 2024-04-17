@@ -24,12 +24,16 @@ func main() {
 		l,
 		db.DatabaseOpts{URL: dbURL, Token: os.Getenv("DB_TOKEN")},
 	)
-
 	if err != nil {
 		l.Error("failed to create database", "error", err)
 		return
 	}
 	defer database.Close()
+
+	if _, err = database.DB().Exec("PRAGMA foreign_keys = ON;"); err != nil {
+		l.Error("failed to enable foreign keys", "error", err)
+		return
+	}
 
 	if err = db.Migrate(database); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		l.Error("failed to migrate database", "error", err)
