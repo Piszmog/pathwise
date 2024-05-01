@@ -23,11 +23,20 @@ type Database interface {
 }
 
 func New(logger *slog.Logger, opts DatabaseOpts) (Database, error) {
+	var db Database
+	var err error
 	if opts.Token == "" {
-		return newLocalDB(logger, opts.URL)
+		db, err = newLocalDB(logger, opts.URL)
 	} else {
-		return newRemoteDB(logger, opts.URL, opts.Token)
+		db, err = newRemoteDB(logger, opts.URL, opts.Token)
 	}
+	if err != nil {
+		return nil, err
+	}
+	if err = db.DB().Ping(); err != nil {
+		return nil, err
+	}
+	return db, nil
 }
 
 type DatabaseOpts struct {
