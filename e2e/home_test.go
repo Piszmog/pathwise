@@ -25,7 +25,6 @@ func TestHome_NewUser(t *testing.T) {
 	require.NoError(t, expect.Locator(page.GetByText("Showing 0 to 0 of 0 results ")).ToHaveCount(1))
 }
 
-/**
 func TestHome_AddApplication(t *testing.T) {
 	beforeEach(t)
 	signin(t)
@@ -35,7 +34,6 @@ func TestHome_AddApplication(t *testing.T) {
 	require.NoError(t, expect.Locator(page.Locator("#job-list").GetByRole("li")).ToHaveCount(0))
 	require.NoError(t, expect.Locator(page.GetByText("Showing 0 to 0 of 0 results ")).ToHaveCount(1))
 }
-*/
 
 func signin(t *testing.T) {
 	t.Helper()
@@ -54,8 +52,9 @@ func signin(t *testing.T) {
 func addJobApplication(t *testing.T, company, title, url string) {
 	t.Helper()
 
+	require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "Add"}).First().Click())
 	require.NoError(t, page.Locator("#new-job-form #company").Fill(company))
 	require.NoError(t, page.Locator("#new-job-form #title").Fill(title))
 	require.NoError(t, page.Locator("#new-job-form #url").Fill(url))
-	require.NoError(t, page.Locator("button[type=submit]").Click())
+	require.NoError(t, page.Locator("#new-job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Add"}).Click())
 }
