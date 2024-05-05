@@ -246,8 +246,8 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 
 	var daysSince int
 	if types.ToJobApplicationStatus(job.Status) != types.ToJobApplicationStatus(status) {
-		histories, err := h.Database.Queries().CountJobApplicationStatusHistoriesByJobApplicationID(r.Context(), job.ID)
-		if err != nil {
+		histories, countErr := h.Database.Queries().CountJobApplicationStatusHistoriesByJobApplicationID(r.Context(), job.ID)
+		if countErr != nil {
 			h.Logger.Error("failed to count job application status histories", "error", err)
 			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 			return
@@ -268,14 +268,14 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	statParams.UserID = userID
 
 	if job.Company != company {
-		currentCompanyCount, err := h.Database.Queries().CountJobApplicationCompany(r.Context(), queries.CountJobApplicationCompanyParams{UserID: userID, Company: job.Company})
-		if err != nil {
+		currentCompanyCount, currentCountErr := h.Database.Queries().CountJobApplicationCompany(r.Context(), queries.CountJobApplicationCompanyParams{UserID: userID, Company: job.Company})
+		if currentCountErr != nil {
 			h.Logger.Error("failed to count current company", "error", err)
 			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 			return
 		}
-		companyCount, err := h.Database.Queries().CountJobApplicationCompany(r.Context(), queries.CountJobApplicationCompanyParams{UserID: userID, Company: company})
-		if err != nil {
+		companyCount, countErr := h.Database.Queries().CountJobApplicationCompany(r.Context(), queries.CountJobApplicationCompanyParams{UserID: userID, Company: company})
+		if countErr != nil {
 			h.Logger.Error("failed to count company", "error", err)
 			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 			return
@@ -311,8 +311,8 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	var stats types.StatsOpts
 	var newTimelineEntry types.NewTimelineEntry
 	if previousStatus != status {
-		latestStatus, err := h.Database.Queries().GetLatestJobApplicationStatusHistoryByID(r.Context(), int64(id))
-		if err != nil {
+		latestStatus, latestErr := h.Database.Queries().GetLatestJobApplicationStatusHistoryByID(r.Context(), int64(id))
+		if latestErr != nil {
 			h.Logger.Error("failed to get latest status", "error", err)
 			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 			return

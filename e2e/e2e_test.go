@@ -63,12 +63,15 @@ func beforeAll() {
 	if err != nil {
 		log.Fatalf("could not start Playwright: %v", err)
 	}
-	if browserName == "chromium" || browserName == "" {
-		browserType = pw.Chromium
-	} else if browserName == "firefox" {
+	switch browserName {
+	case "firefox":
 		browserType = pw.Firefox
-	} else if browserName == "webkit" {
+	case "webkit":
 		browserType = pw.WebKit
+	case "chromium":
+		fallthrough
+	default:
+		browserType = pw.Chromium
 	}
 	// launch browser, headless or not depending on HEADFUL env
 	browser, err = browserType.Launch(playwright.BrowserTypeLaunchOptions{
@@ -221,8 +224,8 @@ func newBrowserContextAndPage(t *testing.T, options playwright.BrowserNewContext
 		t.Fatalf("could not create new context: %v", err)
 	}
 	t.Cleanup(func() {
-		if err := context.Close(); err != nil {
-			t.Errorf("could not close context: %v", err)
+		if ctxErr := context.Close(); ctxErr != nil {
+			t.Errorf("could not close context: %v", ctxErr)
 		}
 	})
 	p, err := context.NewPage()

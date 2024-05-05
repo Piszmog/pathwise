@@ -20,7 +20,7 @@ type Handler struct {
 	Database db.Database
 }
 
-func (h *Handler) html(ctx context.Context, w http.ResponseWriter, status int, t templ.Component) {
+func (h *Handler) html(_ context.Context, w http.ResponseWriter, status int, t templ.Component) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 

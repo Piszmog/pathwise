@@ -84,7 +84,7 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("HX-Redirect", "/")
 }
 
-func (h *Handler) newSession(ctx context.Context, userId int64, userAgent string, currentToken string) (string, time.Time, error) {
+func (h *Handler) newSession(ctx context.Context, userID int64, userAgent string, currentToken string) (string, time.Time, error) {
 	if currentToken != "" {
 		if err := h.Database.Queries().DeleteSessionByToken(ctx, currentToken); err != nil {
 			return "", time.Time{}, err
@@ -93,7 +93,7 @@ func (h *Handler) newSession(ctx context.Context, userId int64, userAgent string
 
 	token := uuid.New().String()
 	session := queries.InsertSessionParams{
-		UserID:    userId,
+		UserID:    userID,
 		Token:     token,
 		ExpiresAt: time.Now().Add(24 * time.Hour),
 		UserAgent: userAgent,
