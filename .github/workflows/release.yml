@@ -76,7 +76,7 @@ jobs:
           MODIFIED_VERSION="${VERSION//./-}"
           echo "VERSION_GCP=$MODIFIED_VERSION" >> $GITHUB_ENV
       - run: go mod download
-      - run: go install github.com/a-h/templ/cmd/templ@v0.2.663
+      - run: go install github.com/a-h/templ/cmd/templ@v0.2.680
       - name: Generate Templ Files
         run: templ generate -path ./components
       - name: Generate CSS
