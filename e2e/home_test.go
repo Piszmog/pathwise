@@ -14,11 +14,7 @@ func TestHome_NewUser(t *testing.T) {
 	signin(t)
 
 	// Initial stats
-	require.NoError(t, expect.Locator(page.Locator("details #stats-total-applications").GetByText("0")).ToHaveCount(1))
-	require.NoError(t, expect.Locator(page.Locator("details #stats-total-companies").GetByText("0")).ToHaveCount(1))
-	require.NoError(t, expect.Locator(page.Locator("details #stats-average-time-to-hear-back").GetByText("0 days")).ToHaveCount(1))
-	require.NoError(t, expect.Locator(page.Locator("details #stats-interview-percentage").GetByText("NaN%")).ToHaveCount(1))
-	require.NoError(t, expect.Locator(page.Locator("details #stats-rejection-percentage").GetByText("NaN%")).ToHaveCount(1))
+	assertStats(t, "0", "0", "0 days", "NaN%", "NaN%")
 
 	// Initial job apps - empty
 	require.NoError(t, expect.Locator(page.Locator("#job-list").GetByRole("li")).ToHaveCount(0))
