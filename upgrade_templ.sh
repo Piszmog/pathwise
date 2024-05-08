@@ -1,11 +1,18 @@
 #!/bin/sh
 
-if [ "$#" -ne 2 ]; then
-	echo "Usage: $0 <old version> <new version>"
-	exit 1
-fi
+old_version=$(grep 'github.com/a-h/templ' go.mod | awk '{print $2}')
 
-old_version="$1"
-new_version="$2"
+go install github.com/a-h/templ/cmd/templ@latest
 
-LC_CTYPE=C find . \( -path "./dist" -o -path "./.git" \) -prune -o -type f ! -name ".DS_Store" -exec sed -i '' -e "s/$old_version/$new_version/g" {} \;
+go get -u github.com/a-h/templ
+go mod tidy
+
+new_version=$(grep 'github.com/a-h/templ' go.mod | awk '{print $2}')
+
+sed -i '' -e "s/${old_version}/${new_version}/g" "Dockerfile"
+
+for file in ".github/workflows"/*; do
+	if [ -f "$file" ]; then
+		sed -i '' -e "s/${old_version}/${new_version}/g" "$file"
+	fi
+done
