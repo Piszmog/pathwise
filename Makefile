@@ -16,6 +16,9 @@ generate-tailwind-watch:
 generate-sql:
 	@echo "Generating sql files..."
 	@sqlc generate
+clean-testcache:
+	@echo "Cleaning test cache..."
+	@go clean -testcache
 test-e2e:
 	@echo "Running E2E tests..."
 	@go test ./... -tags=e2e
