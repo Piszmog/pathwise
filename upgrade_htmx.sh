@@ -17,6 +17,6 @@ done
 
 curl -sL -o "./dist/assets/js/htmx@${new_version}.min.js" "https://github.com/bigskysoftware/htmx/releases/download/${new_version}/htmx.min.js"
 
-sed -i '' -e "s/${old_version}/${new_version}/g" "./components/core/html.templ"
+sed -i '' -e "s/${old_version}/${new_version}/g" "./components/head.templ"
 
 rm "./dist/assets/js/htmx@${old_version}.min.js"
