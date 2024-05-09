@@ -1,6 +1,6 @@
 -- name: InsertUser :one
-INSERT INTO users (email, password)
-VALUES (?, ?)
+INSERT INTO users (email, password, initial_ip_address)
+VALUES (?, ?, ?)
 RETURNING id;
 
 -- name: GetUserByEmail :one

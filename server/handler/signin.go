@@ -67,7 +67,7 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 		cookieValue = cookie.Value
 	}
 
-	token, expiresAt, err := h.newSession(r.Context(), user.ID, r.UserAgent(), cookieValue)
+	token, expiresAt, err := h.newSession(r.Context(), user.ID, r.UserAgent(), cookieValue, r.RemoteAddr)
 	if err != nil {
 		h.Logger.Error("failed to create session", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeWarning, "Something went wrong", "Try again later."))
@@ -89,7 +89,7 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("HX-Redirect", "/")
 }
 
-func (h *Handler) newSession(ctx context.Context, userID int64, userAgent string, currentToken string) (string, time.Time, error) {
+func (h *Handler) newSession(ctx context.Context, userID int64, userAgent string, currentToken string, ipAddress string) (string, time.Time, error) {
 	if currentToken != "" {
 		if err := h.Database.Queries().DeleteSessionByToken(ctx, currentToken); err != nil {
 			return "", time.Time{}, err
@@ -102,6 +102,7 @@ func (h *Handler) newSession(ctx context.Context, userID int64, userAgent string
 		Token:     token,
 		ExpiresAt: time.Now().Add(24 * time.Hour),
 		UserAgent: userAgent,
+		IpAddress: ipAddress,
 	}
 	if err := h.Database.Queries().InsertSession(ctx, session); err != nil {
 		return "", time.Time{}, err

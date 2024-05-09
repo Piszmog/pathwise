@@ -1,5 +1,5 @@
 -- name: InsertSession :exec
-INSERT INTO sessions (expires_at, user_agent, token, user_id) VALUES (?, ?, ?, ?);
+INSERT INTO sessions (expires_at, user_agent, token, ip_address, user_id) VALUES (?, ?, ?, ?, ?);
 
 -- name: GetSessionByToken :one
 SELECT created_at, expires_at, token, user_id FROM sessions WHERE token = ?;
