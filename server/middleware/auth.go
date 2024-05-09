@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"database/sql"
 	"log/slog"
 	"net/http"
@@ -75,8 +76,17 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 			}
 		}
 
+		m.cleanupUserSessions(context.Background(), session.UserID)
+
 		r.Header.Set("USER-ID", strconv.FormatInt(session.UserID, 10))
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (m *AuthMiddleware) cleanupUserSessions(ctx context.Context, userID int64) {
+	err := m.Database.Queries().DeleteOldUserSessions(ctx, userID)
+	if err != nil {
+		m.Logger.Warn("failed to delete old user sessions", "userID", userID, "error", err)
+	}
 }
