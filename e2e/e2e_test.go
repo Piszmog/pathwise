@@ -92,6 +92,9 @@ func beforeAll() {
 	}
 	time.Sleep(time.Second * 5)
 	if err = seedDB(); err != nil {
+		if removeErr := removeDBFile(); removeErr != nil {
+			fmt.Println("failed to delete test DB file", err)
+		}
 		log.Fatalf("could not seed db: %v", err)
 	}
 }
@@ -188,9 +191,13 @@ func afterAll() {
 	if err := pw.Stop(); err != nil {
 		log.Fatalf("could not start Playwright: %v", err)
 	}
-	if err := os.Remove("../test-db.sqlite3"); err != nil {
+	if err := removeDBFile(); err != nil {
 		log.Fatalf("could not remove test-db.sqlite3: %v", err)
 	}
+}
+
+func removeDBFile() error {
+	return os.Remove("../test-db.sqlite3")
 }
 
 // beforeEach creates a new context and page for each test,

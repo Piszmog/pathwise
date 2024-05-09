@@ -11,36 +11,36 @@ import (
 
 func TestHome_NewUser(t *testing.T) {
 	beforeEach(t)
-	signin(t)
+	signin(t, "user1@email.com", "password")
 
 	// Initial stats
 	assertStats(t, "0", "0", "0 days", "NaN%", "NaN%")
 
 	// Initial job apps - empty
-	require.NoError(t, expect.Locator(page.Locator("#job-list").GetByRole("li")).ToHaveCount(0))
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
 	require.NoError(t, expect.Locator(page.GetByText("Showing 0 to 0 of 0 results ")).ToHaveCount(1))
 }
 
 func TestHome_AddApplication(t *testing.T) {
 	beforeEach(t)
-	signin(t)
+	signin(t, "user2@email.com", "password")
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list").GetByRole("li")).ToHaveCount(0))
 	require.NoError(t, expect.Locator(page.GetByText("Showing 0 to 0 of 0 results")).ToHaveCount(1))
 
 	addJobApplication(t, "Super Company", "Rock Star", "https://supercompany.com")
-	require.NoError(t, expect.Locator(page.Locator("#job-1-row")).ToBeVisible())
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
 	require.NoError(t, expect.Locator(page.GetByText("Showing 1 to 1 of 1 results")).ToHaveCount(1))
 
 	assertStats(t, "1", "1", "0 days", "0%", "0%")
 }
 
-func signin(t *testing.T) {
+func signin(t *testing.T, email, password string) {
 	_, err := page.Goto(getFullPath("signin"))
 	require.NoError(t, err)
 
-	require.NoError(t, page.Locator("#email").Fill("user1@email.com"))
-	require.NoError(t, page.Locator("#password").Fill("password"))
+	require.NoError(t, page.Locator("#email").Fill(email))
+	require.NoError(t, page.Locator("#password").Fill(password))
 	require.NoError(t, page.Locator("button[type=submit]").Click())
 
 	require.NoError(t, expect.Page(page).ToHaveURL(getFullPath("")+"/", playwright.PageAssertionsToHaveURLOptions{
