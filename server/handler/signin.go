@@ -81,6 +81,11 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteStrictMode,
 	})
 
+	err = h.Database.Queries().DeleteOldUserSessions(r.Context(), user.ID)
+	if err != nil {
+		h.Logger.Warn("failed to delete old user sessions", "userID", user.ID, "error", err)
+	}
+
 	w.Header().Set("HX-Redirect", "/")
 }
 
