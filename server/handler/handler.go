@@ -45,3 +45,11 @@ func getUserID(r *http.Request) (int64, error) {
 	}
 	return userID, nil
 }
+
+func getClientIP(r *http.Request) string {
+	ip := r.Header.Get("X-FORWARD-FOR")
+	if ip != "" {
+		return ip
+	}
+	return r.RemoteAddr
+}

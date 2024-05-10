@@ -67,7 +67,7 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 		cookieValue = cookie.Value
 	}
 
-	token, expiresAt, err := h.newSession(r.Context(), user.ID, r.UserAgent(), cookieValue, r.RemoteAddr)
+	token, expiresAt, err := h.newSession(r.Context(), user.ID, r.UserAgent(), cookieValue, getClientIP(r))
 	if err != nil {
 		h.Logger.Error("failed to create session", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeWarning, "Something went wrong", "Try again later."))

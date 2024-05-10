@@ -64,7 +64,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	user := queries.InsertUserParams{
 		Email:            email,
 		Password:         string(hashedPassword),
-		InitialIpAddress: r.RemoteAddr,
+		InitialIpAddress: getClientIP(r),
 	}
 	userID, err := h.Database.Queries().InsertUser(r.Context(), user)
 	if err != nil {
