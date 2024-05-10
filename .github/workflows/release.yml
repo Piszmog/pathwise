@@ -19,7 +19,7 @@ jobs:
       - run: |
           echo "::notice::Releasing ${{ github.event.inputs.version }}"
       - name: Create Tag
-        uses: negz/create-tag@v1
+        uses: piszmog/create-tag@v1
         with:
           version: ${{ github.event.inputs.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
