@@ -34,7 +34,7 @@ templ jobRow(j types.JobApplication) {
 		<div class="flex flex-none items-center gap-x-4">
 			<button
 				class="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:block"
-				onClick={ toggleSlideOver("job-details") }
+				onclick="toggleSlideOver('job-details')"
 				hx-get={ "/jobs/" + strconv.FormatInt(j.ID, 10) }
 				hx-target="#job-details"
 				hx-trigger="click"
@@ -152,7 +152,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 			<button
 				type="button"
 				class="text-sm font-semibold leading-6 text-gray-900"
-				onClick={ toggleSlideOver("job-details") }
+				onclick="toggleSlideOver('job-details')"
 			>
 				Cancel
 			</button>
@@ -171,7 +171,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 }
 
 templ jobApplicationForm() {
-	<script lang="javascript">
+	<script type="text/javascript">
 	function afterRequest(form) {
 		form.reset();
 		const slideOver = document.getElementById('new-job-slideOver');
@@ -232,7 +232,7 @@ templ jobApplicationForm() {
 			<button
 				type="button"
 				class="text-sm font-semibold leading-6 text-gray-900"
-				onClick={ toggleSlideOver("new-job") }
+				onclick="toggleSlideOver('new-job')"
 			>
 				Cancel
 			</button>

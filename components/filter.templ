@@ -5,6 +5,12 @@ import (
 )
 
 templ filterForm() {
+	<script type="text/javascript">
+		function clearFilter() {
+			document.getElementById('company').value = '';
+			document.getElementById('status-select').value = '';
+		}
+	</script>
 	<form
 		id="filter-form"
 		class="ml-3 mr-3 mt-3 flex items-center space-x-2"
@@ -37,16 +43,11 @@ templ filterForm() {
 			Filter
 		</button>
 		<button
-			onclick={ clearFilter() }
+			onclick="clearFilter()"
 			type="submit"
 			class="rounded-md mt-8 px-3 py-2 text-sm font-semibold bg-white text-gray-900 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600 ring-1 ring-insert ring-gray-300"
 		>
 			Clear
 		</button>
 	</form>
-}
-
-script clearFilter() {
-	document.getElementById('company').value = '';
-	document.getElementById('status-select').value = '';
 }
