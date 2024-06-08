@@ -3,8 +3,10 @@ package handler
 import (
 	"context"
 	"log/slog"
+	"net"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Piszmog/pathwise/db"
 	"github.com/a-h/templ"
@@ -47,9 +49,19 @@ func getUserID(r *http.Request) (int64, error) {
 }
 
 func getClientIP(r *http.Request) string {
-	ip := r.Header.Get("X-FORWARD-FOR")
-	if ip != "" {
-		return ip
+	xff := r.Header.Get("X-Forwarded-For")
+	if xff != "" {
+		ip := strings.Split(xff, ",")[0]
+		ip = strings.TrimSpace(ip)
+		if net.ParseIP(ip) != nil {
+			return ip
+		}
 	}
-	return r.RemoteAddr
+
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+
+	return ip
 }
