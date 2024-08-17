@@ -1,10 +1,9 @@
 package components
 
 import (
-	"strconv"
-
 	"github.com/Piszmog/pathwise/types"
 	"github.com/Piszmog/pathwise/utils"
+	"strconv"
 )
 
 templ loadingJobs() {
@@ -179,7 +178,7 @@ templ jobApplicationForm() {
 		slideOver.classList.toggle('translate-x-full');
 		overlay.classList.toggle('hidden');
 	}
-</script>
+	</script>
 	<form
 		id="new-job-form"
 		hx-post="/jobs"

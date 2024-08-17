@@ -1,7 +1,9 @@
 package components
 
-import "github.com/Piszmog/pathwise/types"
-import "strconv"
+import (
+	"github.com/Piszmog/pathwise/types"
+	"strconv"
+)
 
 templ loadingStats() {
 	<div hx-get="/stats" hx-trigger="load">
