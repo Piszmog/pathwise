@@ -16,6 +16,6 @@ jobs:
       - run: templ generate -path ./components
       - uses: sqlc-dev/setup-sqlc@v4
         with:
-          sqlc-version: '1.26.0' 
+          sqlc-version: '1.27.0' 
       - run: sqlc generate
       - run: go test -v ./... -tags=e2e
