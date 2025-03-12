@@ -1,4 +1,4 @@
-runtime: go122
+runtime: go123
 
 env_variables:
   DB_URL: pathwise-piszmog
