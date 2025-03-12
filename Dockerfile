@@ -3,7 +3,7 @@ FROM golang:1.24 AS build
 
 ARG VERSION='dev'
 
-RUN apt-get update && apt-get install -y curl
+RUN apt-get update
 
 WORKDIR /app
 
