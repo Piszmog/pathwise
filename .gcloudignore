@@ -69,3 +69,4 @@ tailwind.config.js
 LICENSE
 styles/
 db/queries/*.sql
+goreleaser-dist
