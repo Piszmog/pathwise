@@ -1,29 +1,22 @@
 ## Build
-FROM golang:1.23-alpine AS build
+FROM golang:1.24 AS build
 
 ARG VERSION='dev'
 
-RUN apk update && apk add --no-cache curl
-
-RUN curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64 \
-    && chmod +x tailwindcss-linux-x64 \
-	&& mv tailwindcss-linux-x64 /usr/local/bin/tailwindcss
-
-RUN go install github.com/a-h/templ/cmd/templ@v0.3.819 \
-    && go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+RUN apt-get update && apt-get install -y curl
 
 WORKDIR /app
 
 COPY ./ /app
 
-RUN templ generate -path ./components \
-	&& tailwindcss -i ./styles/input.css -o ./dist/assets/css/output@${VERSION}.css --minify \
-	&& sqlc generate
-
-RUN go build -ldflags="-s -w -X version.Value=${VERSION}" -o pathwise
+RUN go mod download \
+    && go tool templ generate -path ./components \
+    && go tool go-tw -i ./styles/input.css -o ./dist/assets/css/output@${VERSION}.css --minify \
+    && go tool sqlc generate \
+    && go build -ldflags="-s -w -X version.Value=${VERSION}" -o pathwise
 
 ## Deploy
-FROM gcr.io/distroless/static-debian12
+FROM gcr.io/distroless/base-debian12
 
 WORKDIR /
 
