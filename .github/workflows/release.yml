@@ -91,6 +91,7 @@ jobs:
       - run: go tool templ generate -path ./components
       - run: go tool sqlc generate
       - run: go tool go-tw -i ./styles/input.css -o ./dist/assets/css/output@${VERSION}.css --minify
+      - run: ls -al ./dist/assets/css
       - name: Replace version
         run: sed -i 's/\${version}/'"$VERSION"'/' app.yaml
         env:
