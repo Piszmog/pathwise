@@ -13,6 +13,7 @@ templ inputSelect(opts types.SelectOpts) {
 				required?={ opts.Required }
 				aria-invalid="false"
 				aria-describedby={ opts.Name + "-select" + "-error" }
+				disabled?={ opts.Disabled }
 			>
 				if opts.Placeholder != "" {
 					<option selected value="">{ opts.Placeholder }</option>

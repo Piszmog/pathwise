@@ -17,7 +17,7 @@ templ body() {
 					transition: opacity 300ms linear;
 				}
 			</style>
-			@header(true)
+			@header(CurrentPageHome)
 			@loadingStats()
 			@mainContent()
 			@drawer("new-job", "New Job Application") {
@@ -32,8 +32,8 @@ templ body() {
 }
 
 templ mainContent() {
-	@filterForm()
-	@loadingJobs()
+	@filterForm(false)
+	@loadingJobs(false)
 	@drawer("job-details", "Job Application") {
 		<div id="job-details"></div>
 	}

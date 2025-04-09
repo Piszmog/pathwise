@@ -6,8 +6,8 @@ import (
 	"strconv"
 )
 
-templ loadingJobs() {
-	<div hx-get="/jobs" hx-trigger="load">
+templ loadingJobs(archived bool) {
+	<div hx-get={ "/jobs?archived=" + strconv.FormatBool(archived) } hx-trigger="load">
 		@Jobs(nil, types.PaginationOpts{}, types.FilterOpts{})
 	</div>
 }
@@ -73,6 +73,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 		hx-swap="outerHTML"
 		hx-ext="response-targets"
 		hx-target-error="#job-form-error"
+		disabled?={ j.Archived }
 	>
 		<div id="job-form-error"></div>
 		<input
@@ -81,7 +82,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 			value={ strconv.FormatInt(utils.GetFirstElementID(timelineEntries),
 		10) }
 		/>
-		<input type="hidden" name="firstTimelineEntryType" value={ string(utils.GetFirstElementType(timelineEntries)) }/>
+		<input type="hidden" name="firstTimelineEntryType" value={ string(utils.GetFirstElementType(timelineEntries)) } disabled?={ j.Archived }/>
 		<div class="mb-5 flex items-center gap-x-2 text-xs leading-5 text-gray-500">
 			<p class="whitespace-nowrap">
 				Applied
@@ -109,6 +110,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 						id="company"
 						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-gray-300 placeholder:text-gray-400 read-only:bg-gray-50 read-only:text-gray-500 read-only:ring-gray-200 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						value={ j.Company }
+						disabled?={ j.Archived }
 					/>
 				</div>
 			</div>
@@ -121,6 +123,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 						id="title"
 						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-gray-300 placeholder:text-gray-400 read-only:bg-gray-50 read-only:text-gray-500 read-only:ring-gray-200 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						value={ j.Title }
+						disabled?={ j.Archived }
 					/>
 				</div>
 			</div>
@@ -133,6 +136,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 						id="url"
 						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-gray-300 placeholder:text-gray-400 read-only:bg-gray-50 read-only:text-gray-500 read-only:ring-gray-200 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
 						value={ j.URL }
+						disabled?={ j.Archived }
 					/>
 				</div>
 			</div>
@@ -144,6 +148,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 					Options:  types.JobApplicationStatusSelectOptions,
 					Required: true,
 					Value:    j.Status.String(),
+					Disabled: j.Archived,
 				})
 			</div>
 		</div>
@@ -158,6 +163,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 			<button
 				type="submit"
 				class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+				disabled?={ j.Archived }
 			>
 				Update
 			</button>
@@ -165,7 +171,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 	</form>
 	@Timeline(timelineEntries, "")
 	<div class="mt-6 flex gap-x-3">
-		@note(j.ID)
+		@note(j.ID, j.Archived)
 	</div>
 }
 

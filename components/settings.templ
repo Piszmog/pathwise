@@ -5,7 +5,7 @@ templ Settings(email string) {
 	<html lang="en">
 		@Head()
 		<main>
-			@header(false)
+			@header(CurrentPageSettings)
 			@settings(email)
 			@footer()
 		</main>

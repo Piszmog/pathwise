@@ -15,6 +15,7 @@ type JobApplication struct {
 	Status    JobApplicationStatus
 	ID        int64
 	UserID    int64
+	Archived  bool
 }
 
 func (j JobApplication) RecordID() int64 {

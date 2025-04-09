@@ -1,0 +1,27 @@
+package components
+
+templ Archives() {
+	<!DOCTYPE html>
+	<html lang="en">
+		@Head()
+		@archiveBody()
+	</html>
+}
+
+templ archiveBody() {
+	<body>
+		<main>
+			@header(CurrentPageArchived)
+			@archivesContent()
+			@footer()
+		</main>
+	</body>
+}
+
+templ archivesContent() {
+	@filterForm(true)
+	@loadingJobs(true)
+	@drawer("job-details", "Job Application") {
+		<div id="job-details"></div>
+	}
+}

@@ -1,6 +1,6 @@
 -- name: GetJobApplicationByID :one
 SELECT
-	j.applied_at, j.updated_at, j.company, j.title, j.status, j.url, j.id, j.user_id
+	j.applied_at, j.updated_at, j.company, j.title, j.status, j.url, j.id, j.user_id, j.archived
 FROM 
 	job_applications j
 WHERE

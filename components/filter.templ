@@ -1,8 +1,9 @@
 package components
 
 import "github.com/Piszmog/pathwise/types"
+import "strconv"
 
-templ filterForm() {
+templ filterForm(archived bool) {
 	<script type="text/javascript">
 		function clearFilter() {
 			document.getElementById('company').value = '';
@@ -16,6 +17,11 @@ templ filterForm() {
 		hx-target="#jobs"
 		hx-swap="outerHTML"
 	>
+		<input
+			type="hidden"
+			name="archived"
+			value={ strconv.FormatBool(archived) }
+		/>
 		<div class="w-full">
 			<label for="company" class="block text-sm font-medium leading-6 text-gray-900">Company</label>
 			<div class="mt-2">

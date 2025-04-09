@@ -8,6 +8,7 @@ type SelectOpts struct {
 	Err         error
 	Options     []SelectOption
 	Required    bool
+	Disabled    bool
 }
 
 type SelectOption struct {

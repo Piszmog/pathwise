@@ -33,6 +33,10 @@ func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	archived := false
+	if job.Archived == 1 {
+		archived = true
+	}
 	j := types.JobApplication{
 		ID:        job.ID,
 		Company:   job.Company,
@@ -42,6 +46,7 @@ func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
 		AppliedAt: job.AppliedAt,
 		UpdatedAt: job.UpdatedAt,
 		UserID:    job.UserID,
+		Archived:  archived,
 	}
 
 	h.html(r.Context(), w, http.StatusOK, components.JobDetails(j, timelineEntries))
@@ -154,7 +159,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jobs, total, err := h.getJobApplicationsByUserID(r.Context(), userID, false, defaultPerPage, defaultPage*defaultPerPage)
+	jobs, total, err := h.getJobApplicationsByUserID(r.Context(), userID, int64(0), defaultPerPage, defaultPage*defaultPerPage)
 	if err != nil {
 		h.Logger.Error("failed to get jobs", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
@@ -479,7 +484,7 @@ func (h *Handler) ArchiveJobs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jobsPage, total, err := h.getJobApplicationsByUserID(r.Context(), userID, false, defaultPerPage, defaultPage*defaultPerPage)
+	jobsPage, total, err := h.getJobApplicationsByUserID(r.Context(), userID, int64(0), defaultPerPage, defaultPage*defaultPerPage)
 	if err != nil {
 		h.Logger.Error("failed to get jobs", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
