@@ -111,7 +111,9 @@ FROM
 JOIN job_application_status_histories h 
 	ON h.job_application_id = j.id
 WHERE
-	j.user_id = ? AND j.archived = 0;
+	j.user_id = ? AND j.archived = 0
+GROUP BY
+	j.id;
 
 -- name: CountJobApplicationCompanies :one
 SELECT
