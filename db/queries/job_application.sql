@@ -20,12 +20,12 @@ SELECT
 FROM 
 	job_applications j
 WHERE
-	j.user_id = ?
+	j.user_id = ? AND j.archived = ?
 ORDER BY j.updated_at DESC
 LIMIT ? OFFSET ?;
 
 -- name: CountJobApplicationsByUserID :one
-SELECT COUNT(*) FROM job_applications WHERE user_id = ?;
+SELECT COUNT(*) FROM job_applications WHERE user_id = ? AND archived = ?;
 
 -- name: GetJobApplicationsByUserIDAndCompany :many 
 SELECT
@@ -33,12 +33,12 @@ SELECT
 FROM 
 	job_applications j
 WHERE
-	j.company LIKE ? AND j.user_id = ?
+	j.company LIKE ? AND j.user_id = ? AND j.archived = ?
 ORDER BY j.updated_at DESC
 LIMIT ? OFFSET ?;
 
 -- name: CountJobApplicationsByUserIDAndCompany :one
-SELECT COUNT(*) FROM job_applications WHERE company LIKE ? AND user_id = ?;
+SELECT COUNT(*) FROM job_applications WHERE company LIKE ? AND user_id = ? AND archived = ?;
 
 -- name: GetJobApplicationsByUserIDAndStatus :many 
 SELECT
@@ -46,12 +46,12 @@ SELECT
 FROM 
 	job_applications j
 WHERE
-	j.status = ? AND j.user_id = ?
+	j.status = ? AND j.user_id = ? AND j.archived = ?
 ORDER BY j.updated_at DESC
 LIMIT ? OFFSET ?;
 
 -- name: CountJobApplicationsByUserIDAndStatus :one
-SELECT COUNT(*) FROM job_applications WHERE status = ? AND user_id = ?;
+SELECT COUNT(*) FROM job_applications WHERE status = ? AND user_id = ? AND archived = ?;
 
 -- name: GetJobApplicationsByUserIDAndCompanyAndStatus :many 
 SELECT
@@ -59,18 +59,18 @@ SELECT
 FROM 
 	job_applications j
 WHERE
-	j.company LIKE ? AND j.status = ? AND j.user_id = ?
+	j.company LIKE ? AND j.status = ? AND j.user_id = ? AND j.archived = ?
 ORDER BY j.updated_at DESC
 LIMIT ? OFFSET ?;
 
 -- name: CountJobApplicationsByUserIDAndCompanyAndStatus :one
-SELECT COUNT(*) FROM job_applications WHERE company = ? AND status = ? AND user_id = ?;
+SELECT COUNT(*) FROM job_applications WHERE company = ? AND status = ? AND user_id = ? AND archived = ?;
 
 -- name: GetJobApplicationUpdatedAt :one
 SELECT updated_at FROM job_applications WHERE id = ?;
 
 -- name: CountJobApplicationCompany :one
-SELECT COUNT(*) FROM job_applications WHERE company = ? AND user_id = ?;
+SELECT COUNT(*) FROM job_applications WHERE company = ? AND user_id = ? AND archived = ?;
 
 -- name: InsertJobApplication :one 
 INSERT INTO job_applications (company, title, url, user_id) 
@@ -86,3 +86,37 @@ UPDATE job_applications
 		updated_at = CURRENT_TIMESTAMP 
 WHERE id = ?;
 
+-- name: ArchiveJobApplications :exec
+UPDATE job_applications
+	SET archived = 1,
+		updated_at = CURRENT_TIMESTAMP
+WHERE user_id = ?
+AND applied_at <= ?;
+
+-- name: CountJobApplicationsForStats :one
+SELECT
+	COUNT(*)
+FROM 
+	job_applications j
+JOIN job_application_status_histories h 
+	ON h.job_application_id = j.id
+WHERE
+	j.user_id = ? AND j.archived = 0;
+
+-- name: GetJobApplicationsForStats :many 
+SELECT
+	j.applied_at, j.status, MIN(h.created_at) AS heard_back_at
+FROM 
+	job_applications j
+JOIN job_application_status_histories h 
+	ON h.job_application_id = j.id
+WHERE
+	j.user_id = ? AND j.archived = 0;
+
+-- name: CountJobApplicationCompanies :one
+SELECT
+	COUNT(DISTINCT company)
+FROM
+	job_applications j
+WHERE
+	j.user_id = ? AND j.archived = ?;

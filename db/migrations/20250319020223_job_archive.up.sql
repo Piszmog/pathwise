@@ -1,0 +1,2 @@
+ALTER TABLE job_applications
+	 ADD COLUMN archived INTEGER NOT NULL DEFAULT 0;

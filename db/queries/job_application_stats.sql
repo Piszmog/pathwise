@@ -44,3 +44,22 @@ WHERE
 
 -- name: InsertNewJobApplicationStat :exec
 INSERT INTO job_application_stats (user_id) VALUES (?);
+
+-- name: SetJobApplicationStat :exec
+UPDATE job_application_stats
+SET
+	total_applications = ?,
+	total_companies = ?,
+	average_time_to_hear_back = ?,
+	total_accepted = ?,
+	total_applied = ?,
+	total_canceled = ?,
+	total_declined = ?,
+	total_interviewing = ?,
+	total_offers = ?,
+	total_rejected = ?,
+	total_watching = ?,
+	total_widthdrawn = ?,
+	updated_at = CURRENT_TIMESTAMP
+WHERE
+	user_id = ?;

@@ -11,8 +11,7 @@ type LoggingMiddleware struct {
 
 func (m *LoggingMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		userID := r.Header.Get("USER-ID")
-		m.Logger.Debug("request received", "method", r.Method, "requestURI", r.RequestURI, "userID", userID)
+		m.Logger.Debug("request received", "method", r.Method, "requestURI", r.RequestURI)
 		next.ServeHTTP(w, r)
 	})
 }

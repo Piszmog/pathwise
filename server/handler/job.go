@@ -154,7 +154,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jobs, total, err := h.getJobApplicationsByUserID(r.Context(), userID, defaultPerPage, defaultPage*defaultPerPage)
+	jobs, total, err := h.getJobApplicationsByUserID(r.Context(), userID, false, defaultPerPage, defaultPage*defaultPerPage)
 	if err != nil {
 		h.Logger.Error("failed to get jobs", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
@@ -168,7 +168,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.html(r.Context(), w, http.StatusOK, components.AddJob(jobs, stats, types.PaginationOpts{Page: defaultPage, PerPage: defaultPerPage, Total: total}, types.FilterOpts{}))
+	h.html(r.Context(), w, http.StatusOK, components.JobsReload(jobs, stats, types.PaginationOpts{Page: defaultPage, PerPage: defaultPerPage, Total: total}, types.FilterOpts{}))
 }
 
 func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
@@ -350,6 +350,150 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.html(r.Context(), w, http.StatusOK, components.UpdateJob(actualJob, stats, newTimelineEntry))
+}
+
+func (h *Handler) ArchiveJobs(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		h.Logger.Error("failed to parse form", "error", err)
+		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	dateVal := r.FormValue("date")
+	if dateVal == "" {
+		h.Logger.Warn("missing required form values", "date", dateVal)
+		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Missing date", "Please enter a date."))
+		return
+	}
+
+	date, err := time.Parse("2006-01-02", dateVal)
+	if err != nil {
+		h.Logger.Warn("invalid date format", "date", dateVal)
+		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Invalid date", "Please enter a date."))
+		return
+	}
+
+	userID, err := getUserID(r)
+	if err != nil {
+		h.Logger.Error("failed to parse user id", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	tx, err := h.Database.DB().BeginTx(r.Context(), nil)
+	if err != nil {
+		h.Logger.Error("failed to begin transaction", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+	defer func() {
+		if txErr := tx.Rollback(); txErr != nil {
+			err = errors.Join(err, txErr)
+		}
+	}()
+
+	qtx := queries.New(tx)
+
+	err = qtx.ArchiveJobApplications(r.Context(), queries.ArchiveJobApplicationsParams{UserID: userID, AppliedAt: date})
+	if err != nil {
+		h.Logger.Error("failed to archive job applications", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	jobsCount, err := qtx.CountJobApplicationsForStats(r.Context(), userID)
+	if err != nil {
+		h.Logger.Error("failed to count job applications for stats", "userID", userID, "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	var jobs []queries.GetJobApplicationsForStatsRow
+	if jobsCount > 0 {
+		jobs, err = qtx.GetJobApplicationsForStats(r.Context(), userID)
+		if err != nil {
+			h.Logger.Error("failed to get job applications for stats", "userID", userID, "error", err)
+			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+			return
+		}
+	}
+
+	companyCount, err := qtx.CountJobApplicationCompany(r.Context(), queries.CountJobApplicationCompanyParams{UserID: userID, Archived: 0})
+	if err != nil {
+		h.Logger.Error("failed to get count application companies", "userID", userID, "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	statArgs := queries.SetJobApplicationStatParams{TotalCompanies: companyCount, UserID: userID}
+	for _, j := range jobs {
+		statArgs.TotalApplications += 1
+		if j.HeardBackAt != nil {
+			heardBackAt, err := time.Parse("2006-01-02 15:04:05", j.HeardBackAt.(string))
+			if err != nil {
+				h.Logger.Error("failed to convert string to date", "heardBackAt", j.HeardBackAt, "error", err)
+				h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+				return
+			}
+			diff := heardBackAt.Sub(j.AppliedAt)
+			daysSince := int64(diff.Hours() / 24)
+
+			if statArgs.AverageTimeToHearBack == 0 {
+				statArgs.AverageTimeToHearBack = daysSince
+			} else {
+				statArgs.AverageTimeToHearBack = (daysSince + statArgs.AverageTimeToHearBack) / 2
+			}
+		}
+		switch types.JobApplicationStatus(j.Status) {
+		case types.JobApplicationStatusAccepted:
+			statArgs.TotalAccepted += 1
+		case types.JobApplicationStatusApplied:
+			statArgs.TotalApplied += 1
+		case types.JobApplicationStatusCanceled:
+			statArgs.TotalCanceled += 1
+		case types.JobApplicationStatusDeclined:
+			statArgs.TotalDeclined += 1
+		case types.JobApplicationStatusInterviewing:
+			statArgs.TotalInterviewing += 1
+		case types.JobApplicationStatusOffered:
+			statArgs.TotalOffers += 1
+		case types.JobApplicationStatusRejected:
+			statArgs.TotalRejected += 1
+		case types.JobApplicationStatusWatching:
+			statArgs.TotalWatching += 1
+		case types.JobApplicationStatusWithdrawn:
+			statArgs.TotalWatching += 1
+		}
+	}
+
+	err = qtx.SetJobApplicationStat(r.Context(), statArgs)
+	if err != nil {
+		h.Logger.Error("failed to set stats", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
+		h.Logger.Error("failed to commit transaction", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	jobsPage, total, err := h.getJobApplicationsByUserID(r.Context(), userID, false, defaultPerPage, defaultPage*defaultPerPage)
+	if err != nil {
+		h.Logger.Error("failed to get jobs", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	stats, err := h.getStats(r.Context(), userID)
+	if err != nil {
+		h.Logger.Error("failed to get stats", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	h.html(r.Context(), w, http.StatusOK, components.JobsReload(jobsPage, stats, types.PaginationOpts{Page: defaultPage, PerPage: defaultPerPage, Total: total}, types.FilterOpts{}))
 }
 
 func newTimelineID(entryType types.JobApplicationTimelineType, entryID string) string {
