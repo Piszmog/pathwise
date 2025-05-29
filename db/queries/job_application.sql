@@ -1,7 +1,7 @@
 -- name: GetJobApplicationByID :one
 SELECT
 	j.applied_at, j.updated_at, j.company, j.title, j.status, j.url, j.id, j.user_id, j.archived,
-	j.salary_min, j.salary_max, j.salary_currency, j.salary_period
+	j.salary_min, j.salary_max, j.salary_currency
 FROM 
 	job_applications j
 WHERE
@@ -10,7 +10,7 @@ WHERE
 -- name: GetJobApplicationByIDAndUserID :one
 SELECT
 	j.applied_at, j.updated_at, j.company, j.title, j.status, j.url, j.id, j.user_id,
-	j.salary_min, j.salary_max, j.salary_currency, j.salary_period
+	j.salary_min, j.salary_max, j.salary_currency
 FROM
 	job_applications j
 WHERE
@@ -19,7 +19,7 @@ WHERE
 -- name: GetJobApplicationsByUserID :many 
 SELECT
 	j.applied_at, j.updated_at, j.company, j.title, j.status, j.url, j.id,
-	j.salary_min, j.salary_max, j.salary_currency, j.salary_period
+	j.salary_min, j.salary_max, j.salary_currency
 FROM 
 	job_applications j
 WHERE
@@ -33,7 +33,7 @@ SELECT COUNT(*) FROM job_applications WHERE user_id = ? AND archived = ?;
 -- name: GetJobApplicationsByUserIDAndCompany :many 
 SELECT
 	j.applied_at, j.updated_at, j.company, j.title, j.status, j.url, j.id,
-	j.salary_min, j.salary_max, j.salary_currency, j.salary_period
+	j.salary_min, j.salary_max, j.salary_currency
 FROM 
 	job_applications j
 WHERE
@@ -47,7 +47,7 @@ SELECT COUNT(*) FROM job_applications WHERE company LIKE ? AND user_id = ? AND a
 -- name: GetJobApplicationsByUserIDAndStatus :many 
 SELECT
 	j.applied_at, j.updated_at, j.company, j.title, j.status, j.url, j.id,
-	j.salary_min, j.salary_max, j.salary_currency, j.salary_period
+	j.salary_min, j.salary_max, j.salary_currency
 FROM 
 	job_applications j
 WHERE
@@ -61,7 +61,7 @@ SELECT COUNT(*) FROM job_applications WHERE status = ? AND user_id = ? AND archi
 -- name: GetJobApplicationsByUserIDAndCompanyAndStatus :many 
 SELECT
 	j.applied_at, j.updated_at, j.company, j.title, j.status, j.url, j.id,
-	j.salary_min, j.salary_max, j.salary_currency, j.salary_period
+	j.salary_min, j.salary_max, j.salary_currency
 FROM 
 	job_applications j
 WHERE
