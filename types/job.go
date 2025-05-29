@@ -7,14 +7,14 @@ import (
 )
 
 type JobApplication struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	AppliedAt time.Time
-	Company   string
-	Title     string
-	URL       string
-	Status    JobApplicationStatus
-	ID        int64
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	AppliedAt      time.Time
+	Company        string
+	Title          string
+	URL            string
+	Status         JobApplicationStatus
+	ID             int64
 	UserID         int64
 	Archived       bool
 	SalaryMin      sql.NullInt64
