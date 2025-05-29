@@ -330,7 +330,7 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		SalaryMin:      salaryMin,
 		SalaryMax:      salaryMax,
 		SalaryCurrency: salaryCurrency,
-		UserID:         userID, // Ensure UserID is also passed for the WHERE clause in UpdateJobApplication
+		UserID:         userID,
 	})
 	if err != nil {
 		h.Logger.Error("failed to update job", "error", err)
