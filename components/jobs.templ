@@ -151,6 +151,58 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 					Disabled: j.Archived,
 				})
 			</div>
+			<div class="col-span-2">
+				<div class="grid grid-cols-5 gap-x-4">
+					<div class="col-span-1">
+						<label for="salary_currency" class="block text-sm font-medium leading-6 text-gray-900">Currency</label>
+						<div class="mt-2">
+							<select
+								id="salary_currency"
+								name="salary_currency"
+								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+								disabled?={ j.Archived }
+							>
+								<option value="">Select (optional)</option>
+								for _, currency := range types.AvailableCurrencies {
+									if j.SalaryCurrency.Valid && j.SalaryCurrency.String == currency.Code {
+										<option value={ currency.Code } selected>{ currency.Symbol + " (" + currency.Code + ")" }</option>
+									} else {
+										<option value={ currency.Code }>{ currency.Symbol + " (" + currency.Code + ")" }</option>
+									}
+								}
+							</select>
+						</div>
+					</div>
+					<div class="col-span-2">
+						<label for="salary_min" class="block text-sm font-medium leading-6 text-gray-900">Min Salary</label>
+						<div class="mt-2">
+							<input
+								type="number"
+								name="salary_min"
+								id="salary_min"
+								placeholder="Minimum"
+								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-gray-300 placeholder:text-gray-400 read-only:bg-gray-50 read-only:text-gray-500 read-only:ring-gray-200 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+								value={ func() string { if j.SalaryMin.Valid { return strconv.FormatInt(j.SalaryMin.Int64, 10) }; return "" }() }
+								disabled?={ j.Archived }
+							/>
+						</div>
+					</div>
+					<div class="col-span-2">
+						<label for="salary_max" class="block text-sm font-medium leading-6 text-gray-900">Max Salary</label>
+						<div class="mt-2">
+							<input
+								type="number"
+								name="salary_max"
+								id="salary_max"
+								placeholder="Maximum"
+								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-gray-300 placeholder:text-gray-400 read-only:bg-gray-50 read-only:text-gray-500 read-only:ring-gray-200 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+								value={ func() string { if j.SalaryMax.Valid { return strconv.FormatInt(j.SalaryMax.Int64, 10) }; return "" }() }
+								disabled?={ j.Archived }
+							/>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 		<div class="mt-6 flex items-center justify-end gap-x-6">
 			<button
@@ -230,6 +282,49 @@ templ jobApplicationForm() {
 						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
 						required
 					/>
+				</div>
+			</div>
+			<div>
+				<div class="grid grid-cols-5 gap-x-4">
+					<div class="col-span-1">
+						<label for="new-salary_currency" class="block text-sm font-medium leading-6 text-gray-900">Currency</label>
+						<div class="mt-2">
+							<select
+								id="new-salary_currency"
+								name="salary_currency"
+								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+							>
+								<option value="">Select (optional)</option>
+								for _, currency := range types.AvailableCurrencies {
+									<option value={ currency.Code }>{ currency.Symbol + " (" + currency.Code + ")" }</option>
+								}
+							</select>
+						</div>
+					</div>
+					<div class="col-span-2">
+						<label for="new-salary_min" class="block text-sm font-medium leading-6 text-gray-900">Min Salary</label>
+						<div class="mt-2">
+							<input
+								type="number"
+								name="salary_min"
+								id="new-salary_min"
+								placeholder="Minimum"
+								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+							/>
+						</div>
+					</div>
+					<div class="col-span-2">
+						<label for="new-salary_max" class="block text-sm font-medium leading-6 text-gray-900">Max Salary</label>
+						<div class="mt-2">
+							<input
+								type="number"
+								name="salary_max"
+								id="new-salary_max"
+								placeholder="Maximum"
+								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+							/>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>

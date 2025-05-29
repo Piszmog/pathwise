@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"net/http"
 	"sort"
@@ -38,15 +39,18 @@ func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
 		archived = true
 	}
 	j := types.JobApplication{
-		ID:        job.ID,
-		Company:   job.Company,
-		Title:     job.Title,
-		URL:       job.Url,
-		Status:    types.JobApplicationStatus(job.Status),
-		AppliedAt: job.AppliedAt,
-		UpdatedAt: job.UpdatedAt,
-		UserID:    job.UserID,
-		Archived:  archived,
+		ID:             job.ID,
+		Company:        job.Company,
+		Title:          job.Title,
+		URL:            job.Url,
+		Status:         types.JobApplicationStatus(job.Status),
+		AppliedAt:      job.AppliedAt,
+		UpdatedAt:      job.UpdatedAt,
+		UserID:         job.UserID,
+		Archived:       archived,
+		SalaryMin:      job.SalaryMin,
+		SalaryMax:      job.SalaryMax,
+		SalaryCurrency: job.SalaryCurrency,
 	}
 
 	h.html(r.Context(), w, http.StatusOK, components.JobDetails(j, timelineEntries))
@@ -99,6 +103,45 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Parse salary fields
+	salaryMinStr := r.FormValue("salary_min")
+	salaryMaxStr := r.FormValue("salary_max")
+	salaryCurrencyStr := r.FormValue("salary_currency")
+
+	var salaryMin sql.NullInt64
+	if salaryMinStr != "" {
+		val, err := strconv.ParseInt(salaryMinStr, 10, 64)
+		if err != nil {
+			h.Logger.Error("failed to parse salary_min", "error", err, "value", salaryMinStr)
+			h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Invalid salary min value", "Please enter a valid number for minimum salary."))
+			return
+		}
+		salaryMin = sql.NullInt64{Int64: val, Valid: true}
+	}
+
+	var salaryMax sql.NullInt64
+	if salaryMaxStr != "" {
+		val, err := strconv.ParseInt(salaryMaxStr, 10, 64)
+		if err != nil {
+			h.Logger.Error("failed to parse salary_max", "error", err, "value", salaryMaxStr)
+			h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Invalid salary max value", "Please enter a valid number for maximum salary."))
+			return
+		}
+		salaryMax = sql.NullInt64{Int64: val, Valid: true}
+	}
+
+	salaryCurrency := sql.NullString{}
+	if salaryCurrencyStr != "" {
+		salaryCurrency = sql.NullString{String: salaryCurrencyStr, Valid: true}
+	}
+
+	// Validate salary range
+	if salaryMin.Valid && salaryMax.Valid && salaryMin.Int64 > salaryMax.Int64 {
+		h.Logger.Warn("validation error: minimum salary cannot be greater than maximum salary", "min_salary", salaryMin.Int64, "max_salary", salaryMax.Int64)
+		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Invalid Salary Range", "Minimum salary cannot be greater than maximum salary."))
+		return
+	}
+
 	userID, err := getUserID(r)
 	if err != nil {
 		h.Logger.Error("failed to parse user id", "error", err)
@@ -121,10 +164,13 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 	qtx := queries.New(tx)
 
 	job := queries.InsertJobApplicationParams{
-		Company: company,
-		Title:   title,
-		Url:     url,
-		UserID:  userID,
+		Company:        company,
+		Title:          title,
+		Url:            url,
+		UserID:         userID,
+		SalaryMin:      salaryMin,
+		SalaryMax:      salaryMax,
+		SalaryCurrency: salaryCurrency,
 	}
 	var jobID int64
 	if jobID, err = qtx.InsertJobApplication(r.Context(), job); err != nil {
@@ -213,6 +259,45 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	title := r.FormValue("title")
 	url := r.FormValue("url")
 	status := r.FormValue("status")
+
+	// Parse salary fields
+	salaryMinStr := r.FormValue("salary_min")
+	salaryMaxStr := r.FormValue("salary_max")
+	salaryCurrencyStr := r.FormValue("salary_currency")
+
+	var salaryMin sql.NullInt64
+	if salaryMinStr != "" {
+		val, err := strconv.ParseInt(salaryMinStr, 10, 64)
+		if err != nil {
+			h.Logger.Error("failed to parse salary_min", "error", err, "value", salaryMinStr)
+			h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Invalid salary min value", "Please enter a valid number for minimum salary."))
+			return
+		}
+		salaryMin = sql.NullInt64{Int64: val, Valid: true}
+	}
+
+	var salaryMax sql.NullInt64
+	if salaryMaxStr != "" {
+		val, err := strconv.ParseInt(salaryMaxStr, 10, 64)
+		if err != nil {
+			h.Logger.Error("failed to parse salary_max", "error", err, "value", salaryMaxStr)
+			h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Invalid salary max value", "Please enter a valid number for maximum salary."))
+			return
+		}
+		salaryMax = sql.NullInt64{Int64: val, Valid: true}
+	}
+
+	salaryCurrency := sql.NullString{}
+	if salaryCurrencyStr != "" {
+		salaryCurrency = sql.NullString{String: salaryCurrencyStr, Valid: true}
+	}
+	// Validate salary range
+	if salaryMin.Valid && salaryMax.Valid && salaryMin.Int64 > salaryMax.Int64 {
+		h.Logger.Warn("validation error: minimum salary cannot be greater than maximum salary", "min_salary", salaryMin.Int64, "max_salary", salaryMax.Int64)
+		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Invalid Salary Range", "Minimum salary cannot be greater than maximum salary."))
+		return
+	}
+
 	if company == "" || title == "" || url == "" || status == "" {
 		h.Logger.Warn("missing required form values", "company", company, "title", title, "url", url, "status", status)
 		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Missing company, title, url, or status", "Please enter a company, title, url, and status."))
@@ -237,11 +322,15 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	qtx := queries.New(tx)
 
 	err = qtx.UpdateJobApplication(r.Context(), queries.UpdateJobApplicationParams{
-		ID:      job.ID,
-		Company: company,
-		Title:   title,
-		Url:     url,
-		Status:  status,
+		ID:             job.ID,
+		Company:        company,
+		Title:          title,
+		Url:            url,
+		Status:         status,
+		SalaryMin:      salaryMin,
+		SalaryMax:      salaryMax,
+		SalaryCurrency: salaryCurrency,
+		UserID:         userID,
 	})
 	if err != nil {
 		h.Logger.Error("failed to update job", "error", err)

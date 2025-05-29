@@ -1,13 +1,7 @@
 version: 2
 sql:
   - engine: sqlite
-    queries: 
-      - db/queries/job_application.sql
-      - db/queries/job_application_status_history.sql
-      - db/queries/job_application_note.sql
-      - db/queries/user.sql
-      - db/queries/session.sql
-      - db/queries/job_application_stats.sql
+    queries: db/queries/
     schema: db/migrations
     gen:
       go:

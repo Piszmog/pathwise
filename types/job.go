@@ -1,21 +1,25 @@
 package types
 
 import (
+	"database/sql"
 	"time"
 	"unicode"
 )
 
 type JobApplication struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	AppliedAt time.Time
-	Company   string
-	Title     string
-	URL       string
-	Status    JobApplicationStatus
-	ID        int64
-	UserID    int64
-	Archived  bool
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	AppliedAt      time.Time
+	Company        string
+	Title          string
+	URL            string
+	Status         JobApplicationStatus
+	ID             int64
+	UserID         int64
+	Archived       bool
+	SalaryMin      sql.NullInt64
+	SalaryMax      sql.NullInt64
+	SalaryCurrency sql.NullString
 }
 
 func (j JobApplication) RecordID() int64 {
