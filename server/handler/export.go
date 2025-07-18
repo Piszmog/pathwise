@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/Piszmog/pathwise/utils"
 )
 
 func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
@@ -66,7 +68,7 @@ func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
 
 		record := []string{
 			job.Company,
-			job.Title,
+			utils.CleanJobTitle(job.Title),
 			job.Status,
 			minSalary,
 			maxSalary,
