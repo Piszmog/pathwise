@@ -244,9 +244,11 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 		</div>
 	</form>
 	@Timeline(timelineEntries, "")
-	<div class="mt-6 flex gap-x-3">
-		@note(j.ID, j.Archived)
-	</div>
+	if !j.Archived {
+		<div class="mt-6 flex gap-x-3">
+			@note(j.ID, j.Archived)
+		</div>
+	}
 }
 
 templ jobApplicationForm() {
