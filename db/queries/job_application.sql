@@ -105,6 +105,18 @@ UPDATE job_applications
 WHERE user_id = ?
 AND applied_at <= ?;
 
+-- name: ArchiveJobApplication :exec
+UPDATE job_applications
+	SET archived = 1,
+		updated_at = CURRENT_TIMESTAMP
+WHERE id = ? AND user_id = ?;
+
+-- name: UnarchiveJobApplication :exec
+UPDATE job_applications
+	SET archived = 0,
+		updated_at = CURRENT_TIMESTAMP
+WHERE id = ? AND user_id = ?;
+
 -- name: CountJobApplicationsForStats :one
 SELECT
 	COUNT(*)

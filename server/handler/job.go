@@ -590,6 +590,80 @@ func (h *Handler) ArchiveJobs(w http.ResponseWriter, r *http.Request) {
 	h.html(r.Context(), w, http.StatusOK, components.JobsReload(jobsPage, stats, types.PaginationOpts{Page: defaultPage, PerPage: defaultPerPage, Total: total}, types.FilterOpts{}))
 }
 
+func (h *Handler) UnarchiveJob(w http.ResponseWriter, r *http.Request) {
+	jobIDStr := r.PathValue("id")
+	jobID, err := strconv.ParseInt(jobIDStr, 10, 64)
+	if err != nil {
+		h.Logger.Error("failed to parse job id", "jobID", jobIDStr, "error", err)
+		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Invalid job ID", "Please try again."))
+		return
+	}
+
+	userID, err := getUserID(r)
+	if err != nil {
+		h.Logger.Error("failed to parse user id", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	err = h.Database.Queries().UnarchiveJobApplication(r.Context(), queries.UnarchiveJobApplicationParams{
+		ID:     jobID,
+		UserID: userID,
+	})
+	if err != nil {
+		h.Logger.Error("failed to unarchive job application", "jobID", jobID, "userID", userID, "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	// Get the updated archived jobs list (archived = 1)
+	jobs, total, err := h.getJobApplicationsByUserID(r.Context(), userID, int64(1), defaultPerPage, defaultPage*defaultPerPage)
+	if err != nil {
+		h.Logger.Error("failed to get archived jobs", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	h.html(r.Context(), w, http.StatusOK, components.Jobs(jobs, types.PaginationOpts{Page: defaultPage, PerPage: defaultPerPage, Total: total}, types.FilterOpts{}))
+}
+
+func (h *Handler) ArchiveJob(w http.ResponseWriter, r *http.Request) {
+	jobIDStr := r.PathValue("id")
+	jobID, err := strconv.ParseInt(jobIDStr, 10, 64)
+	if err != nil {
+		h.Logger.Error("failed to parse job id", "jobID", jobIDStr, "error", err)
+		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Invalid job ID", "Please try again."))
+		return
+	}
+
+	userID, err := getUserID(r)
+	if err != nil {
+		h.Logger.Error("failed to parse user id", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	err = h.Database.Queries().ArchiveJobApplication(r.Context(), queries.ArchiveJobApplicationParams{
+		ID:     jobID,
+		UserID: userID,
+	})
+	if err != nil {
+		h.Logger.Error("failed to archive job application", "jobID", jobID, "userID", userID, "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	// Get the updated active jobs list (archived = 0)
+	jobs, total, err := h.getJobApplicationsByUserID(r.Context(), userID, int64(0), defaultPerPage, defaultPage*defaultPerPage)
+	if err != nil {
+		h.Logger.Error("failed to get active jobs", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	h.html(r.Context(), w, http.StatusOK, components.Jobs(jobs, types.PaginationOpts{Page: defaultPage, PerPage: defaultPerPage, Total: total}, types.FilterOpts{}))
+}
+
 func newTimelineID(entryType types.JobApplicationTimelineType, entryID string) string {
 	switch entryType {
 	case types.JobApplicationTimelineTypeStatus:
