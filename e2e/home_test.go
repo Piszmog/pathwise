@@ -121,6 +121,45 @@ func TestHome_BulkArchiveByDate(t *testing.T) {
 	require.NoError(t, expect.Locator(page.GetByText("Recent Company")).ToHaveCount(1))
 }
 
+func TestHome_FilterFunctionality(t *testing.T) {
+	beforeEach(t)
+	signin(t, "user8@email.com", "password")
+
+	addJobApplication(t, "Google", "Software Engineer", "https://google.com")
+	addJobApplication(t, "Microsoft", "Backend Developer", "https://microsoft.com")
+	addJobApplication(t, "Apple", "Frontend Developer", "https://apple.com")
+	addJobApplication(t, "Amazon", "DevOps Engineer", "https://amazon.com")
+
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(4))
+
+	filterByCompany(t, "Google")
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
+	require.NoError(t, expect.Locator(page.GetByText("Google")).ToHaveCount(1))
+
+	clearFilter(t)
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(4))
+
+	filterByCompany(t, "Micro")
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
+	require.NoError(t, expect.Locator(page.GetByText("Microsoft")).ToHaveCount(1))
+
+	clearFilter(t)
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(4))
+
+	filterByStatus(t, "applied")
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(4))
+
+	clearFilter(t)
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(4))
+
+	filterByCompany(t, "NonExistent")
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
+	require.NoError(t, expect.Locator(page.GetByText("0 results")).ToHaveCount(1))
+
+	clearFilter(t)
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(4))
+}
+
 func signin(t *testing.T, email, password string) {
 	_, err := page.Goto(getFullPath("signin"))
 	require.NoError(t, err)
@@ -184,4 +223,26 @@ func archiveJobsByDate(t *testing.T, date string) {
 	require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "Archive"}).First().Click())
 	require.NoError(t, page.Locator("#date").Fill(date))
 	require.NoError(t, page.Locator("#archive-jobs-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Archive"}).Click())
+}
+
+func filterByCompany(t *testing.T, company string) {
+	require.NoError(t, page.Locator("#filter-form #company").Fill(company))
+	require.NoError(t, page.Locator("#filter-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Filter"}).Click())
+}
+
+func filterByStatus(t *testing.T, status string) {
+	_, err := page.Locator("#filter-form #status-select").SelectOption(playwright.SelectOptionValues{Values: &[]string{status}})
+	require.NoError(t, err)
+	require.NoError(t, page.Locator("#filter-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Filter"}).Click())
+}
+
+func filterByCompanyAndStatus(t *testing.T, company, status string) {
+	require.NoError(t, page.Locator("#filter-form #company").Fill(company))
+	_, err := page.Locator("#filter-form #status-select").SelectOption(playwright.SelectOptionValues{Values: &[]string{status}})
+	require.NoError(t, err)
+	require.NoError(t, page.Locator("#filter-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Filter"}).Click())
+}
+
+func clearFilter(t *testing.T) {
+	require.NoError(t, page.Locator("#filter-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Clear"}).Click())
 }
