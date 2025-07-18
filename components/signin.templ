@@ -4,10 +4,12 @@ templ Signin() {
 	<!DOCTYPE html>
 	<html lang="en">
 		@Head()
-		<main>
-			@signin()
+		<body class="min-h-screen flex flex-col">
+			<main class="flex-1">
+				@signin()
+			</main>
 			@footer()
-		</main>
+		</body>
 	</html>
 }
 

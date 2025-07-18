@@ -9,12 +9,12 @@ templ Archives() {
 }
 
 templ archiveBody() {
-	<body>
-		<main>
+	<body class="min-h-screen flex flex-col">
+		<main class="flex-1">
 			@header(CurrentPageArchived)
 			@archivesContent()
-			@footer()
 		</main>
+		@footer()
 	</body>
 }
 
