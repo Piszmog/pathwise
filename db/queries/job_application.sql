@@ -147,6 +147,14 @@ FROM
 WHERE
 	j.user_id = ? AND j.archived = ?;
 
+-- name: CountJobApplicationCompaniesArchived :one
+SELECT 
+	total_companies_archived as count
+FROM 
+	job_application_stats 
+WHERE 
+	user_id = ?;
+
 -- name: GetAllJobApplicationsByUserID :many
 SELECT
 	j.applied_at, j.updated_at, j.company, j.title, j.status, j.url,

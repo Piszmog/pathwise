@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"strconv"
 
@@ -9,6 +10,15 @@ import (
 	"github.com/Piszmog/pathwise/db/queries"
 	"github.com/Piszmog/pathwise/types"
 )
+
+// Helper function to handle count queries that might return "no rows" for new users
+func getCountOrZero(count int64, err error) int64 {
+	if err != nil && err == sql.ErrNoRows {
+		return 0
+	}
+
+	return count
+}
 
 func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	userID, err := getUserID(r)
@@ -129,9 +139,13 @@ func (h *Handler) getJobApplicationsByUserIDAndCompany(ctx context.Context, user
 	}
 
 	total, err := h.Database.Queries().CountJobApplicationsByUserIDAndCompany(ctx, queries.CountJobApplicationsByUserIDAndCompanyParams{
-		UserID:  userID,
-		Company: company,
+		Company:  company,
+		UserID:   userID,
+		Archived: archived,
 	})
+	if err != nil {
+		return nil, 0, err
+	}
 	if err != nil {
 		return nil, 0, err
 	}
@@ -168,10 +182,14 @@ func (h *Handler) getJobApplictionsByUserIDAndCompanyAndStatus(ctx context.Conte
 	}
 
 	total, err := h.Database.Queries().CountJobApplicationsByUserIDAndCompanyAndStatus(ctx, queries.CountJobApplicationsByUserIDAndCompanyAndStatusParams{
-		UserID:  userID,
-		Company: company,
-		Status:  status.String(),
+		Company:  company,
+		Status:   status.String(),
+		UserID:   userID,
+		Archived: archived,
 	})
+	if err != nil {
+		return nil, 0, err
+	}
 	if err != nil {
 		return nil, 0, err
 	}
@@ -206,8 +224,9 @@ func (h *Handler) getJobApplicationsByUserIDAndStatus(ctx context.Context, userI
 		}
 	}
 	total, err := h.Database.Queries().CountJobApplicationsByUserIDAndStatus(ctx, queries.CountJobApplicationsByUserIDAndStatusParams{
-		UserID: userID,
-		Status: status.String(),
+		Status:   status.String(),
+		UserID:   userID,
+		Archived: archived,
 	})
 	if err != nil {
 		return nil, 0, err

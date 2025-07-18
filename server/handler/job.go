@@ -180,7 +180,11 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 		return
 	}
-	companyCount, err := h.Database.Queries().CountJobApplicationCompany(r.Context(), queries.CountJobApplicationCompanyParams{UserID: userID, Company: company})
+	companyCount, err := h.Database.Queries().CountJobApplicationCompany(r.Context(), queries.CountJobApplicationCompanyParams{
+		Company:  company,
+		UserID:   userID,
+		Archived: 0,
+	})
 	if err != nil {
 		h.Logger.Error("failed to count company", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
@@ -509,11 +513,17 @@ func (h *Handler) ArchiveJobs(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	companyCount, err := qtx.CountJobApplicationCompanies(r.Context(), queries.CountJobApplicationCompaniesParams{UserID: userID, Archived: 0})
-	if err != nil {
+	companyCount, err := qtx.CountJobApplicationCompanies(r.Context(), queries.CountJobApplicationCompaniesParams{
+		UserID:   userID,
+		Archived: 0,
+	})
+	if err != nil && err != sql.ErrNoRows {
 		h.Logger.Error("failed to get count application companies", "userID", userID, "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 		return
+	}
+	if err == sql.ErrNoRows {
+		companyCount = 0
 	}
 
 	statArgs := queries.SetJobApplicationStatParams{TotalCompanies: companyCount, UserID: userID}
@@ -808,7 +818,10 @@ func (h *Handler) recalculateStats(ctx context.Context, qtx *queries.Queries, us
 		}
 	}
 
-	companyCount, err := qtx.CountJobApplicationCompanies(ctx, queries.CountJobApplicationCompaniesParams{UserID: userID, Archived: 0})
+	companyCount, err := qtx.CountJobApplicationCompanies(ctx, queries.CountJobApplicationCompaniesParams{
+		UserID:   userID,
+		Archived: 0,
+	})
 	if err != nil {
 		return err
 	}

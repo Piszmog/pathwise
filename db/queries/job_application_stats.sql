@@ -3,6 +3,8 @@ SELECT
 	average_time_to_hear_back,
 	total_applications,
 	total_companies,
+	total_applications_archived,
+	total_companies_archived,
 	total_interviewing,
 	total_rejected
 FROM
