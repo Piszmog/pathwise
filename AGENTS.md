@@ -26,6 +26,7 @@ Pathwise is a job application tracking web application built with Go, templ, HTM
 - **Structs**: Group related fields, use receiver methods for behavior, embed time fields (CreatedAt, UpdatedAt)
 - **Constants**: Group related constants with `const ()` blocks, use typed constants for enums
 - **Database**: Use sqlc for queries, enable foreign keys with `PRAGMA foreign_keys = ON`, migrations in db/migrations/
+- **SQLC**: Write SQL queries in .sql files, generate type-safe Go code with `go tool sqlc generate`
 - **HTTP handlers**: Use templ for templates, set proper content types, use structured logging with slog.Logger
 - **Testing**: Use testify for assertions, build tag `//go:build e2e` for E2E tests, use Playwright for browser tests
 - **Logging**: Use structured logging with `h.Logger.Error("message", "key", value)` pattern in handlers
@@ -86,9 +87,31 @@ Pathwise is a job application tracking web application built with Go, templ, HTM
 - **job_application_status_history**: id, job_application_id, status, created_at, updated_at
 - **user_ips**: id, user_id, ip_address, created_at, updated_at
 
+## SQLC Guidelines (https://docs.sqlc.dev/en/latest/tutorials/getting-started-sqlite.html)
+- **Configuration**: sqlc.yml defines engine (sqlite), queries path (db/queries/), schema (db/migrations), and output (db/queries)
+- **Query Files**: Write SQL queries in .sql files in db/queries/ directory with special comments for code generation
+- **Query Annotations**: Use `-- name: QueryName :one|many|exec` to define query name and return type
+  - `:one` - Returns single row (GetUserByID)
+  - `:many` - Returns multiple rows (GetJobApplicationsByUserID)  
+  - `:exec` - Returns sql.Result for INSERT/UPDATE/DELETE (DeleteUserByID)
+- **Parameters**: Use `?` placeholders for parameters, sqlc generates type-safe function signatures
+- **Generated Code**: Run `go tool sqlc generate` to create .go files with type-safe query functions
+- **Models**: sqlc generates Go structs in models.go that match database schema
+- **Database Interface**: Generated Queries struct provides all query methods, accepts any sql.DB-compatible interface
+- **Usage Pattern**: `queries := db.New(database)` then call `queries.GetUserByID(ctx, userID)`
+- **Transactions**: Pass sql.Tx to queries.WithTx(tx) for transactional operations
+- **Example Query Structure**:
+  ```sql
+  -- name: GetJobApplicationByID :one
+  SELECT applied_at, company, title, status, url, id, user_id 
+  FROM job_applications 
+  WHERE id = ?;
+  ```
+
 ## Handler Patterns
 - **Base Handler**: `Handler` struct with `Logger *slog.Logger` and `Database db.Database`
 - **Rendering**: Use `h.html(ctx, w, status, component)` for templ components
 - **User ID**: Extract from `USER-ID` header via `getUserID(r *http.Request)`
 - **Client IP**: Extract via `getClientIP(r *http.Request)` with X-Forwarded-For support
 - **Error Handling**: Log errors with structured logging, return appropriate HTTP status codes
+- **Database Queries**: Use sqlc-generated queries via `h.Database.Queries()` for type-safe database operations
