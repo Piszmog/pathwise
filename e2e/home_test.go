@@ -13,10 +13,7 @@ func TestHome_NewUser(t *testing.T) {
 	beforeEach(t)
 	signin(t, "user1@email.com", "password")
 
-	// Initial stats
 	assertStats(t, "0", "0", "0 days", "NaN%", "NaN%")
-
-	// Initial job apps - empty
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
 	require.NoError(t, expect.Locator(page.GetByText("Showing 0 to 0 of 0 results ")).ToHaveCount(1))
 }
@@ -44,6 +41,84 @@ func TestHome_UpdatedStats(t *testing.T) {
 
 	updateJobApplication(t, "", "", "", "rejected")
 	assertStats(t, "1", "1", "2 days", "0%", "100%")
+}
+
+func TestHome_UpdateAllFields(t *testing.T) {
+	beforeEach(t)
+	signin(t, "user4@email.com", "password")
+
+	addJobApplication(t, "Initial Company", "Initial Title", "https://initial.com")
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
+
+	updateJobApplication(t, "Updated Company", "Updated Title", "https://updated.com", "interviewing")
+
+	require.NoError(t, expect.Locator(page.Locator("#job-form #company")).ToHaveValue("Updated Company"))
+	require.NoError(t, expect.Locator(page.Locator("#job-form #title")).ToHaveValue("Updated Title"))
+	require.NoError(t, expect.Locator(page.Locator("#job-form #url")).ToHaveValue("https://updated.com"))
+	require.NoError(t, expect.Locator(page.Locator("#job-form #status-select")).ToHaveValue("interviewing"))
+}
+
+func TestHome_AddNote(t *testing.T) {
+	beforeEach(t)
+	signin(t, "user5@email.com", "password")
+
+	addJobApplication(t, "Note Test Company", "Software Engineer", "https://notetest.com")
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
+
+	addNote(t, "Had a great phone screening today. Moving to technical round next week.")
+	require.NoError(t, expect.Locator(page.GetByText("Had a great phone screening today. Moving to technical round next week.")).ToHaveCount(1))
+
+	addNote(t, "Completed technical interview. Waiting for feedback.")
+	require.NoError(t, expect.Locator(page.GetByText("Had a great phone screening today. Moving to technical round next week.")).ToHaveCount(1))
+	require.NoError(t, expect.Locator(page.GetByText("Completed technical interview. Waiting for feedback.")).ToHaveCount(1))
+}
+
+func TestHome_StatusUpdateTimeline(t *testing.T) {
+	beforeEach(t)
+	signin(t, "user6@email.com", "password")
+
+	addJobApplication(t, "Timeline Test Company", "Backend Developer", "https://timeline.com")
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
+
+	require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "View job"}).First().Click())
+	require.NoError(t, expect.Locator(page.Locator("#timeline").GetByText("applied")).ToHaveCount(1))
+
+	updateJobApplication(t, "", "", "", "interviewing")
+	require.NoError(t, expect.Locator(page.Locator("#timeline").GetByText("applied")).ToHaveCount(1))
+	require.NoError(t, expect.Locator(page.Locator("#timeline").GetByText("interviewing")).ToHaveCount(1))
+
+	updateJobApplication(t, "", "", "", "offered")
+	require.NoError(t, expect.Locator(page.Locator("#timeline").GetByText("applied")).ToHaveCount(1))
+	require.NoError(t, expect.Locator(page.Locator("#timeline").GetByText("interviewing")).ToHaveCount(1))
+	require.NoError(t, expect.Locator(page.Locator("#timeline").GetByText("offered")).ToHaveCount(1))
+}
+
+func TestHome_BulkArchiveByDate(t *testing.T) {
+	beforeEach(t)
+	signin(t, "user7@email.com", "password")
+
+	addJobApplication(t, "Old Company 1", "Software Engineer", "https://old1.com")
+	addJobApplication(t, "Old Company 2", "Backend Developer", "https://old2.com")
+	addJobApplication(t, "Recent Company", "Frontend Developer", "https://recent.com")
+
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(3))
+	require.NoError(t, expect.Locator(page.GetByText("3 results")).ToHaveCount(1))
+	assertStats(t, "3", "3", "0 days", "0%", "0%")
+
+	tomorrow := "2025-07-19"
+	archiveJobsByDate(t, tomorrow)
+
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
+	require.NoError(t, expect.Locator(page.GetByText("0 results")).ToHaveCount(1))
+	assertStats(t, "0", "0", "0 days", "NaN%", "NaN%")
+
+	_, err := page.Goto(getFullPath("archives"))
+	require.NoError(t, err)
+
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(3))
+	require.NoError(t, expect.Locator(page.GetByText("Old Company 1")).ToHaveCount(1))
+	require.NoError(t, expect.Locator(page.GetByText("Old Company 2")).ToHaveCount(1))
+	require.NoError(t, expect.Locator(page.GetByText("Recent Company")).ToHaveCount(1))
 }
 
 func signin(t *testing.T, email, password string) {
@@ -76,7 +151,10 @@ func assertStats(t *testing.T, totalApps, totalCompanies, hearBack, interviewRat
 }
 
 func updateJobApplication(t *testing.T, company, title, url, status string) {
-	require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "View job"}).First().Click())
+	jobForm := page.Locator("#job-form")
+	if count, _ := jobForm.Count(); count == 0 {
+		require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "View job"}).First().Click())
+	}
 	if company != "" {
 		require.NoError(t, page.Locator("#job-form #company").Fill(company))
 	}
@@ -94,7 +172,16 @@ func updateJobApplication(t *testing.T, company, title, url, status string) {
 }
 
 func addNote(t *testing.T, note string) {
-	require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "View job"}).First().Click())
+	noteForm := page.GetByPlaceholder("Add a note...")
+	if count, _ := noteForm.Count(); count == 0 {
+		require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "View job"}).First().Click())
+	}
 	require.NoError(t, page.GetByPlaceholder("Add a note...").Fill(note))
 	require.NoError(t, page.Locator("#note-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Add"}).Click())
+}
+
+func archiveJobsByDate(t *testing.T, date string) {
+	require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "Archive"}).First().Click())
+	require.NoError(t, page.Locator("#date").Fill(date))
+	require.NoError(t, page.Locator("#archive-jobs-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Archive"}).Click())
 }
