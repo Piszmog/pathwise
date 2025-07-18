@@ -28,7 +28,11 @@ func main() {
 		l.Error("failed to create database", "error", err)
 		return
 	}
-	defer database.Close()
+	defer func() {
+		if closeErr := database.Close(); closeErr != nil {
+			l.Error("failed to close database", "error", closeErr)
+		}
+	}()
 
 	if _, err = database.DB().Exec("PRAGMA foreign_keys = ON;"); err != nil {
 		l.Error("failed to enable foreign keys", "error", err)

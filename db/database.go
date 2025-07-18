@@ -54,7 +54,9 @@ func Migrate(db Database) error {
 	if err != nil {
 		return fmt.Errorf("failed to create iofs: %w", err)
 	}
-	defer iofsDriver.Close()
+	defer func() {
+		_ = iofsDriver.Close()
+	}()
 
 	m, err := migrate.NewWithInstance("iofs", iofsDriver, "sqlite3", driver)
 	if err != nil {

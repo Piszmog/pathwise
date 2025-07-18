@@ -34,10 +34,7 @@ func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	archived := false
-	if job.Archived == 1 {
-		archived = true
-	}
+	archived := job.Archived == 1
 	j := types.JobApplication{
 		ID:             job.ID,
 		Company:        job.Company,
