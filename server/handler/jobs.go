@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 	"strconv"
 
@@ -10,15 +9,6 @@ import (
 	"github.com/Piszmog/pathwise/db/queries"
 	"github.com/Piszmog/pathwise/types"
 )
-
-// Helper function to handle count queries that might return "no rows" for new users
-func getCountOrZero(count int64, err error) int64 {
-	if err != nil && err == sql.ErrNoRows {
-		return 0
-	}
-
-	return count
-}
 
 func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	userID, err := getUserID(r)
@@ -146,9 +136,6 @@ func (h *Handler) getJobApplicationsByUserIDAndCompany(ctx context.Context, user
 	if err != nil {
 		return nil, 0, err
 	}
-	if err != nil {
-		return nil, 0, err
-	}
 	return jobs, total, nil
 }
 
@@ -187,9 +174,6 @@ func (h *Handler) getJobApplictionsByUserIDAndCompanyAndStatus(ctx context.Conte
 		UserID:   userID,
 		Archived: archived,
 	})
-	if err != nil {
-		return nil, 0, err
-	}
 	if err != nil {
 		return nil, 0, err
 	}
