@@ -9,14 +9,14 @@ templ Main() {
 }
 
 templ body() {
-	<body>
-		<main>
-			<style type="text/css">
-				form.htmx-request {
-					opacity: 0.5;
-					transition: opacity 300ms linear;
-				}
-			</style>
+	<body class="min-h-screen flex flex-col">
+		<style type="text/css">
+			form.htmx-request {
+				opacity: 0.5;
+				transition: opacity 300ms linear;
+			}
+		</style>
+		<main class="flex-1">
 			@header(CurrentPageHome)
 			@loadingStats()
 			@mainContent()
@@ -26,8 +26,8 @@ templ body() {
 			@modal("archive-jobs") {
 				@archiveJobs()
 			}
-			@footer()
 		</main>
+		@footer()
 	</body>
 }
 

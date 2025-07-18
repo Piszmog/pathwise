@@ -4,10 +4,12 @@ templ Signup() {
 	<!DOCTYPE html>
 	<html lang="en">
 		@Head()
-		<main>
-			@signup()
+		<body class="min-h-screen flex flex-col">
+			<main class="flex-1">
+				@signup()
+			</main>
 			@footer()
-		</main>
+		</body>
 	</html>
 }
 

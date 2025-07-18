@@ -4,11 +4,13 @@ templ Settings(email string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@Head()
-		<main>
-			@header(CurrentPageSettings)
-			@settings(email)
+		<body class="min-h-screen flex flex-col">
+			<main class="flex-1">
+				@header(CurrentPageSettings)
+				@settings(email)
+			</main>
 			@footer()
-		</main>
+		</body>
 	</html>
 }
 
