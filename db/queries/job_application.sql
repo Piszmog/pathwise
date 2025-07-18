@@ -146,3 +146,13 @@ FROM
 	job_applications j
 WHERE
 	j.user_id = ? AND j.archived = ?;
+
+-- name: GetAllJobApplicationsByUserID :many
+SELECT
+	j.applied_at, j.updated_at, j.company, j.title, j.status, j.url,
+	j.salary_min, j.salary_max, j.salary_currency
+FROM 
+	job_applications j
+WHERE
+	j.user_id = ?
+ORDER BY j.applied_at DESC;
