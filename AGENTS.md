@@ -9,6 +9,7 @@ Pathwise is a job application tracking web application built with Go, templ, HTM
 - **Test all**: `go test ./...`
 - **Test single**: `go test ./path/to/package -run TestName`
 - **E2E tests**: `go test -tags=e2e ./e2e/...` (requires Playwright)
+- **Lint**: `golangci-lint run` (check for linting errors)
 - **Generate code**: `go tool templ generate -path ./components && go tool go-tw -i ./styles/input.css -o ./dist/assets/css/output@dev.css && go tool sqlc generate`
 
 ## Environment Variables
