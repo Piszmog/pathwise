@@ -3,6 +3,7 @@ package utils_test
 import (
 	"testing"
 
+	"github.com/Piszmog/pathwise/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -71,7 +72,7 @@ func TestCleanJobTitle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := CleanJobTitle(tt.input)
+			result := utils.CleanJobTitle(tt.input)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
