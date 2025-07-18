@@ -13,8 +13,5 @@ DELETE FROM sessions WHERE expires_at < CURRENT_TIMESTAMP AND user_id = ?;
 -- name: DeleteSessionByToken :exec
 DELETE FROM sessions WHERE token = ?;
 
--- name: DeleteExpiredSessions :exec
-DELETE FROM sessions WHERE expires_at < CURRENT_TIMESTAMP;
-
 -- name: UpdateSessionExpiresAt :exec
 UPDATE sessions SET expires_at = ? WHERE token = ? AND updated_at = CURRENT_TIMESTAMP;

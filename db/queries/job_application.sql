@@ -72,9 +72,6 @@ LIMIT ? OFFSET ?;
 -- name: CountJobApplicationsByUserIDAndCompanyAndStatus :one
 SELECT COUNT(*) FROM job_applications WHERE company = ? AND status = ? AND user_id = ? AND archived = ?;
 
--- name: GetJobApplicationUpdatedAt :one
-SELECT updated_at FROM job_applications WHERE id = ?;
-
 -- name: CountJobApplicationCompany :one
 SELECT COUNT(*) FROM job_applications WHERE company = ? AND user_id = ? AND archived = ?;
 
