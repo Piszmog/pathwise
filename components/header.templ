@@ -8,9 +8,28 @@ const (
 	CurrentPageSettings CurrentPage = "settings"
 )
 
+var toggleDropdownHandle = templ.NewOnceHandle()
+
 templ header(currentPage CurrentPage) {
 	{{ atHome := currentPage == CurrentPageHome }}
 	{{ atArchived := currentPage == CurrentPageArchived }}
+	@toggleDropdownHandle.Once() {
+		<script type="text/javascript">
+		function toggleDropdown(name) {
+			const dropdown = document.getElementById(name);
+			dropdown.classList.toggle('hidden');
+		}
+		
+		// Close dropdown when clicking outside
+		document.addEventListener('click', function(event) {
+			const dropdown = document.getElementById('user-menu');
+			const button = document.getElementById('user-menu-button');
+			if (dropdown && !dropdown.contains(event.target) && !button.contains(event.target)) {
+				dropdown.classList.add('hidden');
+			}
+		});
+		</script>
+	}
 	<style type="text/css">
 		.dropdown:focus-within .dropdown-menu {
 			display: block;
@@ -78,16 +97,16 @@ templ header(currentPage CurrentPage) {
 						<!-- Profile dropdown -->
 						<div class="dropdown relative ml-3">
 							<div>
-								<button type="button" class="relative flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" id="user-menu-button" aria-expanded="false" aria-haspopup="true">
+								<button type="button" class="relative flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" id="user-menu-button" aria-expanded="false" aria-haspopup="true" onclick="toggleDropdown('user-menu')">
 									<span class="absolute -inset-1.5"></span>
 									<span class="sr-only">Open user menu</span>
 									<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-user" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"></path><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2"></path></svg>
 								</button>
 							</div>
 							<!-- Dropdown menu -->
-							<div class="dropdown-menu absolute hidden right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1">
-								<a href="/settings" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="user-menu-item-1">Settings</a>
-								<a href="/signout" class="block px-4 py-2 text-sm text-gray-700" role="menuitem" tabindex="-1" id="user-menu-item-2">Sign out</a>
+							<div class="dropdown-menu absolute hidden right-0 z-10 mt-2 w-48 origin-top-right rounded-lg bg-white py-2 shadow-xl border border-gray-100 focus:outline-none" role="menu" aria-orientation="vertical" aria-labelledby="user-menu-button" tabindex="-1" id="user-menu">
+								<a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-150" role="menuitem" tabindex="-1" id="user-menu-item-1">Settings</a>
+								<a href="/signout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors duration-150" role="menuitem" tabindex="-1" id="user-menu-item-2">Sign out</a>
 							</div>
 						</div>
 					</div>
