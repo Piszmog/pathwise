@@ -652,7 +652,15 @@ func (h *Handler) UnarchiveJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.html(r.Context(), w, http.StatusOK, components.Jobs(jobs, types.PaginationOpts{Page: defaultPage, PerPage: defaultPerPage, Total: total}, types.FilterOpts{}))
+	// Get updated stats
+	stats, err := h.getStats(r.Context(), userID)
+	if err != nil {
+		h.Logger.Error("failed to get stats", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	h.html(r.Context(), w, http.StatusOK, components.JobsReload(jobs, stats, types.PaginationOpts{Page: defaultPage, PerPage: defaultPerPage, Total: total}, types.FilterOpts{}))
 }
 
 func (h *Handler) ArchiveJob(w http.ResponseWriter, r *http.Request) {
@@ -717,7 +725,15 @@ func (h *Handler) ArchiveJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.html(r.Context(), w, http.StatusOK, components.Jobs(jobs, types.PaginationOpts{Page: defaultPage, PerPage: defaultPerPage, Total: total}, types.FilterOpts{}))
+	// Get updated stats
+	stats, err := h.getStats(r.Context(), userID)
+	if err != nil {
+		h.Logger.Error("failed to get stats", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	h.html(r.Context(), w, http.StatusOK, components.JobsReload(jobs, stats, types.PaginationOpts{Page: defaultPage, PerPage: defaultPerPage, Total: total}, types.FilterOpts{}))
 }
 
 func newTimelineID(entryType types.JobApplicationTimelineType, entryID string) string {
