@@ -160,6 +160,33 @@ func TestHome_FilterFunctionality(t *testing.T) {
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(4))
 }
 
+func TestHome_ArchiveSingleJob(t *testing.T) {
+	beforeEach(t)
+	signin(t, "user9@email.com", "password")
+
+	addJobApplication(t, "Archive Test Company", "Software Engineer", "https://archivetest.com")
+	addJobApplication(t, "Keep This Company", "Backend Developer", "https://keepthis.com")
+
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(2))
+	require.NoError(t, expect.Locator(page.GetByText("2 results")).ToHaveCount(1))
+	assertStats(t, "2", "2", "0 days", "0%", "0%")
+
+	archiveSingleJob(t, "Archive Test Company")
+
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
+	require.NoError(t, expect.Locator(page.GetByText("1 result")).ToHaveCount(1))
+	require.NoError(t, expect.Locator(page.GetByText("Keep This Company")).ToHaveCount(1))
+	require.NoError(t, expect.Locator(page.GetByText("Archive Test Company")).ToHaveCount(0))
+	assertStats(t, "1", "1", "0 days", "0%", "0%")
+
+	_, err := page.Goto(getFullPath("archives"))
+	require.NoError(t, err)
+
+	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
+	require.NoError(t, expect.Locator(page.GetByText("Archive Test Company")).ToHaveCount(1))
+	require.NoError(t, expect.Locator(page.GetByText("Keep This Company")).ToHaveCount(0))
+}
+
 func signin(t *testing.T, email, password string) {
 	_, err := page.Goto(getFullPath("signin"))
 	require.NoError(t, err)
@@ -245,4 +272,12 @@ func filterByCompanyAndStatus(t *testing.T, company, status string) {
 
 func clearFilter(t *testing.T) {
 	require.NoError(t, page.Locator("#filter-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Clear"}).Click())
+}
+
+func archiveSingleJob(t *testing.T, companyName string) {
+	jobRow := page.GetByText(companyName).Locator("xpath=ancestor::li")
+	require.NoError(t, jobRow.GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "View job"}).Click())
+	require.NoError(t, page.Locator("#job-details").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Archive"}).Click())
+
+	page.WaitForTimeout(1000)
 }
