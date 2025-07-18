@@ -606,12 +606,40 @@ func (h *Handler) UnarchiveJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Database.Queries().UnarchiveJobApplication(r.Context(), queries.UnarchiveJobApplicationParams{
+	tx, err := h.Database.DB().BeginTx(r.Context(), nil)
+	if err != nil {
+		h.Logger.Error("failed to begin transaction", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+	defer func() {
+		if txErr := tx.Rollback(); txErr != nil {
+			err = errors.Join(err, txErr)
+		}
+	}()
+
+	qtx := queries.New(tx)
+
+	err = qtx.UnarchiveJobApplication(r.Context(), queries.UnarchiveJobApplicationParams{
 		ID:     jobID,
 		UserID: userID,
 	})
 	if err != nil {
 		h.Logger.Error("failed to unarchive job application", "jobID", jobID, "userID", userID, "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	// Recalculate stats after unarchiving
+	err = h.recalculateStats(r.Context(), qtx, userID)
+	if err != nil {
+		h.Logger.Error("failed to recalculate stats", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
+		h.Logger.Error("failed to commit transaction", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 		return
 	}
@@ -643,12 +671,40 @@ func (h *Handler) ArchiveJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Database.Queries().ArchiveJobApplication(r.Context(), queries.ArchiveJobApplicationParams{
+	tx, err := h.Database.DB().BeginTx(r.Context(), nil)
+	if err != nil {
+		h.Logger.Error("failed to begin transaction", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+	defer func() {
+		if txErr := tx.Rollback(); txErr != nil {
+			err = errors.Join(err, txErr)
+		}
+	}()
+
+	qtx := queries.New(tx)
+
+	err = qtx.ArchiveJobApplication(r.Context(), queries.ArchiveJobApplicationParams{
 		ID:     jobID,
 		UserID: userID,
 	})
 	if err != nil {
 		h.Logger.Error("failed to archive job application", "jobID", jobID, "userID", userID, "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	// Recalculate stats after archiving
+	err = h.recalculateStats(r.Context(), qtx, userID)
+	if err != nil {
+		h.Logger.Error("failed to recalculate stats", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	if err = tx.Commit(); err != nil {
+		h.Logger.Error("failed to commit transaction", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 		return
 	}
@@ -723,4 +779,65 @@ func getStatsDiff(currentStatus types.JobApplicationStatus, newStatus types.JobA
 
 func hasChanged(diff queries.UpdateJobApplicationStatParams) bool {
 	return diff.TotalAccepted != 0 || diff.TotalApplied != 0 || diff.TotalCanceled != 0 || diff.TotalDeclined != 0 || diff.TotalInterviewing != 0 || diff.TotalOffers != 0 || diff.TotalRejected != 0 || diff.TotalWatching != 0 || diff.TotalWidthdrawn != 0 || diff.TotalCompanies != 0
+}
+
+func (h *Handler) recalculateStats(ctx context.Context, qtx *queries.Queries, userID int64) error {
+	jobsCount, err := qtx.CountJobApplicationsForStats(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	var jobs []queries.GetJobApplicationsForStatsRow
+	if jobsCount > 0 {
+		jobs, err = qtx.GetJobApplicationsForStats(ctx, userID)
+		if err != nil {
+			return err
+		}
+	}
+
+	companyCount, err := qtx.CountJobApplicationCompanies(ctx, queries.CountJobApplicationCompaniesParams{UserID: userID, Archived: 0})
+	if err != nil {
+		return err
+	}
+
+	statArgs := queries.SetJobApplicationStatParams{TotalCompanies: companyCount, UserID: userID}
+	for _, j := range jobs {
+		statArgs.TotalApplications += 1
+		if j.HeardBackAt != nil {
+			heardBackAt, err := time.Parse("2006-01-02 15:04:05", j.HeardBackAt.(string))
+			if err != nil {
+				return err
+			}
+			diff := heardBackAt.Sub(j.AppliedAt)
+			daysSince := int64(diff.Hours() / 24)
+
+			if statArgs.AverageTimeToHearBack == 0 {
+				statArgs.AverageTimeToHearBack = daysSince
+			} else {
+				statArgs.AverageTimeToHearBack = (daysSince + statArgs.AverageTimeToHearBack) / 2
+			}
+		}
+		switch types.JobApplicationStatus(j.Status) {
+		case types.JobApplicationStatusAccepted:
+			statArgs.TotalAccepted += 1
+		case types.JobApplicationStatusApplied:
+			statArgs.TotalApplied += 1
+		case types.JobApplicationStatusCanceled:
+			statArgs.TotalCanceled += 1
+		case types.JobApplicationStatusDeclined:
+			statArgs.TotalDeclined += 1
+		case types.JobApplicationStatusInterviewing:
+			statArgs.TotalInterviewing += 1
+		case types.JobApplicationStatusOffered:
+			statArgs.TotalOffers += 1
+		case types.JobApplicationStatusRejected:
+			statArgs.TotalRejected += 1
+		case types.JobApplicationStatusWatching:
+			statArgs.TotalWatching += 1
+		case types.JobApplicationStatusWithdrawn:
+			statArgs.TotalWatching += 1
+		}
+	}
+
+	return qtx.SetJobApplicationStat(ctx, statArgs)
 }
