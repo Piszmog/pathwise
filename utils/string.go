@@ -12,14 +12,10 @@ func CleanJobTitle(title string) string {
 	cleaned := strings.TrimSpace(title)
 
 	// Remove leading quote if present
-	if strings.HasPrefix(cleaned, "\"") {
-		cleaned = strings.TrimPrefix(cleaned, "\"")
-	}
+	cleaned = strings.TrimPrefix(cleaned, "\"")
 
 	// Remove trailing quote if present
-	if strings.HasSuffix(cleaned, "\"") {
-		cleaned = strings.TrimSuffix(cleaned, "\"")
-	}
+	cleaned = strings.TrimSuffix(cleaned, "\"")
 
 	// Trim any remaining whitespace
 	cleaned = strings.TrimSpace(cleaned)
