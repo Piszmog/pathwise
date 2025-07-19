@@ -100,7 +100,7 @@ func (h Handler) filterJobs(ctx context.Context, userID int64, archived bool, fi
 		if err != nil {
 			return nil, 0, err
 		}
-		var totalApps int64 = 0
+		var totalApps int64
 		if !archived {
 			stats, err := h.getStats(ctx, userID)
 			if err != nil {
