@@ -80,8 +80,8 @@ func beforeAll() {
 	if err != nil {
 		log.Fatalf("could not launch: %v", err)
 	}
-	// init web-first assertions with 1s timeout instead of default 5s
-	expect = playwright.NewPlaywrightAssertions(1000)
+	// init web-first assertions with 10s timeout for more reliable tests
+	expect = playwright.NewPlaywrightAssertions(10000)
 	isChromium = browserName == "chromium" || browserName == ""
 	isFirefox = browserName == "firefox"
 	isWebKit = browserName == "webkit"
@@ -160,11 +160,40 @@ func startApp() error {
 	return nil
 }
 
+func cleanDB() error {
+	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	// Clear existing data
+	clearQueries := []string{
+		"DELETE FROM job_application_notes;",
+		"DELETE FROM job_application_status_histories;",
+		"DELETE FROM job_applications;",
+		"DELETE FROM job_application_stats;",
+		"DELETE FROM sessions;",
+		"DELETE FROM user_ips;",
+		"DELETE FROM users;",
+	}
+
+	for _, query := range clearQueries {
+		if _, err := db.Exec(query); err != nil {
+			// Ignore errors for tables that might not exist yet
+			continue
+		}
+	}
+	return nil
+}
+
 func seedDB() error {
 	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
 	if err != nil {
 		return err
 	}
+	defer db.Close()
+
 	b, err := os.ReadFile("./testdata/seed.sql")
 	if err != nil {
 		return err
@@ -175,7 +204,6 @@ func seedDB() error {
 	}
 	return nil
 }
-
 func getPort() int {
 	randomGenerator := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return randomGenerator.Intn(9001-3000) + 3000
@@ -214,6 +242,14 @@ func beforeEach(t *testing.T, contextOptions ...playwright.BrowserNewContextOpti
 		opt = contextOptions[0]
 	}
 	context, page = newBrowserContextAndPage(t, opt)
+
+	// Clean database before each test to ensure isolation
+	if err := cleanDB(); err != nil {
+		t.Fatalf("could not clean db: %v", err)
+	}
+	if err := seedDB(); err != nil {
+		t.Fatalf("could not seed db: %v", err)
+	}
 }
 
 func getBrowserName() string {

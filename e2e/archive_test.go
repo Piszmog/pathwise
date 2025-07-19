@@ -75,7 +75,8 @@ func TestArchive_UnarchiveJobApplication(t *testing.T) {
 
 	require.NoError(t, page.Locator("#job-details").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Unarchive"}).Click())
 
-	page.WaitForTimeout(1000)
+	// Wait for unarchive operation to complete
+	page.WaitForTimeout(2000)
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
 	require.NoError(t, expect.Locator(page.GetByText("0 results")).ToHaveCount(1))

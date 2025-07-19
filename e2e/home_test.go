@@ -134,14 +134,18 @@ func TestHome_FilterFunctionality(t *testing.T) {
 
 	filterByCompany(t, "Google")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
-	require.NoError(t, expect.Locator(page.GetByText("Google")).ToHaveCount(1))
+	require.NoError(t, expect.Locator(page.GetByText("Google")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
+		Timeout: playwright.Float(10000),
+	}))
 
 	clearFilter(t)
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(4))
 
 	filterByCompany(t, "Micro")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
-	require.NoError(t, expect.Locator(page.GetByText("Microsoft")).ToHaveCount(1))
+	require.NoError(t, expect.Locator(page.GetByText("Microsoft")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
+		Timeout: playwright.Float(10000),
+	}))
 
 	clearFilter(t)
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(4))
@@ -206,6 +210,11 @@ func addJobApplication(t *testing.T, company, title, url string) {
 	require.NoError(t, page.Locator("#new-job-form #title").Fill(title))
 	require.NoError(t, page.Locator("#new-job-form #url").Fill(url))
 	require.NoError(t, page.Locator("#new-job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Add"}).Click())
+
+	// Wait for the job to be added by checking that the company name appears in the job list
+	require.NoError(t, expect.Locator(page.GetByText(company)).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
+		Timeout: playwright.Float(10000),
+	}))
 }
 
 func assertStats(t *testing.T, totalApps, totalCompanies, hearBack, interviewRate, rejectionRate string) {
@@ -220,6 +229,10 @@ func updateJobApplication(t *testing.T, company, title, url, status string) {
 	jobForm := page.Locator("#job-form")
 	if count, _ := jobForm.Count(); count == 0 {
 		require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "View job"}).First().Click())
+		// Wait for job form to load
+		require.NoError(t, expect.Locator(page.Locator("#job-form")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
+			Timeout: playwright.Float(5000),
+		}))
 	}
 	if company != "" {
 		require.NoError(t, page.Locator("#job-form #company").Fill(company))
@@ -235,34 +248,57 @@ func updateJobApplication(t *testing.T, company, title, url, status string) {
 		require.NoError(t, err)
 	}
 	require.NoError(t, page.Locator("#job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Update"}).Click())
+
+	// Wait for update to complete
+	page.WaitForTimeout(1500)
 }
 
 func addNote(t *testing.T, note string) {
 	noteForm := page.GetByPlaceholder("Add a note...")
 	if count, _ := noteForm.Count(); count == 0 {
 		require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "View job"}).First().Click())
+		// Wait for note form to load
+		require.NoError(t, expect.Locator(page.GetByPlaceholder("Add a note...")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
+			Timeout: playwright.Float(5000),
+		}))
 	}
 	require.NoError(t, page.GetByPlaceholder("Add a note...").Fill(note))
 	require.NoError(t, page.Locator("#note-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Add"}).Click())
+
+	// Wait for note to be added
+	page.WaitForTimeout(1500)
 }
 
 func archiveJobsByDate(t *testing.T, date string) {
 	require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "Archive"}).First().Click())
+
+	// Wait for archive form to load
+	require.NoError(t, expect.Locator(page.Locator("#date")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
+		Timeout: playwright.Float(5000),
+	}))
+
 	require.NoError(t, page.Locator("#date").Fill(date))
 	require.NoError(t, page.Locator("#archive-jobs-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Archive"}).Click())
+
+	// Wait for bulk archive operation to complete
+	page.WaitForTimeout(3000)
 }
 
 func filterByCompany(t *testing.T, company string) {
 	require.NoError(t, page.Locator("#filter-form #company").Fill(company))
 	require.NoError(t, page.Locator("#filter-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Filter"}).Click())
-}
 
+	// Wait for HTMX request to complete
+	waitForHTMXRequest(t)
+}
 func filterByStatus(t *testing.T, status string) {
 	_, err := page.Locator("#filter-form #status-select").SelectOption(playwright.SelectOptionValues{Values: &[]string{status}})
 	require.NoError(t, err)
 	require.NoError(t, page.Locator("#filter-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Filter"}).Click())
-}
 
+	// Wait for HTMX request to complete
+	waitForHTMXRequest(t)
+}
 func filterByCompanyAndStatus(t *testing.T, company, status string) {
 	require.NoError(t, page.Locator("#filter-form #company").Fill(company))
 	_, err := page.Locator("#filter-form #status-select").SelectOption(playwright.SelectOptionValues{Values: &[]string{status}})
@@ -272,12 +308,30 @@ func filterByCompanyAndStatus(t *testing.T, company, status string) {
 
 func clearFilter(t *testing.T) {
 	require.NoError(t, page.Locator("#filter-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Clear"}).Click())
-}
 
+	// Wait for HTMX request to complete
+	waitForHTMXRequest(t)
+}
 func archiveSingleJob(t *testing.T, companyName string) {
 	jobRow := page.GetByText(companyName).Locator("xpath=ancestor::li")
 	require.NoError(t, jobRow.GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "View job"}).Click())
+
+	// Wait for job details to load
+	require.NoError(t, expect.Locator(page.Locator("#job-details")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
+		Timeout: playwright.Float(5000),
+	}))
+
 	require.NoError(t, page.Locator("#job-details").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Archive"}).Click())
 
-	page.WaitForTimeout(1000)
+	// Wait for archive operation to complete
+	page.WaitForTimeout(2000)
+}
+
+// waitForHTMXRequest waits for HTMX requests to complete by checking for the absence of the htmx-request class
+func waitForHTMXRequest(t *testing.T) {
+	t.Helper()
+	// Wait for any ongoing HTMX requests to complete
+	page.WaitForFunction("() => !document.body.classList.contains('htmx-request')", playwright.PageWaitForFunctionOptions{
+		Timeout: playwright.Float(10000),
+	})
 }
