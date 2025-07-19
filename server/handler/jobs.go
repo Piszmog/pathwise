@@ -96,7 +96,25 @@ func (h Handler) filterJobs(ctx context.Context, userID int64, archived bool, fi
 	} else if filterOpts.Company == "" && filterOpts.Status != "" {
 		return h.getJobApplicationsByUserIDAndStatus(ctx, userID, archivedVal, filterOpts.Status, perPage, offset)
 	} else {
-		return h.getJobApplicationsByUserID(ctx, userID, archivedVal, perPage, offset)
+		apps, err := h.getJobApplicationsByUserID(ctx, userID, archivedVal, perPage, offset)
+		if err != nil {
+			return nil, 0, err
+		}
+		var totalApps int64 = 0
+		if filterOpts.Company == "" && filterOpts.Status == "" {
+			stats, err := h.getStats(ctx, userID)
+			if err != nil {
+				return nil, 0, err
+			}
+			totalApps = stats.TotalApplications
+		} else {
+			total, err := h.Database.Queries().CountJobApplicationsByUserID(ctx, queries.CountJobApplicationsByUserIDParams{UserID: userID, Archived: archivedVal})
+			if err != nil {
+				return nil, 0, err
+			}
+			totalApps = total
+		}
+		return apps, totalApps, nil
 	}
 }
 
@@ -216,7 +234,7 @@ func (h *Handler) getJobApplicationsByUserIDAndStatus(ctx context.Context, userI
 	return jobs, total, nil
 }
 
-func (h *Handler) getJobApplicationsByUserID(ctx context.Context, userID int64, archived int64, perPage, offset int64) ([]types.JobApplication, int64, error) {
+func (h *Handler) getJobApplicationsByUserID(ctx context.Context, userID int64, archived int64, perPage, offset int64) ([]types.JobApplication, error) {
 	h.Logger.Debug("getting job applications by user id", "userID", userID)
 	j, err := h.Database.Queries().GetJobApplicationsByUserID(
 		ctx,
@@ -228,7 +246,7 @@ func (h *Handler) getJobApplicationsByUserID(ctx context.Context, userID int64, 
 		},
 	)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	jobs := make([]types.JobApplication, len(j))
 	for i, job := range j {
@@ -243,10 +261,5 @@ func (h *Handler) getJobApplicationsByUserID(ctx context.Context, userID int64, 
 		}
 	}
 
-	total, err := h.Database.Queries().CountJobApplicationsByUserID(ctx, queries.CountJobApplicationsByUserIDParams{UserID: userID, Archived: archived})
-	if err != nil {
-		return nil, 0, err
-	}
-
-	return jobs, total, nil
+	return jobs, nil
 }
