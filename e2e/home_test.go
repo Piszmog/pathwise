@@ -206,6 +206,9 @@ func addJobApplication(t *testing.T, company, title, url string) {
 	require.NoError(t, page.Locator("#new-job-form #title").Fill(title))
 	require.NoError(t, page.Locator("#new-job-form #url").Fill(url))
 	require.NoError(t, page.Locator("#new-job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Add"}).Click())
+
+	// Wait for the job to be added by checking that the company name appears in the job list
+	require.NoError(t, expect.Locator(page.GetByText(company)).ToBeVisible())
 }
 
 func assertStats(t *testing.T, totalApps, totalCompanies, hearBack, interviewRate, rejectionRate string) {
