@@ -463,6 +463,7 @@ func (h *Handler) ArchiveJobs(w http.ResponseWriter, r *http.Request) {
 		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Invalid date", "Please enter a date."))
 		return
 	}
+	date = date.Add(24 * time.Hour)
 
 	userID, err := getUserID(r)
 	if err != nil {
@@ -657,7 +658,15 @@ func (h *Handler) UnarchiveJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.html(r.Context(), w, http.StatusOK, components.JobsReload(jobs, stats, types.PaginationOpts{Page: defaultPage, PerPage: defaultPerPage, Total: stats.TotalApplications}, types.FilterOpts{}))
+	// Get the correct total count for archived jobs
+	archivedTotal, err := h.Database.Queries().CountJobApplicationsByUserID(r.Context(), queries.CountJobApplicationsByUserIDParams{UserID: userID, Archived: 1})
+	if err != nil {
+		h.Logger.Error("failed to count archived jobs", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	h.html(r.Context(), w, http.StatusOK, components.JobsReload(jobs, stats, types.PaginationOpts{Page: defaultPage, PerPage: defaultPerPage, Total: archivedTotal}, types.FilterOpts{}))
 }
 
 func (h *Handler) ArchiveJob(w http.ResponseWriter, r *http.Request) {
