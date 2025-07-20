@@ -573,3 +573,148 @@ INSERT INTO job_application_stats (
 VALUES (
 	last_insert_rowid()
 );
+
+-- Pagination test users
+INSERT INTO users (
+	email,
+	password
+)
+VALUES (
+	'pagination_user1@email.com',
+	'$2a$14$YRpu0/fntbFMA8Zne3hyLufuYhNkeoM/.68SvNXduN0/eE/s0A3hm'
+);
+
+INSERT INTO job_application_stats (
+	user_id
+)
+VALUES (
+	last_insert_rowid()
+);
+
+INSERT INTO users (
+	email,
+	password
+)
+VALUES (
+	'pagination_user2@email.com',
+	'$2a$14$YRpu0/fntbFMA8Zne3hyLufuYhNkeoM/.68SvNXduN0/eE/s0A3hm'
+);
+
+INSERT INTO job_application_stats (
+	user_id
+)
+VALUES (
+	last_insert_rowid()
+);
+
+INSERT INTO users (
+	email,
+	password
+)
+VALUES (
+	'pagination_user3@email.com',
+	'$2a$14$YRpu0/fntbFMA8Zne3hyLufuYhNkeoM/.68SvNXduN0/eE/s0A3hm'
+);
+
+INSERT INTO job_application_stats (
+	user_id
+)
+VALUES (
+	last_insert_rowid()
+);
+
+INSERT INTO users (
+	email,
+	password
+)
+VALUES (
+	'pagination_user4@email.com',
+	'$2a$14$YRpu0/fntbFMA8Zne3hyLufuYhNkeoM/.68SvNXduN0/eE/s0A3hm'
+);
+
+INSERT INTO job_application_stats (
+	user_id
+)
+VALUES (
+	last_insert_rowid()
+);
+
+INSERT INTO users (
+	email,
+	password
+)
+VALUES (
+	'pagination_user5@email.com',
+	'$2a$14$YRpu0/fntbFMA8Zne3hyLufuYhNkeoM/.68SvNXduN0/eE/s0A3hm'
+);
+
+INSERT INTO job_application_stats (
+	user_id
+)
+VALUES (
+	last_insert_rowid()
+);
+
+INSERT INTO users (
+	email,
+	password
+)
+VALUES (
+	'pagination_user6@email.com',
+	'$2a$14$YRpu0/fntbFMA8Zne3hyLufuYhNkeoM/.68SvNXduN0/eE/s0A3hm'
+);
+
+INSERT INTO job_application_stats (
+	user_id
+)
+VALUES (
+	last_insert_rowid()
+);
+
+INSERT INTO users (
+	email,
+	password
+)
+VALUES (
+	'pagination_user7@email.com',
+	'$2a$14$YRpu0/fntbFMA8Zne3hyLufuYhNkeoM/.68SvNXduN0/eE/s0A3hm'
+);
+
+INSERT INTO job_application_stats (
+	user_id
+)
+VALUES (
+	last_insert_rowid()
+);
+
+INSERT INTO users (
+	email,
+	password
+)
+VALUES (
+	'pagination_user8@email.com',
+	'$2a$14$YRpu0/fntbFMA8Zne3hyLufuYhNkeoM/.68SvNXduN0/eE/s0A3hm'
+);
+
+INSERT INTO job_application_stats (
+	user_id
+)
+VALUES (
+	last_insert_rowid()
+);
+
+INSERT INTO users (
+	email,
+	password
+)
+VALUES (
+	'pagination_user9@email.com',
+	'$2a$14$YRpu0/fntbFMA8Zne3hyLufuYhNkeoM/.68SvNXduN0/eE/s0A3hm'
+);
+
+INSERT INTO job_application_stats (
+	user_id
+)
+VALUES (
+	last_insert_rowid()
+);
