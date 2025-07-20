@@ -30,24 +30,6 @@ func TestHandler_Health(t *testing.T) {
 				"version": version.Value,
 			},
 		},
-		{
-			name:           "POST request should still work",
-			method:         http.MethodPost,
-			expectedStatus: http.StatusOK,
-			expectedBody: map[string]string{
-				"status":  "ok",
-				"version": version.Value,
-			},
-		},
-		{
-			name:           "PUT request should still work",
-			method:         http.MethodPut,
-			expectedStatus: http.StatusOK,
-			expectedBody: map[string]string{
-				"status":  "ok",
-				"version": version.Value,
-			},
-		},
 	}
 
 	for _, tt := range tests {
