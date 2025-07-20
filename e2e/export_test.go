@@ -25,7 +25,7 @@ func TestExport_CSVWithJobApplications(t *testing.T) {
 	updateJobApplication(t, "", "", "", "interviewing")
 
 	// Wait for all operations to complete
-	page.WaitForTimeout(2000)
+	waitForHTMXRequest(t)
 
 	// Set up download handler
 	downloadChan := make(chan playwright.Download, 1)
@@ -35,7 +35,7 @@ func TestExport_CSVWithJobApplications(t *testing.T) {
 
 	// Trigger CSV export by navigating directly to the export URL
 	// Note: This will trigger a download, so we expect the navigation to be "aborted"
-	page.Goto(getFullPath("export/csv")) // Don't check error as download will abort navigation
+	_, _ = page.Goto(getFullPath("export/csv")) // Don't check error as download will abort navigation
 
 	// Wait for download to complete
 	select {
@@ -98,7 +98,7 @@ func TestExport_CSVWithEmptyData(t *testing.T) {
 
 	// Trigger CSV export by navigating directly to the export URL
 	// Note: This will trigger a download, so we expect the navigation to be "aborted"
-	page.Goto(getFullPath("export/csv")) // Don't check error as download will abort navigation
+	_, _ = page.Goto(getFullPath("export/csv")) // Don't check error as download will abort navigation
 
 	// Wait for download to complete
 	select {
@@ -129,7 +129,7 @@ func TestExport_CSVFilenameFormat(t *testing.T) {
 
 	// Trigger CSV export and check filename format
 	// Note: This will trigger a download, so we expect the navigation to be "aborted"
-	page.Goto(getFullPath("export/csv")) // Don't check error as download will abort navigation
+	_, _ = page.Goto(getFullPath("export/csv")) // Don't check error as download will abort navigation
 
 	// Wait for download to complete
 	select {

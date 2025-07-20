@@ -93,7 +93,7 @@ func TestSalary_UpdateExistingSalaryFields(t *testing.T) {
 	require.NoError(t, page.Locator("#job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Update"}).Click())
 
 	// Wait for update to complete
-	page.WaitForTimeout(1500)
+	waitForHTMXRequest(t)
 
 	// Verify updated values
 	require.NoError(t, expect.Locator(page.Locator("#salary_currency")).ToHaveValue("USD"))
@@ -121,7 +121,7 @@ func TestSalary_ClearSalaryFields(t *testing.T) {
 	require.NoError(t, page.Locator("#job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Update"}).Click())
 
 	// Wait for update to complete
-	page.WaitForTimeout(1500)
+	waitForHTMXRequest(t)
 
 	// Verify fields are cleared
 	require.NoError(t, expect.Locator(page.Locator("#salary_currency")).ToHaveValue(""))
@@ -255,7 +255,7 @@ func TestSalary_UnarchiveJobSalaryFieldsEnabled(t *testing.T) {
 	require.NoError(t, page.Locator("#job-details").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Unarchive"}).Click())
 
 	// Wait for unarchive operation
-	page.WaitForTimeout(2000)
+	waitForHTMXRequest(t)
 
 	// Go back to home page
 	_, err = page.Goto(getFullPath(""))
@@ -292,7 +292,7 @@ func TestSalary_UpdateOnlyMinSalary(t *testing.T) {
 	require.NoError(t, page.Locator("#job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Update"}).Click())
 
 	// Wait for update
-	page.WaitForTimeout(1500)
+	waitForHTMXRequest(t)
 
 	// Verify only min salary is set
 	require.NoError(t, expect.Locator(page.Locator("#salary_currency")).ToHaveValue(""))
@@ -317,7 +317,7 @@ func TestSalary_UpdateOnlyMaxSalary(t *testing.T) {
 	require.NoError(t, page.Locator("#job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Update"}).Click())
 
 	// Wait for update
-	page.WaitForTimeout(1500)
+	waitForHTMXRequest(t)
 
 	// Verify only max salary is set
 	require.NoError(t, expect.Locator(page.Locator("#salary_currency")).ToHaveValue(""))
@@ -343,7 +343,7 @@ func TestSalary_UpdateOnlyCurrency(t *testing.T) {
 	require.NoError(t, page.Locator("#job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Update"}).Click())
 
 	// Wait for update
-	page.WaitForTimeout(1500)
+	waitForHTMXRequest(t)
 
 	// Verify only currency is set
 	require.NoError(t, expect.Locator(page.Locator("#salary_currency")).ToHaveValue("JPY"))

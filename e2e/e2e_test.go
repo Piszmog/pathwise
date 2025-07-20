@@ -207,11 +207,11 @@ func waitForAppReady() error {
 	for i := 0; i < 30; i++ {
 		resp, err := http.Get(baseUrL.String() + "/health")
 		if err == nil && resp.StatusCode == 200 {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil
 		}
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -224,7 +224,7 @@ func cleanDB() error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	// Clear existing data in reverse dependency order, ignoring errors for non-existent tables
 	clearQueries := []string{
@@ -251,7 +251,7 @@ func seedDB() error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	b, err := os.ReadFile("./testdata/seed.sql")
 	if err != nil {

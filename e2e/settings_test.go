@@ -264,7 +264,7 @@ func TestSettings_NavigationFromHeader(t *testing.T) {
 func waitForSettingsHTMXRequest(t *testing.T) {
 	t.Helper()
 	// Wait for any ongoing HTMX requests to complete
-	page.WaitForFunction("() => !document.body.classList.contains('htmx-request')", playwright.PageWaitForFunctionOptions{
+	_, _ = page.WaitForFunction("() => !document.body.classList.contains('htmx-request')", playwright.PageWaitForFunctionOptions{
 		Timeout: playwright.Float(10000),
 	})
 }
