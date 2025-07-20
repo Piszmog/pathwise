@@ -117,3 +117,124 @@ Pathwise is a job application tracking web application built with Go, templ, HTM
 - **Client IP**: Extract via `getClientIP(r *http.Request)` with X-Forwarded-For support
 - **Error Handling**: Log errors with structured logging, return appropriate HTTP status codes
 - **Database Queries**: Use sqlc-generated queries via `h.Database.Queries()` for type-safe database operations
+
+## E2E Testing Guidelines (Playwright + Go)
+
+### **Test File Structure**
+- **Build Tag**: All e2e test files must start with `//go:build e2e`
+- **Package**: Use `package e2e_test` for all e2e tests
+- **File Naming**: Use descriptive names like `note_test.go`, `archive_test.go`, `signin_test.go`
+- **Test Setup**: Call `beforeEach(t)` at the start of each test for clean state
+
+### **Test Environment Setup**
+- **Global Variables**: Use shared variables from `e2e_test.go` (page, expect, browser, etc.)
+- **Base Users**: Use `useBaseUser(t, 1|2|3)` for pre-seeded test users (test1@example.com, etc.)
+- **Custom Users**: Use `createTestUser(t, "prefix")` for isolated test scenarios
+- **Database**: Each test gets a clean database state via `beforeEach(t)`
+
+### **Common Test Patterns**
+
+#### **Authentication Flow**
+```go
+user := useBaseUser(t, 1)
+signin(t, user.Email, "password")
+```
+
+#### **Job Application Management**
+```go
+// Add job application
+addJobApplication(t, "Company Name", "Job Title", "https://example.com")
+
+// Update job application
+updateJobApplication(t, "New Company", "New Title", "https://new.com", "interviewing")
+
+// Open job details
+require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "View job"}).First().Click())
+```
+
+#### **Notes Management**
+```go
+// Add note (requires job details to be open)
+addNote(t, "This is a test note")
+
+// Verify note appears in timeline
+require.NoError(t, expect.Locator(page.GetByText("Note added")).ToBeVisible())
+require.NoError(t, expect.Locator(page.GetByText("This is a test note")).ToBeVisible())
+```
+
+### **HTMX Integration Testing**
+- **Wait for Requests**: Always call `waitForHTMXRequest(t)` after HTMX operations
+- **Form Submissions**: HTMX forms auto-submit, wait for completion before assertions
+- **DOM Updates**: Use `hx-target` and `hx-swap` attributes to verify correct DOM updates
+- **Loading States**: Test `.htmx-request` class for loading indicators
+
+### **Element Selection Best Practices**
+- **Roles**: Prefer `page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "Submit"})`
+- **Text Content**: Use `page.GetByText("Exact Text")` for visible text
+- **Placeholders**: Use `page.GetByPlaceholder("Enter text...")` for form inputs
+- **IDs**: Use `page.Locator("#element-id")` for specific elements
+- **CSS Selectors**: Use `page.Locator(".class-name")` sparingly, prefer semantic selectors
+
+### **Assertion Patterns**
+```go
+// Visibility
+require.NoError(t, expect.Locator(element).ToBeVisible())
+
+// Text content
+require.NoError(t, expect.Locator(element).ToHaveText("Expected Text"))
+
+// Count
+require.NoError(t, expect.Locator(elements).ToHaveCount(3))
+
+// Form states
+require.NoError(t, expect.Locator(input).ToBeEnabled())
+require.NoError(t, expect.Locator(input).ToBeDisabled())
+
+// Values
+require.NoError(t, expect.Locator(input).ToHaveValue("expected value"))
+```
+
+### **Timeline Testing Specifics**
+- **Initial Status**: New jobs automatically get an initial status history entry
+- **Mixed Entries**: Timeline contains both notes and status changes, sorted by creation time (newest first)
+- **Count Calculations**: Remember to account for initial status when counting timeline entries
+- **Specific Targeting**: Use `page.Locator("#timeline-list").GetByText("text")` to avoid form option conflicts
+
+### **Archive/Unarchive Testing**
+- **Archive Flow**: Job details → Archive button → Job removed from main list
+- **Unarchive Flow**: Archives page → Job details → Unarchive button → Navigate to main page
+- **Form States**: Archived jobs have disabled forms, unarchived jobs re-enable forms
+- **Navigation**: After unarchive, manually navigate to main page to find unarchived job
+
+### **Error Handling & Edge Cases**
+- **Empty Forms**: Test HTML5 validation with required fields
+- **Special Characters**: Test Unicode, emojis, and special symbols in text inputs
+- **Long Content**: Test with very long text to ensure proper handling
+- **Network Issues**: Test HTMX request failures and timeouts
+- **Concurrent Operations**: Test rapid successive operations
+
+### **Test Data Management**
+- **Isolation**: Each test should be independent and not rely on other test data
+- **Cleanup**: Database is automatically cleaned between tests via `beforeEach(t)`
+- **Realistic Data**: Use meaningful company names, job titles, and notes for easier debugging
+- **Edge Cases**: Include empty strings, special characters, and boundary values
+
+### **Performance Considerations**
+- **Timeouts**: Use appropriate timeouts (5000ms for complex operations, 1000ms for simple ones)
+- **Wait Strategies**: Prefer `expect.Locator().ToBeVisible()` over arbitrary `time.Sleep()`
+- **Parallel Execution**: Tests run sequentially but each gets isolated browser context
+- **Resource Cleanup**: Browser contexts are automatically cleaned up after each test
+
+### **Debugging Tips**
+- **Headful Mode**: Set `HEADFUL=1` environment variable to see browser during tests
+- **Screenshots**: Playwright can capture screenshots on failures
+- **Console Logs**: Check browser console for JavaScript errors
+- **Network Tab**: Monitor HTMX requests in browser dev tools
+- **Element Inspector**: Use browser dev tools to verify selectors and DOM structure
+
+### **Common Gotchas**
+- **Multiple Elements**: Use `.First()` or `.Last()` when multiple elements match
+- **Strict Mode**: Playwright enforces strict mode - selectors must match exactly one element
+- **Page Reloads**: Handle `page.Reload()` return values: `_, err := page.Reload()`
+- **Form Resets**: HTMX forms may reset after submission, verify empty state
+- **Timing Issues**: Always wait for HTMX requests to complete before assertions
