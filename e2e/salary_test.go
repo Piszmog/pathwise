@@ -11,7 +11,8 @@ import (
 
 func TestSalary_AddJobWithSalaryFields(t *testing.T) {
 	beforeEach(t)
-	signin(t, "salary_user1@email.com", "password")
+	user := createTestUser(t, "salary")
+	signin(t, user.Email, "password")
 
 	// Add job with all salary fields
 	addJobApplicationWithSalary(t, "Salary Test Company", "Software Engineer", "https://salarytest.com", "80000", "120000", "USD")
@@ -30,7 +31,8 @@ func TestSalary_AddJobWithSalaryFields(t *testing.T) {
 
 func TestSalary_AddJobWithPartialSalaryFields(t *testing.T) {
 	beforeEach(t)
-	signin(t, "salary_user2@email.com", "password")
+	user := createTestUser(t, "salary")
+	signin(t, user.Email, "password")
 
 	// Add job with only min salary
 	require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "Add"}).First().Click())
@@ -55,7 +57,8 @@ func TestSalary_AddJobWithPartialSalaryFields(t *testing.T) {
 
 func TestSalary_AddJobWithNoSalaryFields(t *testing.T) {
 	beforeEach(t)
-	signin(t, "salary_user3@email.com", "password")
+	user := createTestUser(t, "salary")
+	signin(t, user.Email, "password")
 
 	// Add job without any salary information
 	addJobApplication(t, "No Salary Company", "Frontend Developer", "https://nosalary.com")
@@ -70,7 +73,8 @@ func TestSalary_AddJobWithNoSalaryFields(t *testing.T) {
 
 func TestSalary_UpdateExistingSalaryFields(t *testing.T) {
 	beforeEach(t)
-	signin(t, "salary_user4@email.com", "password")
+	user := createTestUser(t, "salary")
+	signin(t, user.Email, "password")
 
 	// Add job with initial salary
 	addJobApplicationWithSalary(t, "Update Salary Company", "DevOps Engineer", "https://updatesalary.com", "70000", "100000", "EUR")
@@ -103,7 +107,8 @@ func TestSalary_UpdateExistingSalaryFields(t *testing.T) {
 
 func TestSalary_ClearSalaryFields(t *testing.T) {
 	beforeEach(t)
-	signin(t, "salary_user5@email.com", "password")
+	user := createTestUser(t, "salary")
+	signin(t, user.Email, "password")
 
 	// Add job with salary
 	addJobApplicationWithSalary(t, "Clear Salary Company", "Product Manager", "https://clearsalary.com", "95000", "140000", "GBP")
@@ -131,7 +136,8 @@ func TestSalary_ClearSalaryFields(t *testing.T) {
 
 func TestSalary_AllCurrencyOptions(t *testing.T) {
 	beforeEach(t)
-	signin(t, "salary_user6@email.com", "password")
+	user := createTestUser(t, "salary")
+	signin(t, user.Email, "password")
 
 	// Add job to test currency options
 	addJobApplication(t, "Currency Test Company", "Data Scientist", "https://currencytest.com")
@@ -156,7 +162,8 @@ func TestSalary_AllCurrencyOptions(t *testing.T) {
 
 func TestSalary_NumericValidation(t *testing.T) {
 	beforeEach(t)
-	signin(t, "salary_user7@email.com", "password")
+	user := createTestUser(t, "salary")
+	signin(t, user.Email, "password")
 
 	// Add job to test numeric validation
 	require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "Add"}).First().Click())
@@ -181,7 +188,8 @@ func TestSalary_NumericValidation(t *testing.T) {
 
 func TestSalary_LargeNumbers(t *testing.T) {
 	beforeEach(t)
-	signin(t, "salary_user8@email.com", "password")
+	user := createTestUser(t, "salary")
+	signin(t, user.Email, "password")
 
 	// Test with large salary numbers
 	addJobApplicationWithSalary(t, "High Salary Company", "Senior Architect", "https://highsalary.com", "250000", "500000", "USD")
@@ -196,7 +204,8 @@ func TestSalary_LargeNumbers(t *testing.T) {
 
 func TestSalary_ZeroValues(t *testing.T) {
 	beforeEach(t)
-	signin(t, "salary_user9@email.com", "password")
+	user := createTestUser(t, "salary")
+	signin(t, user.Email, "password")
 
 	// Test with zero values
 	addJobApplicationWithSalary(t, "Zero Salary Company", "Intern", "https://zerosalary.com", "0", "0", "USD")
@@ -211,7 +220,8 @@ func TestSalary_ZeroValues(t *testing.T) {
 
 func TestSalary_ArchivedJobSalaryFieldsDisabled(t *testing.T) {
 	beforeEach(t)
-	signin(t, "salary_user10@email.com", "password")
+	user := createTestUser(t, "salary")
+	signin(t, user.Email, "password")
 
 	// Add job with salary
 	addJobApplicationWithSalary(t, "Archive Salary Company", "Solutions Architect", "https://archivesalary.com", "120000", "180000", "CAD")
@@ -239,7 +249,8 @@ func TestSalary_ArchivedJobSalaryFieldsDisabled(t *testing.T) {
 
 func TestSalary_UnarchiveJobSalaryFieldsEnabled(t *testing.T) {
 	beforeEach(t)
-	signin(t, "salary_user11@email.com", "password")
+	user := createTestUser(t, "salary")
+	signin(t, user.Email, "password")
 
 	// Add job with salary
 	addJobApplicationWithSalary(t, "Unarchive Salary Company", "Tech Lead", "https://unarchivesalary.com", "140000", "200000", "AUD")
@@ -277,7 +288,8 @@ func TestSalary_UnarchiveJobSalaryFieldsEnabled(t *testing.T) {
 
 func TestSalary_UpdateOnlyMinSalary(t *testing.T) {
 	beforeEach(t)
-	signin(t, "salary_user12@email.com", "password")
+	user := createTestUser(t, "salary")
+	signin(t, user.Email, "password")
 
 	// Add job without salary
 	addJobApplication(t, "Min Only Company", "Software Engineer", "https://minonly.com")
@@ -302,7 +314,8 @@ func TestSalary_UpdateOnlyMinSalary(t *testing.T) {
 
 func TestSalary_UpdateOnlyMaxSalary(t *testing.T) {
 	beforeEach(t)
-	signin(t, "salary_user13@email.com", "password")
+	user := createTestUser(t, "salary")
+	signin(t, user.Email, "password")
 
 	// Add job without salary
 	addJobApplication(t, "Max Only Company", "Product Manager", "https://maxonly.com")
@@ -327,7 +340,8 @@ func TestSalary_UpdateOnlyMaxSalary(t *testing.T) {
 
 func TestSalary_UpdateOnlyCurrency(t *testing.T) {
 	beforeEach(t)
-	signin(t, "salary_user14@email.com", "password")
+	user := createTestUser(t, "salary")
+	signin(t, user.Email, "password")
 
 	// Add job without salary
 	addJobApplication(t, "Currency Only Company", "Data Analyst", "https://currencyonly.com")

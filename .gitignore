@@ -62,3 +62,4 @@ output@dev.css
 /db/queries/*.go
 goreleaser-dist
 pathwise-test
+pathwise

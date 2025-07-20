@@ -14,7 +14,8 @@ import (
 
 func TestExport_CSVWithJobApplications(t *testing.T) {
 	beforeEach(t)
-	signin(t, "export_user1@email.com", "password")
+	user := createTestUser(t, "export")
+	signin(t, user.Email, "password")
 
 	// Add job applications with various data including salary
 	addJobApplicationWithSalary(t, "Google", "Software Engineer", "https://google.com", "120000", "150000", "USD")
@@ -85,7 +86,8 @@ func TestExport_CSVWithJobApplications(t *testing.T) {
 
 func TestExport_CSVWithEmptyData(t *testing.T) {
 	beforeEach(t)
-	signin(t, "export_user2@email.com", "password")
+	user := createTestUser(t, "export")
+	signin(t, user.Email, "password")
 
 	// Ensure no job applications exist
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
@@ -117,7 +119,8 @@ func TestExport_CSVWithEmptyData(t *testing.T) {
 
 func TestExport_CSVFilenameFormat(t *testing.T) {
 	beforeEach(t)
-	signin(t, "export_user3@email.com", "password")
+	user := createTestUser(t, "export")
+	signin(t, user.Email, "password")
 
 	addJobApplication(t, "Test Company", "Test Role", "https://test.com")
 

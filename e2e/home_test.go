@@ -12,7 +12,8 @@ import (
 
 func TestHome_NewUser(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user1@email.com", "password")
+	user := useBaseUser(t, 1)
+	signin(t, user.Email, "password")
 
 	assertStats(t, "0", "0", "0 days", "NaN%", "NaN%")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
@@ -21,7 +22,8 @@ func TestHome_NewUser(t *testing.T) {
 
 func TestHome_AddApplication(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user2@email.com", "password")
+	user := createTestUser(t, "home")
+	signin(t, user.Email, "password")
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
 	require.NoError(t, expect.Locator(page.GetByText("Showing 0 to 0 of 0 results")).ToHaveCount(1))
@@ -35,18 +37,22 @@ func TestHome_AddApplication(t *testing.T) {
 
 func TestHome_UpdatedStats(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user3@email.com", "password")
+	user := createTestUser(t, "home")
+	signin(t, user.Email, "password")
 
+	// Add a job application first
+	addJobApplication(t, "Company A", "Title A", "http://companyA/titleA")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
 	assertStats(t, "1", "1", "0 days", "0%", "0%")
 
 	updateJobApplication(t, "", "", "", "rejected")
-	assertStats(t, "1", "1", "2 days", "0%", "100%")
+	assertStats(t, "1", "1", "0 days", "0%", "100%")
 }
 
 func TestHome_UpdateAllFields(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user4@email.com", "password")
+	user := createTestUser(t, "home")
+	signin(t, user.Email, "password")
 
 	addJobApplication(t, "Initial Company", "Initial Title", "https://initial.com")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
@@ -61,7 +67,8 @@ func TestHome_UpdateAllFields(t *testing.T) {
 
 func TestHome_AddNote(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user5@email.com", "password")
+	user := createTestUser(t, "home")
+	signin(t, user.Email, "password")
 
 	addJobApplication(t, "Note Test Company", "Software Engineer", "https://notetest.com")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
@@ -76,7 +83,8 @@ func TestHome_AddNote(t *testing.T) {
 
 func TestHome_StatusUpdateTimeline(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user6@email.com", "password")
+	user := createTestUser(t, "home")
+	signin(t, user.Email, "password")
 
 	addJobApplication(t, "Timeline Test Company", "Backend Developer", "https://timeline.com")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
@@ -96,7 +104,8 @@ func TestHome_StatusUpdateTimeline(t *testing.T) {
 
 func TestHome_BulkArchiveByDate(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user7@email.com", "password")
+	user := createTestUser(t, "home")
+	signin(t, user.Email, "password")
 
 	addJobApplication(t, "Old Company 1", "Software Engineer", "https://old1.com")
 	addJobApplication(t, "Old Company 2", "Backend Developer", "https://old2.com")
@@ -124,7 +133,8 @@ func TestHome_BulkArchiveByDate(t *testing.T) {
 
 func TestHome_FilterFunctionality(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user8@email.com", "password")
+	user := createTestUser(t, "home")
+	signin(t, user.Email, "password")
 
 	addJobApplication(t, "Google", "Software Engineer", "https://google.com")
 	addJobApplication(t, "Microsoft", "Backend Developer", "https://microsoft.com")
@@ -167,7 +177,8 @@ func TestHome_FilterFunctionality(t *testing.T) {
 
 func TestHome_ArchiveSingleJob(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user9@email.com", "password")
+	user := createTestUser(t, "home")
+	signin(t, user.Email, "password")
 
 	addJobApplication(t, "Archive Test Company", "Software Engineer", "https://archivetest.com")
 	addJobApplication(t, "Keep This Company", "Backend Developer", "https://keepthis.com")

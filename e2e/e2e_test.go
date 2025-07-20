@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/playwright-community/playwright-go"
+	"github.com/stretchr/testify/require"
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	_ "modernc.org/sqlite"
 )
@@ -218,6 +219,52 @@ func waitForAppReady() error {
 	return fmt.Errorf("app did not become ready within 3 seconds")
 }
 
+func seedBaseUsersIfNeeded() error {
+	db, err := sql.Open("libsql", fmt.Sprintf("file:%s?_journal_mode=WAL&_synchronous=NORMAL", dbPath))
+	if err != nil {
+		return err
+	}
+	defer func() { _ = db.Close() }()
+
+	// Check if base users exist
+	var count int
+	err = db.QueryRow("SELECT COUNT(*) FROM users WHERE email LIKE 'test%@example.com'").Scan(&count)
+	if err != nil {
+		return err
+	}
+
+	// If base users don't exist, create them
+	if count == 0 {
+		return seedDB()
+	}
+	return nil
+}
+
+func cleanDBKeepBaseUsers() error {
+	db, err := sql.Open("libsql", fmt.Sprintf("file:%s?_journal_mode=WAL&_synchronous=NORMAL", dbPath))
+	if err != nil {
+		return err
+	}
+	defer func() { _ = db.Close() }()
+
+	clearQueries := []string{
+		"DELETE FROM job_application_notes WHERE job_application_id IN (SELECT id FROM job_applications WHERE user_id NOT IN (SELECT id FROM users WHERE email LIKE 'test%@example.com'))",
+		"DELETE FROM job_application_status_histories WHERE job_application_id IN (SELECT id FROM job_applications WHERE user_id NOT IN (SELECT id FROM users WHERE email LIKE 'test%@example.com'))",
+		"DELETE FROM job_applications WHERE user_id NOT IN (SELECT id FROM users WHERE email LIKE 'test%@example.com')",
+		"DELETE FROM sessions WHERE user_id NOT IN (SELECT id FROM users WHERE email LIKE 'test%@example.com')",
+		"DELETE FROM user_ips WHERE user_id NOT IN (SELECT id FROM users WHERE email LIKE 'test%@example.com')",
+		"DELETE FROM users WHERE email NOT LIKE 'test%@example.com'",
+		"DELETE FROM job_application_stats WHERE user_id NOT IN (SELECT id FROM users WHERE email LIKE 'test%@example.com')",
+	}
+
+	for _, query := range clearQueries {
+		if _, err := db.Exec(query); err != nil {
+			continue
+		}
+	}
+	return nil
+}
+
 func cleanDB() error {
 	// Open the same database file that the app is using with WAL mode
 	db, err := sql.Open("libsql", fmt.Sprintf("file:%s?_journal_mode=WAL&_synchronous=NORMAL", dbPath))
@@ -306,12 +353,13 @@ func beforeEach(t *testing.T, contextOptions ...playwright.BrowserNewContextOpti
 	}
 	context, page = newBrowserContextAndPage(t, opt)
 
-	// Clean database before each test to ensure isolation
-	if err := cleanDB(); err != nil {
+	// Clean database but keep base users
+	if err := cleanDBKeepBaseUsers(); err != nil {
 		t.Fatalf("could not clean db: %v", err)
 	}
-	if err := seedDB(); err != nil {
-		t.Fatalf("could not seed db: %v", err)
+	// Only seed if base users don't exist
+	if err := seedBaseUsersIfNeeded(); err != nil {
+		t.Fatalf("could not seed base users: %v", err)
 	}
 }
 
@@ -343,4 +391,78 @@ func newBrowserContextAndPage(t *testing.T, options playwright.BrowserNewContext
 
 func getFullPath(relativePath string) string {
 	return baseUrL.ResolveReference(&url.URL{Path: relativePath}).String()
+}
+
+type TestUser struct {
+	ID    int
+	Email string
+}
+
+func createTestUser(t *testing.T, emailPrefix string) TestUser {
+	t.Helper()
+
+	email := fmt.Sprintf("%s_%d@test.com", emailPrefix, time.Now().UnixNano())
+
+	db, err := sql.Open("libsql", fmt.Sprintf("file:%s?_journal_mode=WAL&_synchronous=NORMAL", dbPath))
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	result, err := db.Exec("INSERT INTO users (email, password) VALUES (?, ?)",
+		email, "$2a$14$YRpu0/fntbFMA8Zne3hyLufuYhNkeoM/.68SvNXduN0/eE/s0A3hm")
+	require.NoError(t, err)
+
+	userID, err := result.LastInsertId()
+	require.NoError(t, err)
+
+	_, err = db.Exec("INSERT INTO job_application_stats (user_id) VALUES (?)", userID)
+	require.NoError(t, err)
+
+	return TestUser{ID: int(userID), Email: email}
+}
+
+func createTestUserWithJobs(t *testing.T, emailPrefix string, jobCount int) TestUser {
+	t.Helper()
+
+	user := createTestUser(t, emailPrefix)
+
+	db, err := sql.Open("libsql", fmt.Sprintf("file:%s?_journal_mode=WAL&_synchronous=NORMAL", dbPath))
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	for i := 0; i < jobCount; i++ {
+		result, err := db.Exec(`
+			INSERT INTO job_applications (company, title, url, applied_at, user_id) 
+			VALUES (?, ?, ?, ?, ?)`,
+			fmt.Sprintf("Company %d", i+1),
+			fmt.Sprintf("Title %d", i+1),
+			fmt.Sprintf("http://company%d.com", i+1),
+			time.Now().Add(-time.Duration(i)*24*time.Hour),
+			user.ID)
+		require.NoError(t, err)
+
+		jobID, err := result.LastInsertId()
+		require.NoError(t, err)
+
+		_, err = db.Exec("INSERT INTO job_application_status_histories (job_application_id) VALUES (?)", jobID)
+		require.NoError(t, err)
+	}
+
+	return user
+}
+
+func useBaseUser(t *testing.T, userNumber int) TestUser {
+	t.Helper()
+	require.True(t, userNumber >= 1 && userNumber <= 3, "userNumber must be 1, 2, or 3")
+
+	email := fmt.Sprintf("test%d@example.com", userNumber)
+
+	db, err := sql.Open("libsql", fmt.Sprintf("file:%s?_journal_mode=WAL&_synchronous=NORMAL", dbPath))
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	var userID int
+	err = db.QueryRow("SELECT id FROM users WHERE email = ?", email).Scan(&userID)
+	require.NoError(t, err)
+
+	return TestUser{ID: userID, Email: email}
 }

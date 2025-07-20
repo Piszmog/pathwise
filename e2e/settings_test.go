@@ -11,7 +11,8 @@ import (
 
 func TestSettings_PageLoadsCorrectly(t *testing.T) {
 	beforeEach(t)
-	signin(t, "settings_user1@email.com", "password")
+	user := createTestUser(t, "settings")
+	signin(t, user.Email, "password")
 
 	// Navigate to settings page
 	_, err := page.Goto(getFullPath("settings"))
@@ -19,7 +20,7 @@ func TestSettings_PageLoadsCorrectly(t *testing.T) {
 
 	// Verify page loads and displays user email
 	require.NoError(t, expect.Locator(page.GetByRole("heading", playwright.PageGetByRoleOptions{Name: "Personal Information"})).ToBeVisible())
-	require.NoError(t, expect.Locator(page.Locator("#email")).ToHaveValue("settings_user1@email.com"))
+	require.NoError(t, expect.Locator(page.Locator("#email")).ToHaveValue(user.Email))
 	require.NoError(t, expect.Locator(page.Locator("#email")).ToHaveAttribute("readonly", ""))
 
 	// Verify all sections are present
@@ -35,7 +36,8 @@ func TestSettings_PageLoadsCorrectly(t *testing.T) {
 
 func TestSettings_ChangePasswordSuccess(t *testing.T) {
 	beforeEach(t)
-	signin(t, "settings_user2@email.com", "password")
+	user := createTestUser(t, "settings")
+	signin(t, user.Email, "password")
 
 	// Navigate to settings page
 	_, err := page.Goto(getFullPath("settings"))
@@ -55,7 +57,7 @@ func TestSettings_ChangePasswordSuccess(t *testing.T) {
 	}))
 
 	// Try to sign in with new password
-	require.NoError(t, page.Locator("#email").Fill("settings_user2@email.com"))
+	require.NoError(t, page.Locator("#email").Fill(user.Email))
 	require.NoError(t, page.Locator("#password").Fill("NewPassword123!"))
 	require.NoError(t, page.Locator("button[type=submit]").Click())
 
@@ -67,7 +69,8 @@ func TestSettings_ChangePasswordSuccess(t *testing.T) {
 
 func TestSettings_ChangePasswordInvalidCurrent(t *testing.T) {
 	beforeEach(t)
-	signin(t, "settings_user3@email.com", "password")
+	user := createTestUser(t, "settings")
+	signin(t, user.Email, "password")
 
 	// Navigate to settings page
 	_, err := page.Goto(getFullPath("settings"))
@@ -94,7 +97,8 @@ func TestSettings_ChangePasswordInvalidCurrent(t *testing.T) {
 
 func TestSettings_ChangePasswordMismatch(t *testing.T) {
 	beforeEach(t)
-	signin(t, "settings_user4@email.com", "password")
+	user := createTestUser(t, "settings")
+	signin(t, user.Email, "password")
 
 	// Navigate to settings page
 	_, err := page.Goto(getFullPath("settings"))
@@ -121,7 +125,8 @@ func TestSettings_ChangePasswordMismatch(t *testing.T) {
 
 func TestSettings_ChangePasswordWeak(t *testing.T) {
 	beforeEach(t)
-	signin(t, "settings_user5@email.com", "password")
+	user := createTestUser(t, "settings")
+	signin(t, user.Email, "password")
 
 	// Navigate to settings page
 	_, err := page.Goto(getFullPath("settings"))
@@ -161,7 +166,8 @@ func TestSettings_ChangePasswordWeak(t *testing.T) {
 
 func TestSettings_ChangePasswordSameAsCurrent(t *testing.T) {
 	beforeEach(t)
-	signin(t, "settings_user6@email.com", "password")
+	user := createTestUser(t, "settings")
+	signin(t, user.Email, "password")
 
 	// Navigate to settings page
 	_, err := page.Goto(getFullPath("settings"))
@@ -182,7 +188,8 @@ func TestSettings_ChangePasswordSameAsCurrent(t *testing.T) {
 }
 func TestSettings_LogoutAllSessions(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user1@email.com", "password")
+	user := useBaseUser(t, 1)
+	signin(t, user.Email, "password")
 
 	// Navigate to settings page
 	_, err := page.Goto(getFullPath("settings"))
@@ -203,7 +210,8 @@ func TestSettings_LogoutAllSessions(t *testing.T) {
 
 func TestSettings_DeleteAccount(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user2@email.com", "password")
+	user := useBaseUser(t, 2)
+	signin(t, user.Email, "password")
 
 	// Navigate to settings page
 	_, err := page.Goto(getFullPath("settings"))
@@ -222,7 +230,7 @@ func TestSettings_DeleteAccount(t *testing.T) {
 	}))
 
 	// Try to sign in with deleted account - should fail
-	require.NoError(t, page.Locator("#email").Fill("user2@email.com"))
+	require.NoError(t, page.Locator("#email").Fill(user.Email))
 	require.NoError(t, page.Locator("#password").Fill("password"))
 	require.NoError(t, page.Locator("button[type=submit]").Click())
 
@@ -234,7 +242,8 @@ func TestSettings_DeleteAccount(t *testing.T) {
 
 func TestSettings_NavigationFromHeader(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user3@email.com", "password")
+	user := useBaseUser(t, 3)
+	signin(t, user.Email, "password")
 
 	// Should be on home page
 	require.NoError(t, expect.Page(page).ToHaveURL(getFullPath("")+"/", playwright.PageAssertionsToHaveURLOptions{

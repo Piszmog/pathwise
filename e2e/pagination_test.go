@@ -12,7 +12,8 @@ import (
 
 func TestPagination_BasicNavigation(t *testing.T) {
 	beforeEach(t)
-	signin(t, "pagination_user1@email.com", "password")
+	user := createTestUser(t, "pagination")
+	signin(t, user.Email, "password")
 
 	// Add 15 job applications to trigger pagination (default page size is 10)
 	for i := 1; i <= 15; i++ {
@@ -56,7 +57,8 @@ func TestPagination_BasicNavigation(t *testing.T) {
 
 func TestPagination_LargeDataset(t *testing.T) {
 	beforeEach(t)
-	signin(t, "pagination_user2@email.com", "password")
+	user := createTestUser(t, "pagination")
+	signin(t, user.Email, "password")
 
 	// Add 25 job applications to test multiple pages
 	for i := 1; i <= 25; i++ {
@@ -106,7 +108,8 @@ func TestPagination_LargeDataset(t *testing.T) {
 
 func TestPagination_WithFilters(t *testing.T) {
 	beforeEach(t)
-	signin(t, "pagination_user3@email.com", "password")
+	user := createTestUser(t, "pagination")
+	signin(t, user.Email, "password")
 
 	// Add 15 jobs with different companies
 	for i := 1; i <= 10; i++ {
@@ -155,7 +158,8 @@ func TestPagination_WithFilters(t *testing.T) {
 
 func TestPagination_FilterPreservesPage(t *testing.T) {
 	beforeEach(t)
-	signin(t, "pagination_user4@email.com", "password")
+	user := createTestUser(t, "pagination")
+	signin(t, user.Email, "password")
 
 	// Add 25 jobs with mixed companies
 	for i := 1; i <= 15; i++ {
@@ -196,7 +200,8 @@ func TestPagination_FilterPreservesPage(t *testing.T) {
 
 func TestPagination_EdgeCases(t *testing.T) {
 	beforeEach(t)
-	signin(t, "pagination_user5@email.com", "password")
+	user := createTestUser(t, "pagination")
+	signin(t, user.Email, "password")
 
 	// Test with exactly 10 items (no pagination needed)
 	for i := 1; i <= 10; i++ {
@@ -240,7 +245,8 @@ func TestPagination_EdgeCases(t *testing.T) {
 
 func TestPagination_EmptyResults(t *testing.T) {
 	beforeEach(t)
-	signin(t, "pagination_user6@email.com", "password")
+	user := createTestUser(t, "pagination")
+	signin(t, user.Email, "password")
 
 	// Start with no jobs
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
@@ -272,7 +278,8 @@ func TestPagination_EmptyResults(t *testing.T) {
 
 func TestPagination_StatusFilter(t *testing.T) {
 	beforeEach(t)
-	signin(t, "pagination_user7@email.com", "password")
+	user := createTestUser(t, "pagination")
+	signin(t, user.Email, "password")
 
 	// Add 12 jobs - this will create pagination
 	for i := 1; i <= 12; i++ {
@@ -325,7 +332,8 @@ func TestPagination_StatusFilter(t *testing.T) {
 
 func TestPagination_AddJobUpdatesCount(t *testing.T) {
 	beforeEach(t)
-	signin(t, "pagination_user8@email.com", "password")
+	user := createTestUser(t, "pagination")
+	signin(t, user.Email, "password")
 
 	// Add 10 jobs (exactly one page)
 	for i := 1; i <= 10; i++ {
@@ -360,7 +368,8 @@ func TestPagination_AddJobUpdatesCount(t *testing.T) {
 
 func TestPagination_ArchiveUpdatesCount(t *testing.T) {
 	beforeEach(t)
-	signin(t, "pagination_user9@email.com", "password")
+	user := createTestUser(t, "pagination")
+	signin(t, user.Email, "password")
 
 	// Add 12 jobs to have pagination
 	for i := 1; i <= 12; i++ {
