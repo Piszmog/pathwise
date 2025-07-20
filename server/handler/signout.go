@@ -8,8 +8,9 @@ import (
 func (h *Handler) Signout(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session")
 	if err != nil {
-		h.Logger.Error("failed to get session cookie", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		h.Logger.Warn("no session cookie", "err", err)
+		// No session cookie, just redirect to signin
+		http.Redirect(w, r, "/signin", http.StatusSeeOther)
 		return
 	}
 

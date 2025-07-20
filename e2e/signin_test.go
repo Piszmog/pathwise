@@ -11,10 +11,11 @@ import (
 
 func TestSignin(t *testing.T) {
 	beforeEach(t)
+	user := useBaseUser(t, 1)
 	_, err := page.Goto(getFullPath("signin"))
 	require.NoError(t, err)
 
-	require.NoError(t, page.Locator("#email").Fill("user1@email.com"))
+	require.NoError(t, page.Locator("#email").Fill(user.Email))
 	require.NoError(t, page.Locator("#password").Fill("password"))
 	require.NoError(t, page.Locator("button[type=submit]").Click())
 

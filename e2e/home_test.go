@@ -4,6 +4,7 @@ package e2e_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/playwright-community/playwright-go"
 	"github.com/stretchr/testify/require"
@@ -11,7 +12,8 @@ import (
 
 func TestHome_NewUser(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user1@email.com", "password")
+	user := useBaseUser(t, 1)
+	signin(t, user.Email, "password")
 
 	assertStats(t, "0", "0", "0 days", "NaN%", "NaN%")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
@@ -20,7 +22,8 @@ func TestHome_NewUser(t *testing.T) {
 
 func TestHome_AddApplication(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user2@email.com", "password")
+	user := createTestUser(t, "home")
+	signin(t, user.Email, "password")
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
 	require.NoError(t, expect.Locator(page.GetByText("Showing 0 to 0 of 0 results")).ToHaveCount(1))
@@ -34,18 +37,22 @@ func TestHome_AddApplication(t *testing.T) {
 
 func TestHome_UpdatedStats(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user3@email.com", "password")
+	user := createTestUser(t, "home")
+	signin(t, user.Email, "password")
 
+	// Add a job application first
+	addJobApplication(t, "Company A", "Title A", "http://companyA/titleA")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
 	assertStats(t, "1", "1", "0 days", "0%", "0%")
 
 	updateJobApplication(t, "", "", "", "rejected")
-	assertStats(t, "1", "1", "2 days", "0%", "100%")
+	assertStats(t, "1", "1", "0 days", "0%", "100%")
 }
 
 func TestHome_UpdateAllFields(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user4@email.com", "password")
+	user := createTestUser(t, "home")
+	signin(t, user.Email, "password")
 
 	addJobApplication(t, "Initial Company", "Initial Title", "https://initial.com")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
@@ -60,7 +67,8 @@ func TestHome_UpdateAllFields(t *testing.T) {
 
 func TestHome_AddNote(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user5@email.com", "password")
+	user := createTestUser(t, "home")
+	signin(t, user.Email, "password")
 
 	addJobApplication(t, "Note Test Company", "Software Engineer", "https://notetest.com")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
@@ -75,7 +83,8 @@ func TestHome_AddNote(t *testing.T) {
 
 func TestHome_StatusUpdateTimeline(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user6@email.com", "password")
+	user := createTestUser(t, "home")
+	signin(t, user.Email, "password")
 
 	addJobApplication(t, "Timeline Test Company", "Backend Developer", "https://timeline.com")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
@@ -95,7 +104,8 @@ func TestHome_StatusUpdateTimeline(t *testing.T) {
 
 func TestHome_BulkArchiveByDate(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user7@email.com", "password")
+	user := createTestUser(t, "home")
+	signin(t, user.Email, "password")
 
 	addJobApplication(t, "Old Company 1", "Software Engineer", "https://old1.com")
 	addJobApplication(t, "Old Company 2", "Backend Developer", "https://old2.com")
@@ -105,7 +115,7 @@ func TestHome_BulkArchiveByDate(t *testing.T) {
 	require.NoError(t, expect.Locator(page.GetByText("3 results")).ToHaveCount(1))
 	assertStats(t, "3", "3", "0 days", "0%", "0%")
 
-	tomorrow := "2025-07-19"
+	tomorrow := time.Now().AddDate(0, 0, 1).Format("2006-01-02")
 	archiveJobsByDate(t, tomorrow)
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
@@ -123,7 +133,8 @@ func TestHome_BulkArchiveByDate(t *testing.T) {
 
 func TestHome_FilterFunctionality(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user8@email.com", "password")
+	user := createTestUser(t, "home")
+	signin(t, user.Email, "password")
 
 	addJobApplication(t, "Google", "Software Engineer", "https://google.com")
 	addJobApplication(t, "Microsoft", "Backend Developer", "https://microsoft.com")
@@ -135,7 +146,7 @@ func TestHome_FilterFunctionality(t *testing.T) {
 	filterByCompany(t, "Google")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
 	require.NoError(t, expect.Locator(page.GetByText("Google")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
-		Timeout: playwright.Float(10000),
+		Timeout: playwright.Float(5000),
 	}))
 
 	clearFilter(t)
@@ -144,7 +155,7 @@ func TestHome_FilterFunctionality(t *testing.T) {
 	filterByCompany(t, "Micro")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
 	require.NoError(t, expect.Locator(page.GetByText("Microsoft")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
-		Timeout: playwright.Float(10000),
+		Timeout: playwright.Float(5000),
 	}))
 
 	clearFilter(t)
@@ -166,7 +177,8 @@ func TestHome_FilterFunctionality(t *testing.T) {
 
 func TestHome_ArchiveSingleJob(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user9@email.com", "password")
+	user := createTestUser(t, "home")
+	signin(t, user.Email, "password")
 
 	addJobApplication(t, "Archive Test Company", "Software Engineer", "https://archivetest.com")
 	addJobApplication(t, "Keep This Company", "Backend Developer", "https://keepthis.com")
@@ -200,7 +212,7 @@ func signin(t *testing.T, email, password string) {
 	require.NoError(t, page.Locator("button[type=submit]").Click())
 
 	require.NoError(t, expect.Page(page).ToHaveURL(getFullPath("")+"/", playwright.PageAssertionsToHaveURLOptions{
-		Timeout: playwright.Float(10000),
+		Timeout: playwright.Float(5000),
 	}))
 }
 
@@ -212,8 +224,8 @@ func addJobApplication(t *testing.T, company, title, url string) {
 	require.NoError(t, page.Locator("#new-job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Add"}).Click())
 
 	// Wait for the job to be added by checking that the company name appears in the job list
-	require.NoError(t, expect.Locator(page.GetByText(company)).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
-		Timeout: playwright.Float(10000),
+	require.NoError(t, expect.Locator(page.GetByText(company).First()).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
+		Timeout: playwright.Float(5000),
 	}))
 }
 
@@ -249,8 +261,8 @@ func updateJobApplication(t *testing.T, company, title, url, status string) {
 	}
 	require.NoError(t, page.Locator("#job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Update"}).Click())
 
-	// Wait for update to complete
-	page.WaitForTimeout(1500)
+	// Wait for HTMX request to complete
+	waitForHTMXRequest(t)
 }
 
 func addNote(t *testing.T, note string) {
@@ -265,8 +277,8 @@ func addNote(t *testing.T, note string) {
 	require.NoError(t, page.GetByPlaceholder("Add a note...").Fill(note))
 	require.NoError(t, page.Locator("#note-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Add"}).Click())
 
-	// Wait for note to be added
-	page.WaitForTimeout(1500)
+	// Wait for HTMX request to complete
+	waitForHTMXRequest(t)
 }
 
 func archiveJobsByDate(t *testing.T, date string) {
@@ -281,7 +293,9 @@ func archiveJobsByDate(t *testing.T, date string) {
 	require.NoError(t, page.Locator("#archive-jobs-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Archive"}).Click())
 
 	// Wait for bulk archive operation to complete
-	page.WaitForTimeout(3000)
+	waitForHTMXRequest(t)
+	// Give extra time for bulk operation
+	time.Sleep(1 * time.Second)
 }
 
 func filterByCompany(t *testing.T, company string) {
@@ -298,12 +312,6 @@ func filterByStatus(t *testing.T, status string) {
 
 	// Wait for HTMX request to complete
 	waitForHTMXRequest(t)
-}
-func filterByCompanyAndStatus(t *testing.T, company, status string) {
-	require.NoError(t, page.Locator("#filter-form #company").Fill(company))
-	_, err := page.Locator("#filter-form #status-select").SelectOption(playwright.SelectOptionValues{Values: &[]string{status}})
-	require.NoError(t, err)
-	require.NoError(t, page.Locator("#filter-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Filter"}).Click())
 }
 
 func clearFilter(t *testing.T) {
@@ -324,14 +332,14 @@ func archiveSingleJob(t *testing.T, companyName string) {
 	require.NoError(t, page.Locator("#job-details").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Archive"}).Click())
 
 	// Wait for archive operation to complete
-	page.WaitForTimeout(2000)
+	waitForHTMXRequest(t)
 }
 
 // waitForHTMXRequest waits for HTMX requests to complete by checking for the absence of the htmx-request class
 func waitForHTMXRequest(t *testing.T) {
 	t.Helper()
 	// Wait for any ongoing HTMX requests to complete
-	page.WaitForFunction("() => !document.body.classList.contains('htmx-request')", playwright.PageWaitForFunctionOptions{
-		Timeout: playwright.Float(10000),
+	_, _ = page.WaitForFunction("() => !document.body.classList.contains('htmx-request')", playwright.PageWaitForFunctionOptions{
+		Timeout: playwright.Float(2000),
 	})
 }

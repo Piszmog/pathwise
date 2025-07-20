@@ -11,7 +11,8 @@ import (
 
 func TestArchive_InputFieldsDisabled(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user10@email.com", "password")
+	user := createTestUser(t, "archive")
+	signin(t, user.Email, "password")
 
 	addJobApplication(t, "Test Company", "Software Engineer", "https://test.com")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
@@ -55,7 +56,8 @@ func TestArchive_InputFieldsDisabled(t *testing.T) {
 
 func TestArchive_UnarchiveJobApplication(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user11@email.com", "password")
+	user := createTestUser(t, "archive")
+	signin(t, user.Email, "password")
 
 	addJobApplication(t, "Unarchive Test Company", "Backend Developer", "https://unarchivetest.com")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
@@ -76,7 +78,7 @@ func TestArchive_UnarchiveJobApplication(t *testing.T) {
 	require.NoError(t, page.Locator("#job-details").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Unarchive"}).Click())
 
 	// Wait for unarchive operation to complete
-	page.WaitForTimeout(2000)
+	waitForHTMXRequest(t)
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
 	require.NoError(t, expect.Locator(page.GetByText("0 results")).ToHaveCount(1))

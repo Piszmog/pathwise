@@ -21,6 +21,7 @@ func New(logger *slog.Logger, database db.Database) http.Handler {
 	router.HandleFunc(http.MethodGet+" /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/assets/img/favicon.ico", http.StatusSeeOther)
 	})
+	router.HandleFunc(http.MethodGet+" /health", h.Health)
 	router.HandleFunc(http.MethodGet+" /signup", h.Signup)
 	router.HandleFunc(http.MethodPost+" /signup", h.Register)
 	router.HandleFunc(http.MethodGet+" /signin", h.Signin)

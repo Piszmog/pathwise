@@ -8,14 +8,18 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
+	"os/signal"
+	"path/filepath"
 	"syscall"
 	"testing"
 	"time"
 
 	"github.com/playwright-community/playwright-go"
+	"github.com/stretchr/testify/require"
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	_ "modernc.org/sqlite"
 )
@@ -34,6 +38,9 @@ var (
 	browserType playwright.BrowserType
 	app         *exec.Cmd
 	baseUrL     *url.URL
+	binaryPath  string
+	appPort     int
+	dbPath      string
 )
 
 // defaultContextOptions for most tests
@@ -54,6 +61,16 @@ func TestMain(m *testing.M) {
 //   - launch browser depends on BROWSER env
 //   - init web-first assertions, alias as `expect`
 func beforeAll() {
+	// Set up signal handler for cleanup on interrupt
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		fmt.Println("\nReceived interrupt signal, cleaning up...")
+		afterAll()
+		os.Exit(1)
+	}()
+
 	err := playwright.Install()
 	if err != nil {
 		log.Fatalf("could not install Playwright: %v", err)
@@ -76,45 +93,70 @@ func beforeAll() {
 	// launch browser, headless or not depending on HEADFUL env
 	browser, err = browserType.Launch(playwright.BrowserTypeLaunchOptions{
 		Headless: playwright.Bool(os.Getenv("HEADFUL") == ""),
+		Args: []string{
+			"--no-sandbox",
+			"--disable-dev-shm-usage",
+			"--disable-gpu",
+			"--disable-web-security",
+			"--disable-features=TranslateUI",
+			"--disable-ipc-flooding-protection",
+		},
 	})
 	if err != nil {
 		log.Fatalf("could not launch: %v", err)
 	}
-	// init web-first assertions with 10s timeout for more reliable tests
-	expect = playwright.NewPlaywrightAssertions(10000)
+	// init web-first assertions with 1s timeout for faster tests
+	expect = playwright.NewPlaywrightAssertions(1000)
 	isChromium = browserName == "chromium" || browserName == ""
 	isFirefox = browserName == "firefox"
 	isWebKit = browserName == "webkit"
 
-	// start app
+	// build and start app
+	if err = buildApp(); err != nil {
+		log.Fatalf("could not build app: %v", err)
+	}
 	if err = startApp(); err != nil {
 		log.Fatalf("could not start app: %v", err)
 	}
-	time.Sleep(time.Second * 5)
+	if err = waitForAppReady(); err != nil {
+		log.Fatalf("app did not become ready: %v", err)
+	}
 	if err = seedDB(); err != nil {
-		if removeErr := removeDBFile(); removeErr != nil {
-			fmt.Println("failed to delete test DB file", err)
-		}
 		log.Fatalf("could not seed db: %v", err)
 	}
 }
 
-func startApp() error {
-	port := getPort()
-	app = exec.Command("go", "run", "main.go")
-	app.Dir = "../"
-	app.Env = append(
-		os.Environ(),
-		"DB_URL=./test-db.sqlite3",
-		fmt.Sprintf("PORT=%d", port),
-		"LOG_LEVEL=DEBUG",
-	)
-
-	var err error
-	baseUrL, err = url.Parse(fmt.Sprintf("http://localhost:%d", port))
+func buildApp() error {
+	// Get absolute path to avoid cleanup issues
+	wd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
+	binaryPath = filepath.Join(filepath.Dir(wd), "pathwise-test")
+
+	buildCmd := exec.Command("go", "build", "-o", binaryPath, "main.go")
+	buildCmd.Dir = "../"
+	return buildCmd.Run()
+}
+
+func startApp() error {
+	appPort = getPort()
+
+	// Get absolute path for database
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	dbPath = filepath.Join(filepath.Dir(wd), fmt.Sprintf("test-db-%d.sqlite3", appPort))
+
+	app = exec.Command(binaryPath)
+	app.Dir = "../"
+	app.Env = append(
+		os.Environ(),
+		fmt.Sprintf("DB_URL=%s", dbPath),
+		fmt.Sprintf("PORT=%d", appPort),
+		"LOG_LEVEL=ERROR",
+	)
 
 	stdout, err := app.StdoutPipe()
 	if err != nil {
@@ -128,7 +170,7 @@ func startApp() error {
 	if err := app.Start(); err != nil {
 		return err
 	}
-	fmt.Printf("Started app on port %d, pid %d", port, app.Process.Pid)
+	fmt.Printf("Started app on port %d, pid %d", appPort, app.Process.Pid)
 
 	stdoutchan := make(chan string)
 	stderrchan := make(chan string)
@@ -160,22 +202,86 @@ func startApp() error {
 	return nil
 }
 
-func cleanDB() error {
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+func waitForAppReady() error {
+	baseUrL, _ = url.Parse(fmt.Sprintf("http://localhost:%d", appPort))
+
+	for i := 0; i < 30; i++ {
+		resp, err := http.Get(baseUrL.String() + "/health")
+		if err == nil && resp.StatusCode == 200 {
+			_ = resp.Body.Close()
+			return nil
+		}
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return fmt.Errorf("app did not become ready within 3 seconds")
+}
+
+func seedBaseUsersIfNeeded() error {
+	db, err := sql.Open("libsql", fmt.Sprintf("file:%s?_journal_mode=WAL&_synchronous=NORMAL", dbPath))
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
-	// Clear existing data
+	// Check if base users exist
+	var count int
+	err = db.QueryRow("SELECT COUNT(*) FROM users WHERE email LIKE 'test%@example.com'").Scan(&count)
+	if err != nil {
+		return err
+	}
+
+	// If base users don't exist, create them
+	if count == 0 {
+		return seedDB()
+	}
+	return nil
+}
+
+func cleanDBKeepBaseUsers() error {
+	db, err := sql.Open("libsql", fmt.Sprintf("file:%s?_journal_mode=WAL&_synchronous=NORMAL", dbPath))
+	if err != nil {
+		return err
+	}
+	defer func() { _ = db.Close() }()
+
 	clearQueries := []string{
-		"DELETE FROM job_application_notes;",
-		"DELETE FROM job_application_status_histories;",
-		"DELETE FROM job_applications;",
-		"DELETE FROM job_application_stats;",
-		"DELETE FROM sessions;",
-		"DELETE FROM user_ips;",
-		"DELETE FROM users;",
+		"DELETE FROM job_application_notes WHERE job_application_id IN (SELECT id FROM job_applications WHERE user_id NOT IN (SELECT id FROM users WHERE email LIKE 'test%@example.com'))",
+		"DELETE FROM job_application_status_histories WHERE job_application_id IN (SELECT id FROM job_applications WHERE user_id NOT IN (SELECT id FROM users WHERE email LIKE 'test%@example.com'))",
+		"DELETE FROM job_applications WHERE user_id NOT IN (SELECT id FROM users WHERE email LIKE 'test%@example.com')",
+		"DELETE FROM sessions WHERE user_id NOT IN (SELECT id FROM users WHERE email LIKE 'test%@example.com')",
+		"DELETE FROM user_ips WHERE user_id NOT IN (SELECT id FROM users WHERE email LIKE 'test%@example.com')",
+		"DELETE FROM users WHERE email NOT LIKE 'test%@example.com'",
+		"DELETE FROM job_application_stats WHERE user_id NOT IN (SELECT id FROM users WHERE email LIKE 'test%@example.com')",
+	}
+
+	for _, query := range clearQueries {
+		if _, err := db.Exec(query); err != nil {
+			continue
+		}
+	}
+	return nil
+}
+
+func cleanDB() error {
+	// Open the same database file that the app is using with WAL mode
+	db, err := sql.Open("libsql", fmt.Sprintf("file:%s?_journal_mode=WAL&_synchronous=NORMAL", dbPath))
+	if err != nil {
+		return err
+	}
+	defer func() { _ = db.Close() }()
+
+	// Clear existing data in reverse dependency order, ignoring errors for non-existent tables
+	clearQueries := []string{
+		"DELETE FROM job_application_notes",
+		"DELETE FROM job_application_status_histories",
+		"DELETE FROM job_applications",
+		"DELETE FROM job_application_stats",
+		"DELETE FROM sessions",
+		"DELETE FROM user_ips",
+		"DELETE FROM users",
 	}
 
 	for _, query := range clearQueries {
@@ -186,13 +292,13 @@ func cleanDB() error {
 	}
 	return nil
 }
-
 func seedDB() error {
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	// Open the same database file that the app is using with WAL mode
+	db, err := sql.Open("libsql", fmt.Sprintf("file:%s?_journal_mode=WAL&_synchronous=NORMAL", dbPath))
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	b, err := os.ReadFile("./testdata/seed.sql")
 	if err != nil {
@@ -216,16 +322,20 @@ func afterAll() {
 			fmt.Println(err)
 		}
 	}
+
 	if err := pw.Stop(); err != nil {
 		log.Fatalf("could not start Playwright: %v", err)
 	}
-	if err := removeDBFile(); err != nil {
-		log.Fatalf("could not remove test-db.sqlite3: %v", err)
+	if binaryPath != "" {
+		if err := os.Remove(binaryPath); err != nil && !os.IsNotExist(err) {
+			fmt.Printf("could not remove binary %s: %v\n", binaryPath, err)
+		}
 	}
-}
-
-func removeDBFile() error {
-	return os.Remove("../test-db.sqlite3")
+	if dbPath != "" {
+		if err := os.Remove(dbPath); err != nil && !os.IsNotExist(err) {
+			fmt.Printf("could not remove database %s: %v\n", dbPath, err)
+		}
+	}
 }
 
 // beforeEach creates a new context and page for each test,
@@ -243,12 +353,13 @@ func beforeEach(t *testing.T, contextOptions ...playwright.BrowserNewContextOpti
 	}
 	context, page = newBrowserContextAndPage(t, opt)
 
-	// Clean database before each test to ensure isolation
-	if err := cleanDB(); err != nil {
+	// Clean database but keep base users
+	if err := cleanDBKeepBaseUsers(); err != nil {
 		t.Fatalf("could not clean db: %v", err)
 	}
-	if err := seedDB(); err != nil {
-		t.Fatalf("could not seed db: %v", err)
+	// Only seed if base users don't exist
+	if err := seedBaseUsersIfNeeded(); err != nil {
+		t.Fatalf("could not seed base users: %v", err)
 	}
 }
 
@@ -280,4 +391,78 @@ func newBrowserContextAndPage(t *testing.T, options playwright.BrowserNewContext
 
 func getFullPath(relativePath string) string {
 	return baseUrL.ResolveReference(&url.URL{Path: relativePath}).String()
+}
+
+type TestUser struct {
+	ID    int
+	Email string
+}
+
+func createTestUser(t *testing.T, emailPrefix string) TestUser {
+	t.Helper()
+
+	email := fmt.Sprintf("%s_%d@test.com", emailPrefix, time.Now().UnixNano())
+
+	db, err := sql.Open("libsql", fmt.Sprintf("file:%s?_journal_mode=WAL&_synchronous=NORMAL", dbPath))
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	result, err := db.Exec("INSERT INTO users (email, password) VALUES (?, ?)",
+		email, "$2a$14$YRpu0/fntbFMA8Zne3hyLufuYhNkeoM/.68SvNXduN0/eE/s0A3hm")
+	require.NoError(t, err)
+
+	userID, err := result.LastInsertId()
+	require.NoError(t, err)
+
+	_, err = db.Exec("INSERT INTO job_application_stats (user_id) VALUES (?)", userID)
+	require.NoError(t, err)
+
+	return TestUser{ID: int(userID), Email: email}
+}
+
+func createTestUserWithJobs(t *testing.T, emailPrefix string, jobCount int) TestUser {
+	t.Helper()
+
+	user := createTestUser(t, emailPrefix)
+
+	db, err := sql.Open("libsql", fmt.Sprintf("file:%s?_journal_mode=WAL&_synchronous=NORMAL", dbPath))
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	for i := 0; i < jobCount; i++ {
+		result, err := db.Exec(`
+			INSERT INTO job_applications (company, title, url, applied_at, user_id) 
+			VALUES (?, ?, ?, ?, ?)`,
+			fmt.Sprintf("Company %d", i+1),
+			fmt.Sprintf("Title %d", i+1),
+			fmt.Sprintf("http://company%d.com", i+1),
+			time.Now().Add(-time.Duration(i)*24*time.Hour),
+			user.ID)
+		require.NoError(t, err)
+
+		jobID, err := result.LastInsertId()
+		require.NoError(t, err)
+
+		_, err = db.Exec("INSERT INTO job_application_status_histories (job_application_id) VALUES (?)", jobID)
+		require.NoError(t, err)
+	}
+
+	return user
+}
+
+func useBaseUser(t *testing.T, userNumber int) TestUser {
+	t.Helper()
+	require.True(t, userNumber >= 1 && userNumber <= 3, "userNumber must be 1, 2, or 3")
+
+	email := fmt.Sprintf("test%d@example.com", userNumber)
+
+	db, err := sql.Open("libsql", fmt.Sprintf("file:%s?_journal_mode=WAL&_synchronous=NORMAL", dbPath))
+	require.NoError(t, err)
+	defer func() { _ = db.Close() }()
+
+	var userID int
+	err = db.QueryRow("SELECT id FROM users WHERE email = ?", email).Scan(&userID)
+	require.NoError(t, err)
+
+	return TestUser{ID: userID, Email: email}
 }
