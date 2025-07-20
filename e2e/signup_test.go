@@ -20,7 +20,7 @@ func TestSignup(t *testing.T) {
 	require.NoError(t, page.Locator("button[type=submit]").Click())
 
 	require.NoError(t, expect.Page(page).ToHaveURL(getFullPath("signin"), playwright.PageAssertionsToHaveURLOptions{
-		Timeout: playwright.Float(10000),
+		Timeout: playwright.Float(5000),
 	}))
 }
 
@@ -32,7 +32,7 @@ func TestSignUp_NavigationFromSignIn(t *testing.T) {
 	require.NoError(t, page.Locator("a[href='/signup']").Click())
 
 	require.NoError(t, expect.Page(page).ToHaveURL(getFullPath("signup"), playwright.PageAssertionsToHaveURLOptions{
-		Timeout: playwright.Float(10000),
+		Timeout: playwright.Float(5000),
 	}))
 }
 
@@ -47,7 +47,7 @@ func TestSignUp_UserAlreadyExists(t *testing.T) {
 	require.NoError(t, page.Locator("button[type=submit]").Click())
 
 	require.NoError(t, expect.Page(page).ToHaveURL(getFullPath("signin"), playwright.PageAssertionsToHaveURLOptions{
-		Timeout: playwright.Float(10000),
+		Timeout: playwright.Float(5000),
 	}))
 
 	_, err = page.Goto(getFullPath("signup"))
@@ -72,7 +72,7 @@ func TestSignUp_InvalidEmail(t *testing.T) {
 	require.NoError(t, page.Locator("button[type=submit]").Click())
 
 	require.NoError(t, expect.Page(page).ToHaveURL(getFullPath("signup"), playwright.PageAssertionsToHaveURLOptions{
-		Timeout: playwright.Float(10000),
+		Timeout: playwright.Float(5000),
 	}))
 }
 
@@ -87,7 +87,7 @@ func TestSignUp_InvalidPassword(t *testing.T) {
 	require.NoError(t, page.Locator("button[type=submit]").Click())
 
 	require.NoError(t, expect.Page(page).ToHaveURL(getFullPath("signup"), playwright.PageAssertionsToHaveURLOptions{
-		Timeout: playwright.Float(10000),
+		Timeout: playwright.Float(5000),
 	}))
 }
 
@@ -102,6 +102,6 @@ func TestSignUp_PasswordsDoNotMatch(t *testing.T) {
 	require.NoError(t, page.Locator("button[type=submit]").Click())
 
 	require.NoError(t, expect.Page(page).ToHaveURL(getFullPath("signup"), playwright.PageAssertionsToHaveURLOptions{
-		Timeout: playwright.Float(10000),
+		Timeout: playwright.Float(5000),
 	}))
 }

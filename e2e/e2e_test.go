@@ -8,9 +8,12 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
+	"os/signal"
+	"path/filepath"
 	"syscall"
 	"testing"
 	"time"
@@ -34,6 +37,9 @@ var (
 	browserType playwright.BrowserType
 	app         *exec.Cmd
 	baseUrL     *url.URL
+	binaryPath  string
+	appPort     int
+	dbPath      string
 )
 
 // defaultContextOptions for most tests
@@ -54,6 +60,16 @@ func TestMain(m *testing.M) {
 //   - launch browser depends on BROWSER env
 //   - init web-first assertions, alias as `expect`
 func beforeAll() {
+	// Set up signal handler for cleanup on interrupt
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		fmt.Println("\nReceived interrupt signal, cleaning up...")
+		afterAll()
+		os.Exit(1)
+	}()
+
 	err := playwright.Install()
 	if err != nil {
 		log.Fatalf("could not install Playwright: %v", err)
@@ -80,41 +96,60 @@ func beforeAll() {
 	if err != nil {
 		log.Fatalf("could not launch: %v", err)
 	}
-	// init web-first assertions with 10s timeout for more reliable tests
-	expect = playwright.NewPlaywrightAssertions(10000)
+	// init web-first assertions with 5s timeout for faster tests
+	expect = playwright.NewPlaywrightAssertions(5000)
 	isChromium = browserName == "chromium" || browserName == ""
 	isFirefox = browserName == "firefox"
 	isWebKit = browserName == "webkit"
 
-	// start app
+	// build and start app
+	if err = buildApp(); err != nil {
+		log.Fatalf("could not build app: %v", err)
+	}
 	if err = startApp(); err != nil {
 		log.Fatalf("could not start app: %v", err)
 	}
-	time.Sleep(time.Second * 5)
+	if err = waitForAppReady(); err != nil {
+		log.Fatalf("app did not become ready: %v", err)
+	}
+	// Give the app a moment to run migrations
+	time.Sleep(2 * time.Second)
 	if err = seedDB(); err != nil {
-		if removeErr := removeDBFile(); removeErr != nil {
-			fmt.Println("failed to delete test DB file", err)
-		}
 		log.Fatalf("could not seed db: %v", err)
 	}
 }
 
-func startApp() error {
-	port := getPort()
-	app = exec.Command("go", "run", "main.go")
-	app.Dir = "../"
-	app.Env = append(
-		os.Environ(),
-		"DB_URL=./test-db.sqlite3",
-		fmt.Sprintf("PORT=%d", port),
-		"LOG_LEVEL=DEBUG",
-	)
-
-	var err error
-	baseUrL, err = url.Parse(fmt.Sprintf("http://localhost:%d", port))
+func buildApp() error {
+	// Get absolute path to avoid cleanup issues
+	wd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
+	binaryPath = filepath.Join(filepath.Dir(wd), "pathwise-test")
+
+	buildCmd := exec.Command("go", "build", "-o", binaryPath, "main.go")
+	buildCmd.Dir = "../"
+	return buildCmd.Run()
+}
+
+func startApp() error {
+	appPort = getPort()
+
+	// Get absolute path for database
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	dbPath = filepath.Join(filepath.Dir(wd), fmt.Sprintf("test-db-%d.sqlite3", appPort))
+
+	app = exec.Command(binaryPath)
+	app.Dir = "../"
+	app.Env = append(
+		os.Environ(),
+		fmt.Sprintf("DB_URL=%s", dbPath),
+		fmt.Sprintf("PORT=%d", appPort),
+		"LOG_LEVEL=ERROR",
+	)
 
 	stdout, err := app.StdoutPipe()
 	if err != nil {
@@ -128,7 +163,7 @@ func startApp() error {
 	if err := app.Start(); err != nil {
 		return err
 	}
-	fmt.Printf("Started app on port %d, pid %d", port, app.Process.Pid)
+	fmt.Printf("Started app on port %d, pid %d", appPort, app.Process.Pid)
 
 	stdoutchan := make(chan string)
 	stderrchan := make(chan string)
@@ -160,14 +195,38 @@ func startApp() error {
 	return nil
 }
 
+func waitForAppReady() error {
+	baseUrL, _ = url.Parse(fmt.Sprintf("http://localhost:%d", appPort))
+
+	for i := 0; i < 30; i++ {
+		resp, err := http.Get(baseUrL.String() + "/signin")
+		if err == nil && resp.StatusCode == 200 {
+			resp.Body.Close()
+			return nil
+		}
+		if resp != nil {
+			resp.Body.Close()
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return fmt.Errorf("app did not become ready within 3 seconds")
+}
+
 func cleanDB() error {
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	// Open the same database file that the app is using
+	db, err := sql.Open("libsql", fmt.Sprintf("file:%s", dbPath))
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	// Clear existing data
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Clear existing data in reverse dependency order
 	clearQueries := []string{
 		"DELETE FROM job_application_notes;",
 		"DELETE FROM job_application_status_histories;",
@@ -179,16 +238,17 @@ func cleanDB() error {
 	}
 
 	for _, query := range clearQueries {
-		if _, err := db.Exec(query); err != nil {
+		if _, err := tx.Exec(query); err != nil {
 			// Ignore errors for tables that might not exist yet
 			continue
 		}
 	}
-	return nil
-}
 
+	return tx.Commit()
+}
 func seedDB() error {
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	// Open the same database file that the app is using
+	db, err := sql.Open("libsql", fmt.Sprintf("file:%s", dbPath))
 	if err != nil {
 		return err
 	}
@@ -216,16 +276,20 @@ func afterAll() {
 			fmt.Println(err)
 		}
 	}
+
 	if err := pw.Stop(); err != nil {
 		log.Fatalf("could not start Playwright: %v", err)
 	}
-	if err := removeDBFile(); err != nil {
-		log.Fatalf("could not remove test-db.sqlite3: %v", err)
+	if binaryPath != "" {
+		if err := os.Remove(binaryPath); err != nil && !os.IsNotExist(err) {
+			fmt.Printf("could not remove binary %s: %v\n", binaryPath, err)
+		}
 	}
-}
-
-func removeDBFile() error {
-	return os.Remove("../test-db.sqlite3")
+	if dbPath != "" {
+		if err := os.Remove(dbPath); err != nil && !os.IsNotExist(err) {
+			fmt.Printf("could not remove database %s: %v\n", dbPath, err)
+		}
+	}
 }
 
 // beforeEach creates a new context and page for each test,

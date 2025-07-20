@@ -4,6 +4,7 @@ package e2e_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/playwright-community/playwright-go"
 	"github.com/stretchr/testify/require"
@@ -105,7 +106,7 @@ func TestHome_BulkArchiveByDate(t *testing.T) {
 	require.NoError(t, expect.Locator(page.GetByText("3 results")).ToHaveCount(1))
 	assertStats(t, "3", "3", "0 days", "0%", "0%")
 
-	tomorrow := "2025-07-19"
+	tomorrow := time.Now().AddDate(0, 0, 1).Format("2006-01-02")
 	archiveJobsByDate(t, tomorrow)
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
@@ -135,7 +136,7 @@ func TestHome_FilterFunctionality(t *testing.T) {
 	filterByCompany(t, "Google")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
 	require.NoError(t, expect.Locator(page.GetByText("Google")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
-		Timeout: playwright.Float(10000),
+		Timeout: playwright.Float(5000),
 	}))
 
 	clearFilter(t)
@@ -144,7 +145,7 @@ func TestHome_FilterFunctionality(t *testing.T) {
 	filterByCompany(t, "Micro")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
 	require.NoError(t, expect.Locator(page.GetByText("Microsoft")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
-		Timeout: playwright.Float(10000),
+		Timeout: playwright.Float(5000),
 	}))
 
 	clearFilter(t)
@@ -200,7 +201,7 @@ func signin(t *testing.T, email, password string) {
 	require.NoError(t, page.Locator("button[type=submit]").Click())
 
 	require.NoError(t, expect.Page(page).ToHaveURL(getFullPath("")+"/", playwright.PageAssertionsToHaveURLOptions{
-		Timeout: playwright.Float(10000),
+		Timeout: playwright.Float(5000),
 	}))
 }
 
@@ -213,7 +214,7 @@ func addJobApplication(t *testing.T, company, title, url string) {
 
 	// Wait for the job to be added by checking that the company name appears in the job list
 	require.NoError(t, expect.Locator(page.GetByText(company)).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
-		Timeout: playwright.Float(10000),
+		Timeout: playwright.Float(5000),
 	}))
 }
 
@@ -249,8 +250,8 @@ func updateJobApplication(t *testing.T, company, title, url, status string) {
 	}
 	require.NoError(t, page.Locator("#job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Update"}).Click())
 
-	// Wait for update to complete
-	page.WaitForTimeout(1500)
+	// Wait for HTMX request to complete
+	waitForHTMXRequest(t)
 }
 
 func addNote(t *testing.T, note string) {
@@ -265,8 +266,8 @@ func addNote(t *testing.T, note string) {
 	require.NoError(t, page.GetByPlaceholder("Add a note...").Fill(note))
 	require.NoError(t, page.Locator("#note-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Add"}).Click())
 
-	// Wait for note to be added
-	page.WaitForTimeout(1500)
+	// Wait for HTMX request to complete
+	waitForHTMXRequest(t)
 }
 
 func archiveJobsByDate(t *testing.T, date string) {
@@ -281,7 +282,9 @@ func archiveJobsByDate(t *testing.T, date string) {
 	require.NoError(t, page.Locator("#archive-jobs-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Archive"}).Click())
 
 	// Wait for bulk archive operation to complete
-	page.WaitForTimeout(3000)
+	waitForHTMXRequest(t)
+	// Give extra time for bulk operation
+	time.Sleep(1 * time.Second)
 }
 
 func filterByCompany(t *testing.T, company string) {
@@ -324,7 +327,7 @@ func archiveSingleJob(t *testing.T, companyName string) {
 	require.NoError(t, page.Locator("#job-details").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Archive"}).Click())
 
 	// Wait for archive operation to complete
-	page.WaitForTimeout(2000)
+	waitForHTMXRequest(t)
 }
 
 // waitForHTMXRequest waits for HTMX requests to complete by checking for the absence of the htmx-request class
@@ -332,6 +335,6 @@ func waitForHTMXRequest(t *testing.T) {
 	t.Helper()
 	// Wait for any ongoing HTMX requests to complete
 	page.WaitForFunction("() => !document.body.classList.contains('htmx-request')", playwright.PageWaitForFunctionOptions{
-		Timeout: playwright.Float(10000),
+		Timeout: playwright.Float(5000),
 	})
 }
