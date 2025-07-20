@@ -335,6 +335,6 @@ func waitForHTMXRequest(t *testing.T) {
 	t.Helper()
 	// Wait for any ongoing HTMX requests to complete
 	page.WaitForFunction("() => !document.body.classList.contains('htmx-request')", playwright.PageWaitForFunctionOptions{
-		Timeout: playwright.Float(5000),
+		Timeout: playwright.Float(2000),
 	})
 }

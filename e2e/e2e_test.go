@@ -112,8 +112,6 @@ func beforeAll() {
 	if err = waitForAppReady(); err != nil {
 		log.Fatalf("app did not become ready: %v", err)
 	}
-	// Give the app a moment to run migrations
-	time.Sleep(2 * time.Second)
 	if err = seedDB(); err != nil {
 		log.Fatalf("could not seed db: %v", err)
 	}
@@ -199,7 +197,7 @@ func waitForAppReady() error {
 	baseUrL, _ = url.Parse(fmt.Sprintf("http://localhost:%d", appPort))
 
 	for i := 0; i < 30; i++ {
-		resp, err := http.Get(baseUrL.String() + "/signin")
+		resp, err := http.Get(baseUrL.String() + "/health")
 		if err == nil && resp.StatusCode == 200 {
 			resp.Body.Close()
 			return nil
