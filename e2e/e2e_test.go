@@ -92,12 +92,20 @@ func beforeAll() {
 	// launch browser, headless or not depending on HEADFUL env
 	browser, err = browserType.Launch(playwright.BrowserTypeLaunchOptions{
 		Headless: playwright.Bool(os.Getenv("HEADFUL") == ""),
+		Args: []string{
+			"--no-sandbox",
+			"--disable-dev-shm-usage",
+			"--disable-gpu",
+			"--disable-web-security",
+			"--disable-features=TranslateUI",
+			"--disable-ipc-flooding-protection",
+		},
 	})
 	if err != nil {
 		log.Fatalf("could not launch: %v", err)
 	}
-	// init web-first assertions with 5s timeout for faster tests
-	expect = playwright.NewPlaywrightAssertions(5000)
+	// init web-first assertions with 1s timeout for faster tests
+	expect = playwright.NewPlaywrightAssertions(1000)
 	isChromium = browserName == "chromium" || browserName == ""
 	isFirefox = browserName == "firefox"
 	isWebKit = browserName == "webkit"
@@ -211,42 +219,35 @@ func waitForAppReady() error {
 }
 
 func cleanDB() error {
-	// Open the same database file that the app is using
-	db, err := sql.Open("libsql", fmt.Sprintf("file:%s", dbPath))
+	// Open the same database file that the app is using with WAL mode
+	db, err := sql.Open("libsql", fmt.Sprintf("file:%s?_journal_mode=WAL&_synchronous=NORMAL", dbPath))
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	// Clear existing data in reverse dependency order
+	// Clear existing data in reverse dependency order, ignoring errors for non-existent tables
 	clearQueries := []string{
-		"DELETE FROM job_application_notes;",
-		"DELETE FROM job_application_status_histories;",
-		"DELETE FROM job_applications;",
-		"DELETE FROM job_application_stats;",
-		"DELETE FROM sessions;",
-		"DELETE FROM user_ips;",
-		"DELETE FROM users;",
+		"DELETE FROM job_application_notes",
+		"DELETE FROM job_application_status_histories",
+		"DELETE FROM job_applications",
+		"DELETE FROM job_application_stats",
+		"DELETE FROM sessions",
+		"DELETE FROM user_ips",
+		"DELETE FROM users",
 	}
 
 	for _, query := range clearQueries {
-		if _, err := tx.Exec(query); err != nil {
+		if _, err := db.Exec(query); err != nil {
 			// Ignore errors for tables that might not exist yet
 			continue
 		}
 	}
-
-	return tx.Commit()
+	return nil
 }
 func seedDB() error {
-	// Open the same database file that the app is using
-	db, err := sql.Open("libsql", fmt.Sprintf("file:%s", dbPath))
+	// Open the same database file that the app is using with WAL mode
+	db, err := sql.Open("libsql", fmt.Sprintf("file:%s?_journal_mode=WAL&_synchronous=NORMAL", dbPath))
 	if err != nil {
 		return err
 	}
