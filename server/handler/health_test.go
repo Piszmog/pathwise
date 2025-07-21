@@ -47,7 +47,7 @@ func TestHealthEndpoint(t *testing.T) {
 			client := &http.Client{}
 			resp, err := client.Do(req)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, test.expectedStatus, resp.StatusCode)
 			assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
