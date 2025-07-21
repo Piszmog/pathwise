@@ -318,22 +318,28 @@ func createTestUser(t *testing.T, email, password string) {
 	}
 	defer db.Close()
 
+	tx, err := db.BeginTx(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("failed to begin transaction: %v", err)
+	}
+	defer tx.Rollback()
+
 	hashedPassword := "$2a$14$YRpu0/fntbFMA8Zne3hyLufuYhNkeoM/.68SvNXduN0/eE/s0A3hm"
 
-	_, err = db.Exec("INSERT INTO users (email, password) VALUES (?, ?)", email, hashedPassword)
+	var userID int64
+	err = tx.QueryRow("INSERT INTO users (email, password) VALUES (?, ?) RETURNING id", email, hashedPassword).Scan(&userID)
 	if err != nil {
 		t.Fatalf("could not create test user: %v", err)
 	}
 
-	var userID int64
-	err = db.QueryRow("SELECT id FROM users WHERE email = ?", email).Scan(&userID)
-	if err != nil {
-		t.Fatalf("could not get user ID: %v", err)
-	}
-
-	_, err = db.Exec("INSERT INTO job_application_stats (user_id) VALUES (?)", userID)
+	_, err = tx.Exec("INSERT INTO job_application_stats (user_id) VALUES (?)", userID)
 	if err != nil {
 		t.Fatalf("could not create job application stats: %v", err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		t.Fatalf("failed to commit transaction: %v", err)
 	}
 }
 
