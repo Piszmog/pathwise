@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -90,7 +91,11 @@ func beforeAll() {
 	if err = startApp(); err != nil {
 		log.Fatalf("could not start app: %v", err)
 	}
-	time.Sleep(time.Second * 5)
+
+	// wait for server to be ready
+	if err = waitForServer(); err != nil {
+		log.Fatalf("could not wait for server: %v", err)
+	}
 }
 
 func startApp() error {
@@ -154,25 +159,19 @@ func startApp() error {
 	return nil
 }
 
-func waitForDatabase() error {
+func waitForServer() error {
 	for i := 0; i < 30; i++ {
-		db, err := sql.Open("libsql", "file:../test-db.sqlite3")
-		if err != nil {
-			time.Sleep(time.Second)
-			continue
-		}
-
-		// Check if the users table exists (indicating migrations have run)
-		_, err = db.Exec("SELECT 1 FROM users LIMIT 1")
-		db.Close()
-
-		if err == nil {
+		resp, err := http.Get(baseUrL.String() + "/health")
+		if err == nil && resp.StatusCode == 200 {
+			resp.Body.Close()
 			return nil
 		}
-
+		if resp != nil {
+			resp.Body.Close()
+		}
 		time.Sleep(time.Second)
 	}
-	return fmt.Errorf("database not ready after 30 seconds")
+	return fmt.Errorf("server not ready after 30 seconds")
 }
 
 func cleanDB() error {
@@ -258,9 +257,9 @@ func beforeEach(t *testing.T, contextOptions ...playwright.BrowserNewContextOpti
 	}
 	context, page = newBrowserContextAndPage(t, opt)
 
-	// Wait for database to be ready and migrated
-	if err := waitForDatabase(); err != nil {
-		t.Fatalf("could not wait for database: %v", err)
+	// Wait for server to be ready
+	if err := waitForServer(); err != nil {
+		t.Fatalf("could not wait for server: %v", err)
 	}
 
 	// Clean database before each test to ensure isolation
