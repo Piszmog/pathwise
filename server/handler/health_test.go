@@ -8,22 +8,24 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Piszmog/pathwise/server/handler"
+	"github.com/Piszmog/pathwise/server/router"
 	"github.com/Piszmog/pathwise/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestHandler_Health(t *testing.T) {
+func TestHealthEndpoint(t *testing.T) {
 	tests := []struct {
 		name           string
 		method         string
+		path           string
 		expectedStatus int
 		expectedBody   map[string]string
 	}{
 		{
-			name:           "successful GET request",
+			name:           "GET /health returns success",
 			method:         http.MethodGet,
+			path:           "/health",
 			expectedStatus: http.StatusOK,
 			expectedBody: map[string]string{
 				"status":  "ok",
@@ -35,21 +37,23 @@ func TestHandler_Health(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-			h := &handler.Handler{
-				Logger:   logger,
-				Database: nil,
-			}
+			handler := router.New(logger, nil)
+			server := httptest.NewServer(handler)
+			defer server.Close()
 
-			req := httptest.NewRequest(tt.method, "/health", nil)
-			w := httptest.NewRecorder()
+			req, err := http.NewRequest(tt.method, server.URL+tt.path, nil)
+			require.NoError(t, err)
 
-			h.Health(w, req)
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			require.NoError(t, err)
+			defer resp.Body.Close()
 
-			assert.Equal(t, tt.expectedStatus, w.Code)
-			assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
+			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
+			assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
 
 			var response map[string]string
-			err := json.Unmarshal(w.Body.Bytes(), &response)
+			err = json.NewDecoder(resp.Body).Decode(&response)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedBody, response)
 		})
