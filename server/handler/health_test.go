@@ -34,14 +34,14 @@ func TestHealthEndpoint(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			handler := router.New(logger, nil)
 			server := httptest.NewServer(handler)
 			defer server.Close()
 
-			req, err := http.NewRequest(tt.method, server.URL+tt.path, nil)
+			req, err := http.NewRequest(test.method, server.URL+test.path, nil)
 			require.NoError(t, err)
 
 			client := &http.Client{}
@@ -49,13 +49,13 @@ func TestHealthEndpoint(t *testing.T) {
 			require.NoError(t, err)
 			defer resp.Body.Close()
 
-			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
+			assert.Equal(t, test.expectedStatus, resp.StatusCode)
 			assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
 
 			var response map[string]string
 			err = json.NewDecoder(resp.Body).Decode(&response)
 			require.NoError(t, err)
-			assert.Equal(t, tt.expectedBody, response)
+			assert.Equal(t, test.expectedBody, response)
 		})
 	}
 }
