@@ -37,7 +37,7 @@ func TestHashPassword(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			hash, err := utils.HashPassword([]byte(tt.password))
+			hash, err := utils.HashPassword([]byte(tt.password), 4)
 
 			require.NoError(t, err)
 			assert.NotEmpty(t, hash)
@@ -52,7 +52,7 @@ func TestHashPassword(t *testing.T) {
 
 func TestCheckPasswordHash(t *testing.T) {
 	password := "testpassword123"
-	hash, err := utils.HashPassword([]byte(password))
+	hash, err := utils.HashPassword([]byte(password), 4)
 	require.NoError(t, err)
 
 	tests := []struct {
@@ -109,10 +109,10 @@ func TestCheckPasswordHash(t *testing.T) {
 func TestHashPasswordConsistency(t *testing.T) {
 	password := "consistencytest"
 
-	hash1, err1 := utils.HashPassword([]byte(password))
+	hash1, err1 := utils.HashPassword([]byte(password), 4)
 	require.NoError(t, err1)
 
-	hash2, err2 := utils.HashPassword([]byte(password))
+	hash2, err2 := utils.HashPassword([]byte(password), 4)
 	require.NoError(t, err2)
 
 	// Hashes should be different (bcrypt includes salt)

@@ -83,7 +83,7 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashedPassword, err := utils.HashPassword([]byte(newPassword))
+	hashedPassword, err := utils.HashPassword([]byte(newPassword), 14)
 	if err != nil {
 		h.Logger.Error("failed to hash password", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))

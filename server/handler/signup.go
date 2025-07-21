@@ -55,7 +55,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashedPassword, err := utils.HashPassword([]byte(password))
+	hashedPassword, err := utils.HashPassword([]byte(password), 14)
 	if err != nil {
 		h.Logger.Error("failed to hash password", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))

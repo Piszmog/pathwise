@@ -4,10 +4,12 @@ package e2e_test
 
 import (
 	"bufio"
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"math/rand"
+	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -24,7 +26,7 @@ import (
 var (
 	pw          *playwright.Playwright
 	browser     playwright.Browser
-	context     playwright.BrowserContext
+	ctx         playwright.BrowserContext
 	page        playwright.Page
 	expect      playwright.PlaywrightAssertions
 	isChromium  bool
@@ -90,12 +92,10 @@ func beforeAll() {
 	if err = startApp(); err != nil {
 		log.Fatalf("could not start app: %v", err)
 	}
-	time.Sleep(time.Second * 5)
-	if err = seedDB(); err != nil {
-		if removeErr := removeDBFile(); removeErr != nil {
-			fmt.Println("failed to delete test DB file", err)
-		}
-		log.Fatalf("could not seed db: %v", err)
+
+	// wait for server to be ready
+	if err = waitForServer(); err != nil {
+		log.Fatalf("could not wait for server: %v", err)
 	}
 }
 
@@ -160,12 +160,35 @@ func startApp() error {
 	return nil
 }
 
+func waitForServer() error {
+	for range 30 {
+		time.Sleep(100 * time.Millisecond)
+		resp, err := http.Get(baseUrL.String() + "/health")
+		if err != nil {
+			continue
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode == http.StatusOK {
+			resp.Body.Close()
+			return nil
+		}
+	}
+	return fmt.Errorf("server not ready after 30 seconds")
+}
+
 func cleanDB() error {
 	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
 	if err != nil {
 		return err
 	}
 	defer db.Close()
+
+	ctx := context.Background()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 
 	// Clear existing data
 	clearQueries := []string{
@@ -179,12 +202,12 @@ func cleanDB() error {
 	}
 
 	for _, query := range clearQueries {
-		if _, err := db.Exec(query); err != nil {
+		if _, err := tx.Exec(query); err != nil {
 			// Ignore errors for tables that might not exist yet
 			continue
 		}
 	}
-	return nil
+	return tx.Commit()
 }
 
 func seedDB() error {
@@ -241,7 +264,12 @@ func beforeEach(t *testing.T, contextOptions ...playwright.BrowserNewContextOpti
 	if len(contextOptions) == 1 {
 		opt = contextOptions[0]
 	}
-	context, page = newBrowserContextAndPage(t, opt)
+	ctx, page = newBrowserContextAndPage(t, opt)
+
+	// Wait for server to be ready
+	if err := waitForServer(); err != nil {
+		t.Fatalf("could not wait for server: %v", err)
+	}
 
 	// Clean database before each test to ensure isolation
 	if err := cleanDB(); err != nil {
@@ -262,22 +290,69 @@ func getBrowserName() string {
 
 func newBrowserContextAndPage(t *testing.T, options playwright.BrowserNewContextOptions) (playwright.BrowserContext, playwright.Page) {
 	t.Helper()
-	context, err := browser.NewContext(options)
+	ctx, err := browser.NewContext(options)
 	if err != nil {
 		t.Fatalf("could not create new context: %v", err)
 	}
 	t.Cleanup(func() {
-		if ctxErr := context.Close(); ctxErr != nil {
+		if ctxErr := ctx.Close(); ctxErr != nil {
 			t.Errorf("could not close context: %v", ctxErr)
 		}
 	})
-	p, err := context.NewPage()
+	p, err := ctx.NewPage()
 	if err != nil {
 		t.Fatalf("could not create new page: %v", err)
 	}
-	return context, p
+	return ctx, p
 }
 
 func getFullPath(relativePath string) string {
 	return baseUrL.ResolveReference(&url.URL{Path: relativePath}).String()
+}
+
+func createTestUser(t *testing.T, email string) {
+	t.Helper()
+	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	if err != nil {
+		t.Fatalf("could not open db: %v", err)
+	}
+	defer db.Close()
+
+	tx, err := db.BeginTx(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("failed to begin transaction: %v", err)
+	}
+	defer tx.Rollback()
+
+	hashedPassword := "$2a$14$YRpu0/fntbFMA8Zne3hyLufuYhNkeoM/.68SvNXduN0/eE/s0A3hm"
+
+	var userID int64
+	err = tx.QueryRow("INSERT INTO users (email, password) VALUES (?, ?) RETURNING id", email, hashedPassword).Scan(&userID)
+	if err != nil {
+		t.Fatalf("could not create test user: %v", err)
+	}
+
+	_, err = tx.Exec("INSERT INTO job_application_stats (user_id) VALUES (?)", userID)
+	if err != nil {
+		t.Fatalf("could not create job application stats: %v", err)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		t.Fatalf("failed to commit transaction: %v", err)
+	}
+}
+
+func generateUniqueEmail(t *testing.T) string {
+	t.Helper()
+	timestamp := time.Now().UnixNano()
+	return fmt.Sprintf("test-%d@example.com", timestamp)
+}
+
+func createUserAndSignIn(t *testing.T) string {
+	t.Helper()
+	email := generateUniqueEmail(t)
+	createTestUser(t, email)
+	signin(t, email, "password")
+	return email
 }

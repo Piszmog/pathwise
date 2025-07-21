@@ -2,9 +2,9 @@ package utils
 
 import "golang.org/x/crypto/bcrypt"
 
-// HashPassword generates a bcrypt hash of the password using work factor 14.
-func HashPassword(password []byte) ([]byte, error) {
-	return bcrypt.GenerateFromPassword(password, 14)
+// HashPassword generates a bcrypt hash of the password using the specified work factor.
+func HashPassword(password []byte, cost int) ([]byte, error) {
+	return bcrypt.GenerateFromPassword(password, cost)
 }
 
 // CheckPassword securely compares a bcrypt hashed password with its possible

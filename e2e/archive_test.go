@@ -11,7 +11,7 @@ import (
 
 func TestArchive_InputFieldsDisabled(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user10@email.com", "password")
+	createUserAndSignIn(t)
 
 	addJobApplication(t, "Test Company", "Software Engineer", "https://test.com")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
@@ -55,7 +55,7 @@ func TestArchive_InputFieldsDisabled(t *testing.T) {
 
 func TestArchive_UnarchiveJobApplication(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user11@email.com", "password")
+	createUserAndSignIn(t)
 
 	addJobApplication(t, "Unarchive Test Company", "Backend Developer", "https://unarchivetest.com")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
