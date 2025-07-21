@@ -12,7 +12,7 @@ import (
 
 func TestHome_NewUser(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user1@email.com", "password")
+	createUserAndSignIn(t)
 
 	assertStats(t, "0", "0", "0 days", "NaN%", "NaN%")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
@@ -21,7 +21,7 @@ func TestHome_NewUser(t *testing.T) {
 
 func TestHome_AddApplication(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user2@email.com", "password")
+	createUserAndSignIn(t)
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
 	require.NoError(t, expect.Locator(page.GetByText("Showing 0 to 0 of 0 results")).ToHaveCount(1))
@@ -35,7 +35,7 @@ func TestHome_AddApplication(t *testing.T) {
 
 func TestHome_UpdatedStats(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user3@email.com", "password")
+	signin(t, "existing-user@test.com", "password")
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
 	assertStats(t, "1", "1", "0 days", "0%", "0%")
@@ -46,7 +46,7 @@ func TestHome_UpdatedStats(t *testing.T) {
 
 func TestHome_UpdateAllFields(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user4@email.com", "password")
+	createUserAndSignIn(t)
 
 	addJobApplication(t, "Initial Company", "Initial Title", "https://initial.com")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
@@ -61,7 +61,7 @@ func TestHome_UpdateAllFields(t *testing.T) {
 
 func TestHome_AddNote(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user5@email.com", "password")
+	createUserAndSignIn(t)
 
 	addJobApplication(t, "Note Test Company", "Software Engineer", "https://notetest.com")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
@@ -76,7 +76,7 @@ func TestHome_AddNote(t *testing.T) {
 
 func TestHome_StatusUpdateTimeline(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user6@email.com", "password")
+	createUserAndSignIn(t)
 
 	addJobApplication(t, "Timeline Test Company", "Backend Developer", "https://timeline.com")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
@@ -96,7 +96,7 @@ func TestHome_StatusUpdateTimeline(t *testing.T) {
 
 func TestHome_BulkArchiveByDate(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user7@email.com", "password")
+	createUserAndSignIn(t)
 
 	addJobApplication(t, "Old Company 1", "Software Engineer", "https://old1.com")
 	addJobApplication(t, "Old Company 2", "Backend Developer", "https://old2.com")
@@ -124,7 +124,7 @@ func TestHome_BulkArchiveByDate(t *testing.T) {
 
 func TestHome_FilterFunctionality(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user8@email.com", "password")
+	createUserAndSignIn(t)
 
 	addJobApplication(t, "Google", "Software Engineer", "https://google.com")
 	addJobApplication(t, "Microsoft", "Backend Developer", "https://microsoft.com")
@@ -167,7 +167,7 @@ func TestHome_FilterFunctionality(t *testing.T) {
 
 func TestHome_ArchiveSingleJob(t *testing.T) {
 	beforeEach(t)
-	signin(t, "user9@email.com", "password")
+	createUserAndSignIn(t)
 
 	addJobApplication(t, "Archive Test Company", "Software Engineer", "https://archivetest.com")
 	addJobApplication(t, "Keep This Company", "Backend Developer", "https://keepthis.com")
@@ -282,7 +282,8 @@ func archiveJobsByDate(t *testing.T, date string) {
 	require.NoError(t, page.Locator("#archive-jobs-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Archive"}).Click())
 
 	// Wait for bulk archive operation to complete
-	page.WaitForTimeout(3000)
+	waitForHTMXRequest(t)
+	page.WaitForTimeout(2000)
 }
 
 func filterByCompany(t *testing.T, company string) {

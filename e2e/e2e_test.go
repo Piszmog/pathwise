@@ -91,12 +91,6 @@ func beforeAll() {
 		log.Fatalf("could not start app: %v", err)
 	}
 	time.Sleep(time.Second * 5)
-	if err = seedDB(); err != nil {
-		if removeErr := removeDBFile(); removeErr != nil {
-			fmt.Println("failed to delete test DB file", err)
-		}
-		log.Fatalf("could not seed db: %v", err)
-	}
 }
 
 func startApp() error {
@@ -158,6 +152,27 @@ func startApp() error {
 		}
 	}()
 	return nil
+}
+
+func waitForDatabase() error {
+	for i := 0; i < 30; i++ {
+		db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+		if err != nil {
+			time.Sleep(time.Second)
+			continue
+		}
+
+		// Check if the users table exists (indicating migrations have run)
+		_, err = db.Exec("SELECT 1 FROM users LIMIT 1")
+		db.Close()
+
+		if err == nil {
+			return nil
+		}
+
+		time.Sleep(time.Second)
+	}
+	return fmt.Errorf("database not ready after 30 seconds")
 }
 
 func cleanDB() error {
@@ -243,6 +258,11 @@ func beforeEach(t *testing.T, contextOptions ...playwright.BrowserNewContextOpti
 	}
 	context, page = newBrowserContextAndPage(t, opt)
 
+	// Wait for database to be ready and migrated
+	if err := waitForDatabase(); err != nil {
+		t.Fatalf("could not wait for database: %v", err)
+	}
+
 	// Clean database before each test to ensure isolation
 	if err := cleanDB(); err != nil {
 		t.Fatalf("could not clean db: %v", err)
@@ -280,4 +300,75 @@ func newBrowserContextAndPage(t *testing.T, options playwright.BrowserNewContext
 
 func getFullPath(relativePath string) string {
 	return baseUrL.ResolveReference(&url.URL{Path: relativePath}).String()
+}
+
+func createTestUser(t *testing.T, email, password string) {
+	t.Helper()
+	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	if err != nil {
+		t.Fatalf("could not open db: %v", err)
+	}
+	defer db.Close()
+
+	hashedPassword := "$2a$14$YRpu0/fntbFMA8Zne3hyLufuYhNkeoM/.68SvNXduN0/eE/s0A3hm"
+
+	_, err = db.Exec("INSERT INTO users (email, password) VALUES (?, ?)", email, hashedPassword)
+	if err != nil {
+		t.Fatalf("could not create test user: %v", err)
+	}
+
+	var userID int64
+	err = db.QueryRow("SELECT id FROM users WHERE email = ?", email).Scan(&userID)
+	if err != nil {
+		t.Fatalf("could not get user ID: %v", err)
+	}
+
+	_, err = db.Exec("INSERT INTO job_application_stats (user_id) VALUES (?)", userID)
+	if err != nil {
+		t.Fatalf("could not create job application stats: %v", err)
+	}
+}
+
+func generateUniqueEmail(t *testing.T) string {
+	t.Helper()
+	timestamp := time.Now().UnixNano()
+	return fmt.Sprintf("test-%d@example.com", timestamp)
+}
+
+func resetUserData(t *testing.T, email string) {
+	t.Helper()
+	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	if err != nil {
+		t.Fatalf("could not open db: %v", err)
+	}
+	defer db.Close()
+
+	var userID int64
+	err = db.QueryRow("SELECT id FROM users WHERE email = ?", email).Scan(&userID)
+	if err != nil {
+		return
+	}
+
+	clearQueries := []string{
+		"DELETE FROM job_application_notes WHERE job_application_id IN (SELECT id FROM job_applications WHERE user_id = ?)",
+		"DELETE FROM job_application_status_histories WHERE job_application_id IN (SELECT id FROM job_applications WHERE user_id = ?)",
+		"DELETE FROM job_applications WHERE user_id = ?",
+		"UPDATE job_application_stats SET total_applications = 0, total_companies = 0, total_applied = 0, total_interviewing = 0, total_offered = 0, total_rejected = 0 WHERE user_id = ?",
+		"DELETE FROM sessions WHERE user_id = ?",
+		"DELETE FROM user_ips WHERE user_id = ?",
+	}
+
+	for _, query := range clearQueries {
+		if _, err := db.Exec(query, userID); err != nil {
+			continue
+		}
+	}
+}
+
+func createUserAndSignIn(t *testing.T) string {
+	t.Helper()
+	email := generateUniqueEmail(t)
+	createTestUser(t, email, "password")
+	signin(t, email, "password")
+	return email
 }
