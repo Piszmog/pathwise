@@ -4,6 +4,7 @@ package e2e_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/playwright-community/playwright-go"
 	"github.com/stretchr/testify/require"
@@ -105,8 +106,8 @@ func TestHome_BulkArchiveByDate(t *testing.T) {
 	require.NoError(t, expect.Locator(page.GetByText("3 results")).ToHaveCount(1))
 	assertStats(t, "3", "3", "0 days", "0%", "0%")
 
-	tomorrow := "2025-07-19"
-	archiveJobsByDate(t, tomorrow)
+	today := time.Now().Format("2006-01-02")
+	archiveJobsByDate(t, today)
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
 	require.NoError(t, expect.Locator(page.GetByText("0 results")).ToHaveCount(1))
