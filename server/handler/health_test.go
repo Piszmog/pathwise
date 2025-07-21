@@ -34,27 +34,20 @@ func TestHandler_Health(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Setup
 			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			h := &handler.Handler{
 				Logger:   logger,
-				Database: nil, // Health endpoint doesn't use database
+				Database: nil,
 			}
 
-			// Create request
 			req := httptest.NewRequest(tt.method, "/health", nil)
 			w := httptest.NewRecorder()
 
-			// Execute
 			h.Health(w, req)
 
-			// Assert status code
 			assert.Equal(t, tt.expectedStatus, w.Code)
-
-			// Assert content type
 			assert.Equal(t, "application/json", w.Header().Get("Content-Type"))
 
-			// Assert response body
 			var response map[string]string
 			err := json.Unmarshal(w.Body.Bytes(), &response)
 			require.NoError(t, err)
