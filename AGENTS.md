@@ -20,7 +20,7 @@ Pathwise is a job application tracking web application built with Go, templ, HTM
 - **VERSION**: Application version string
 
 ## Code Style & Conventions
-- **Comments**: Avoid comments, the code should be self documenting. Even in tests, do not use comments
+- **Comments**: DO NOT ADD COMMENTS to any code including tests. Code should be self-documenting through clear naming and structure. This is a strict rule with no exceptions.
 - **Imports**: Standard library first, then external packages, then local packages (separated by blank lines)
 - **Naming**: Use camelCase for variables/functions, PascalCase for types/constants, snake_case for SQL
 - **Types**: Define custom types for domain concepts (e.g., `JobApplicationStatus`), use `sql.Null*` for nullable DB fields
