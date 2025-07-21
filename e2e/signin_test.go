@@ -12,7 +12,7 @@ import (
 func TestSignin(t *testing.T) {
 	beforeEach(t)
 	email := generateUniqueEmail(t)
-	createTestUser(t, email, "password")
+	createTestUser(t, email)
 
 	_, err := page.Goto(getFullPath("signin"))
 	require.NoError(t, err)

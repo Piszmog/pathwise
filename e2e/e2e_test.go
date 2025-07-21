@@ -310,7 +310,7 @@ func getFullPath(relativePath string) string {
 	return baseUrL.ResolveReference(&url.URL{Path: relativePath}).String()
 }
 
-func createTestUser(t *testing.T, email, password string) {
+func createTestUser(t *testing.T, email string) {
 	t.Helper()
 	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
 	if err != nil {
@@ -352,7 +352,7 @@ func generateUniqueEmail(t *testing.T) string {
 func createUserAndSignIn(t *testing.T) string {
 	t.Helper()
 	email := generateUniqueEmail(t)
-	createTestUser(t, email, "password")
+	createTestUser(t, email)
 	signin(t, email, "password")
 	return email
 }
