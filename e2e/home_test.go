@@ -106,8 +106,8 @@ func TestHome_BulkArchiveByDate(t *testing.T) {
 	require.NoError(t, expect.Locator(page.GetByText("3 results")).ToHaveCount(1))
 	assertStats(t, "3", "3", "0 days", "0%", "0%")
 
-	today := time.Now().Format("2006-01-02")
-	archiveJobsByDate(t, today)
+	tomorrow := time.Now().AddDate(0, 0, 1).Format("2006-01-02")
+	archiveJobsByDate(t, tomorrow)
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
 	require.NoError(t, expect.Locator(page.GetByText("0 results")).ToHaveCount(1))

@@ -4,6 +4,7 @@ package e2e_test
 
 import (
 	"bufio"
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -25,7 +26,7 @@ import (
 var (
 	pw          *playwright.Playwright
 	browser     playwright.Browser
-	context     playwright.BrowserContext
+	ctx         playwright.BrowserContext
 	page        playwright.Page
 	expect      playwright.PlaywrightAssertions
 	isChromium  bool
@@ -160,16 +161,17 @@ func startApp() error {
 }
 
 func waitForServer() error {
-	for i := 0; i < 30; i++ {
+	for range 30 {
+		time.Sleep(100 * time.Millisecond)
 		resp, err := http.Get(baseUrL.String() + "/health")
-		if err == nil && resp.StatusCode == 200 {
+		if err != nil {
+			continue
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode == http.StatusOK {
 			resp.Body.Close()
 			return nil
 		}
-		if resp != nil {
-			resp.Body.Close()
-		}
-		time.Sleep(time.Second)
 	}
 	return fmt.Errorf("server not ready after 30 seconds")
 }
@@ -180,6 +182,13 @@ func cleanDB() error {
 		return err
 	}
 	defer db.Close()
+
+	ctx := context.Background()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 
 	// Clear existing data
 	clearQueries := []string{
@@ -193,12 +202,12 @@ func cleanDB() error {
 	}
 
 	for _, query := range clearQueries {
-		if _, err := db.Exec(query); err != nil {
+		if _, err := tx.Exec(query); err != nil {
 			// Ignore errors for tables that might not exist yet
 			continue
 		}
 	}
-	return nil
+	return tx.Commit()
 }
 
 func seedDB() error {
@@ -255,7 +264,7 @@ func beforeEach(t *testing.T, contextOptions ...playwright.BrowserNewContextOpti
 	if len(contextOptions) == 1 {
 		opt = contextOptions[0]
 	}
-	context, page = newBrowserContextAndPage(t, opt)
+	ctx, page = newBrowserContextAndPage(t, opt)
 
 	// Wait for server to be ready
 	if err := waitForServer(); err != nil {
@@ -281,20 +290,20 @@ func getBrowserName() string {
 
 func newBrowserContextAndPage(t *testing.T, options playwright.BrowserNewContextOptions) (playwright.BrowserContext, playwright.Page) {
 	t.Helper()
-	context, err := browser.NewContext(options)
+	ctx, err := browser.NewContext(options)
 	if err != nil {
 		t.Fatalf("could not create new context: %v", err)
 	}
 	t.Cleanup(func() {
-		if ctxErr := context.Close(); ctxErr != nil {
+		if ctxErr := ctx.Close(); ctxErr != nil {
 			t.Errorf("could not close context: %v", ctxErr)
 		}
 	})
-	p, err := context.NewPage()
+	p, err := ctx.NewPage()
 	if err != nil {
 		t.Fatalf("could not create new page: %v", err)
 	}
-	return context, p
+	return ctx, p
 }
 
 func getFullPath(relativePath string) string {
@@ -332,36 +341,6 @@ func generateUniqueEmail(t *testing.T) string {
 	t.Helper()
 	timestamp := time.Now().UnixNano()
 	return fmt.Sprintf("test-%d@example.com", timestamp)
-}
-
-func resetUserData(t *testing.T, email string) {
-	t.Helper()
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
-	if err != nil {
-		t.Fatalf("could not open db: %v", err)
-	}
-	defer db.Close()
-
-	var userID int64
-	err = db.QueryRow("SELECT id FROM users WHERE email = ?", email).Scan(&userID)
-	if err != nil {
-		return
-	}
-
-	clearQueries := []string{
-		"DELETE FROM job_application_notes WHERE job_application_id IN (SELECT id FROM job_applications WHERE user_id = ?)",
-		"DELETE FROM job_application_status_histories WHERE job_application_id IN (SELECT id FROM job_applications WHERE user_id = ?)",
-		"DELETE FROM job_applications WHERE user_id = ?",
-		"UPDATE job_application_stats SET total_applications = 0, total_companies = 0, total_applied = 0, total_interviewing = 0, total_offered = 0, total_rejected = 0 WHERE user_id = ?",
-		"DELETE FROM sessions WHERE user_id = ?",
-		"DELETE FROM user_ips WHERE user_id = ?",
-	}
-
-	for _, query := range clearQueries {
-		if _, err := db.Exec(query, userID); err != nil {
-			continue
-		}
-	}
 }
 
 func createUserAndSignIn(t *testing.T) string {

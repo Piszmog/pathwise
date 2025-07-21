@@ -463,7 +463,7 @@ func (h *Handler) ArchiveJobs(w http.ResponseWriter, r *http.Request) {
 		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Invalid date", "Please enter a date."))
 		return
 	}
-	date = date.Add(24 * time.Hour)
+	date = date.UTC().Add(24*time.Hour - time.Nanosecond)
 
 	userID, err := getUserID(r)
 	if err != nil {
