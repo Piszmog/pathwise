@@ -249,9 +249,6 @@ func updateJobApplication(t *testing.T, company, title, url, status string) {
 		require.NoError(t, err)
 	}
 	require.NoError(t, page.Locator("#job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Update"}).Click())
-
-	// Wait for update to complete
-	page.WaitForTimeout(1500)
 }
 
 func addNote(t *testing.T, note string) {
@@ -265,9 +262,6 @@ func addNote(t *testing.T, note string) {
 	}
 	require.NoError(t, page.GetByPlaceholder("Add a note...").Fill(note))
 	require.NoError(t, page.Locator("#note-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Add"}).Click())
-
-	// Wait for note to be added
-	page.WaitForTimeout(1500)
 }
 
 func archiveJobsByDate(t *testing.T, date string) {
@@ -281,9 +275,7 @@ func archiveJobsByDate(t *testing.T, date string) {
 	require.NoError(t, page.Locator("#date").Fill(date))
 	require.NoError(t, page.Locator("#archive-jobs-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Archive"}).Click())
 
-	// Wait for bulk archive operation to complete
 	waitForHTMXRequest(t)
-	page.WaitForTimeout(2000)
 }
 
 func filterByCompany(t *testing.T, company string) {
@@ -325,8 +317,7 @@ func archiveSingleJob(t *testing.T, companyName string) {
 
 	require.NoError(t, page.Locator("#job-details").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Archive"}).Click())
 
-	// Wait for archive operation to complete
-	page.WaitForTimeout(2000)
+	waitForHTMXRequest(t)
 }
 
 // waitForHTMXRequest waits for HTMX requests to complete by checking for the absence of the htmx-request class
