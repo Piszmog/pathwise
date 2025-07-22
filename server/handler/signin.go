@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"errors"
 	"net/http"
 	"sync"
 	"time"
@@ -43,7 +44,7 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 	}
 	user, err := h.Database.Queries().GetUserByEmail(r.Context(), email)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			h.Logger.Debug("user not found", "email", email)
 			h.html(r.Context(), w, http.StatusUnauthorized, components.Alert(types.AlertTypeError, "Incorrect email or password", "Double check your email and password and try again."))
 		} else {
@@ -61,7 +62,7 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 	var cookieValue string
 	cookie, err := r.Cookie("session")
 	if err != nil {
-		if err != http.ErrNoCookie {
+		if !errors.Is(err, http.ErrNoCookie) {
 			h.Logger.Error("failed to get session cookie", "error", err)
 		}
 	} else {

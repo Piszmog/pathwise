@@ -2,9 +2,10 @@ version: "2"
 linters:
   default: all
   disable:
-    - depguard
     - canonicalheader
     - cyclop
+    - depguard
+    - dupl
     - exhaustruct
     - forcetypeassert
     - funlen

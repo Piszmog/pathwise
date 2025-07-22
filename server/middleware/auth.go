@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"database/sql"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -21,7 +22,7 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 		isHxRequest := r.Header.Get("HX-Request") == "true"
 		cookie, err := r.Cookie("session")
 		if err != nil {
-			if err == http.ErrNoCookie {
+			if errors.Is(err, http.ErrNoCookie) {
 				m.Logger.Warn("no session cookie", "err", err)
 				w.Header().Set("HX-Redirect", "/signin")
 				if !isHxRequest {
@@ -36,7 +37,7 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 
 		session, err := m.Database.Queries().GetSessionByToken(r.Context(), cookie.Value)
 		if err != nil {
-			if err != sql.ErrNoRows {
+			if !errors.Is(err, sql.ErrNoRows) {
 				m.Logger.Error("failed to get session", "err", err)
 			}
 			w.Header().Set("HX-Redirect", "/signin")
