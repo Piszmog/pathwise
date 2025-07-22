@@ -176,7 +176,7 @@ func waitForServer() error {
 			return nil
 		}
 	}
-	return fmt.Errorf("server not ready after 30 seconds")
+	return fmt.Errorf("server not ready after 3 seconds")
 }
 
 func cleanDB() error {
