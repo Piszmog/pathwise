@@ -77,156 +77,277 @@ func TestSalary_UpdateSalaryInformation(t *testing.T) {
 
 	require.NoError(t, page.Locator("#job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Update"}).Click())
 
-	// Wait for update to complete
-	page.WaitForTimeout(1500)
-
-	// Verify the salary information was updated
-	require.NoError(t, expect.Locator(page.Locator("#job-form #salary_currency")).ToHaveValue("GBP"))
+	require.NoError(t, expect.Locator(page.Locator("#job-form #salary_currency")).ToHaveValue("GBP", playwright.LocatorAssertionsToHaveValueOptions{
+		Timeout: playwright.Float(5000),
+	}))
 	require.NoError(t, expect.Locator(page.Locator("#job-form #salary_min")).ToHaveValue("45000"))
 	require.NoError(t, expect.Locator(page.Locator("#job-form #salary_max")).ToHaveValue("65000"))
 }
 
-func TestSalary_ValidationMinGreaterThanMax(t *testing.T) {
-	beforeEach(t)
-	createUserAndSignIn(t)
+func TestSalary_ValidationScenarios(t *testing.T) {
+	testCases := []struct {
+		name       string
+		company    string
+		title      string
+		url        string
+		currency   string
+		minSalary  string
+		maxSalary  string
+		shouldFail bool
+		isUpdate   bool
+	}{
+		{
+			name:       "min greater than max",
+			company:    "Validation Test Company",
+			title:      "DevOps Engineer",
+			url:        "https://validationtest.com",
+			currency:   "USD",
+			minSalary:  "120000",
+			maxSalary:  "80000",
+			shouldFail: true,
+			isUpdate:   false,
+		},
+		{
+			name:       "negative salary values",
+			company:    "Invalid Salary Company",
+			title:      "QA Engineer",
+			url:        "https://invalidsalary.com",
+			currency:   "USD",
+			minSalary:  "-50000",
+			maxSalary:  "-30000",
+			shouldFail: false,
+			isUpdate:   true,
+		},
+		{
+			name:       "extremely large values",
+			company:    "Large Salary Company",
+			title:      "Senior Engineer",
+			url:        "https://largesalary.com",
+			currency:   "USD",
+			minSalary:  "999999999",
+			maxSalary:  "9999999999",
+			shouldFail: false,
+			isUpdate:   false,
+		},
+		{
+			name:       "zero values",
+			company:    "Zero Salary Company",
+			title:      "Intern",
+			url:        "https://zerosalary.com",
+			currency:   "USD",
+			minSalary:  "0",
+			maxSalary:  "0",
+			shouldFail: false,
+			isUpdate:   false,
+		},
+	}
 
-	require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "Add"}).First().Click())
-	require.NoError(t, page.Locator("#new-job-form #company").Fill("Validation Test Company"))
-	require.NoError(t, page.Locator("#new-job-form #title").Fill("DevOps Engineer"))
-	require.NoError(t, page.Locator("#new-job-form #url").Fill("https://validationtest.com"))
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			beforeEach(t)
+			createUserAndSignIn(t)
 
-	// Set invalid salary range (min > max)
-	_, err := page.Locator("#new-job-form #new-salary_currency").SelectOption(playwright.SelectOptionValues{Values: &[]string{"USD"}})
-	require.NoError(t, err)
-	require.NoError(t, page.Locator("#new-job-form #new-salary_min").Fill("120000"))
-	require.NoError(t, page.Locator("#new-job-form #new-salary_max").Fill("80000"))
+			if tc.isUpdate {
+				addJobApplication(t, tc.company, tc.title, tc.url)
 
-	require.NoError(t, page.Locator("#new-job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Add"}).Click())
+				require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "View job"}).First().Click())
 
-	// Wait for the form submission to complete
-	page.WaitForTimeout(2000)
+				require.NoError(t, expect.Locator(page.Locator("#job-form")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
+					Timeout: playwright.Float(5000),
+				}))
 
-	// Verify job was not added (main validation that the error occurred)
-	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
+				if tc.currency != "" {
+					_, err := page.Locator("#job-form #salary_currency").SelectOption(playwright.SelectOptionValues{Values: &[]string{tc.currency}})
+					require.NoError(t, err)
+				}
+				require.NoError(t, page.Locator("#job-form #salary_min").Fill(tc.minSalary))
+				require.NoError(t, page.Locator("#job-form #salary_max").Fill(tc.maxSalary))
 
-	// Verify we can see the job list is still empty
-	require.NoError(t, expect.Locator(page.GetByText("0 results")).ToHaveCount(1))
-}
+				require.NoError(t, page.Locator("#job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Update"}).Click())
+			} else {
+				require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "Add"}).First().Click())
+				require.NoError(t, page.Locator("#new-job-form #company").Fill(tc.company))
+				require.NoError(t, page.Locator("#new-job-form #title").Fill(tc.title))
+				require.NoError(t, page.Locator("#new-job-form #url").Fill(tc.url))
 
-func TestSalary_ValidationInvalidSalaryValues(t *testing.T) {
-	beforeEach(t)
-	createUserAndSignIn(t)
+				if tc.currency != "" {
+					_, err := page.Locator("#new-job-form #new-salary_currency").SelectOption(playwright.SelectOptionValues{Values: &[]string{tc.currency}})
+					require.NoError(t, err)
+				}
+				require.NoError(t, page.Locator("#new-job-form #new-salary_min").Fill(tc.minSalary))
+				require.NoError(t, page.Locator("#new-job-form #new-salary_max").Fill(tc.maxSalary))
 
-	addJobApplication(t, "Invalid Salary Company", "QA Engineer", "https://invalidsalary.com")
+				require.NoError(t, page.Locator("#new-job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Add"}).Click())
 
-	// Open job details
-	require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "View job"}).First().Click())
-
-	// Wait for job form to load
-	require.NoError(t, expect.Locator(page.Locator("#job-form")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
-		Timeout: playwright.Float(5000),
-	}))
-
-	// Try to set invalid salary values (negative numbers)
-	require.NoError(t, page.Locator("#job-form #salary_min").Fill("-50000"))
-	require.NoError(t, page.Locator("#job-form #salary_max").Fill("-30000"))
-
-	require.NoError(t, page.Locator("#job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Update"}).Click())
-
-	// Wait for potential error
-	page.WaitForTimeout(1500)
-
-	// The form should handle negative values gracefully (browser validation or server validation)
-	// This test ensures the application doesn't crash with invalid input
+				if tc.shouldFail {
+					require.NoError(t, expect.Locator(page.GetByText("0 results")).ToHaveCount(1, playwright.LocatorAssertionsToHaveCountOptions{
+						Timeout: playwright.Float(5000),
+					}))
+				} else {
+					require.NoError(t, expect.Locator(page.GetByText(tc.company)).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
+						Timeout: playwright.Float(10000),
+					}))
+				}
+			}
+		})
+	}
 }
 
 func TestSalary_PartialSalaryInformation(t *testing.T) {
-	beforeEach(t)
-	createUserAndSignIn(t)
+	testCases := []struct {
+		name             string
+		company          string
+		title            string
+		url              string
+		currency         string
+		minSalary        string
+		maxSalary        string
+		expectedCurrency string
+		expectedMin      string
+		expectedMax      string
+	}{
+		{
+			name:             "minimum salary only",
+			company:          "Min Only Company",
+			title:            "Data Scientist",
+			url:              "https://minonly.com",
+			currency:         "CAD",
+			minSalary:        "70000",
+			maxSalary:        "",
+			expectedCurrency: "CAD",
+			expectedMin:      "70000",
+			expectedMax:      "",
+		},
+		{
+			name:             "maximum salary only",
+			company:          "Max Only Company",
+			title:            "Product Manager",
+			url:              "https://maxonly.com",
+			currency:         "USD",
+			minSalary:        "",
+			maxSalary:        "150000",
+			expectedCurrency: "USD",
+			expectedMin:      "",
+			expectedMax:      "150000",
+		},
+		{
+			name:             "currency only",
+			company:          "Currency Only Company",
+			title:            "Designer",
+			url:              "https://currencyonly.com",
+			currency:         "EUR",
+			minSalary:        "",
+			maxSalary:        "",
+			expectedCurrency: "EUR",
+			expectedMin:      "",
+			expectedMax:      "",
+		},
+		{
+			name:             "no salary information",
+			company:          "No Salary Company",
+			title:            "Intern",
+			url:              "https://nosalary.com",
+			currency:         "",
+			minSalary:        "",
+			maxSalary:        "",
+			expectedCurrency: "",
+			expectedMin:      "",
+			expectedMax:      "",
+		},
+	}
 
-	// Test with only minimum salary
-	require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "Add"}).First().Click())
-	require.NoError(t, page.Locator("#new-job-form #company").Fill("Partial Salary Company"))
-	require.NoError(t, page.Locator("#new-job-form #title").Fill("Data Scientist"))
-	require.NoError(t, page.Locator("#new-job-form #url").Fill("https://partialsalary.com"))
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			beforeEach(t)
+			createUserAndSignIn(t)
 
-	// Set only minimum salary
-	_, err := page.Locator("#new-job-form #new-salary_currency").SelectOption(playwright.SelectOptionValues{Values: &[]string{"CAD"}})
-	require.NoError(t, err)
-	require.NoError(t, page.Locator("#new-job-form #new-salary_min").Fill("70000"))
-	// Leave max salary empty
+			require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "Add"}).First().Click())
+			require.NoError(t, page.Locator("#new-job-form #company").Fill(tc.company))
+			require.NoError(t, page.Locator("#new-job-form #title").Fill(tc.title))
+			require.NoError(t, page.Locator("#new-job-form #url").Fill(tc.url))
 
-	require.NoError(t, page.Locator("#new-job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Add"}).Click())
+			if tc.currency != "" {
+				_, err := page.Locator("#new-job-form #new-salary_currency").SelectOption(playwright.SelectOptionValues{Values: &[]string{tc.currency}})
+				require.NoError(t, err)
+			}
+			if tc.minSalary != "" {
+				require.NoError(t, page.Locator("#new-job-form #new-salary_min").Fill(tc.minSalary))
+			}
+			if tc.maxSalary != "" {
+				require.NoError(t, page.Locator("#new-job-form #new-salary_max").Fill(tc.maxSalary))
+			}
 
-	// Wait for the job to be added
-	require.NoError(t, expect.Locator(page.GetByText("Partial Salary Company")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
-		Timeout: playwright.Float(10000),
-	}))
+			require.NoError(t, page.Locator("#new-job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Add"}).Click())
 
-	// Open job details to verify partial salary information
-	require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "View job"}).First().Click())
+			require.NoError(t, expect.Locator(page.GetByText(tc.company)).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
+				Timeout: playwright.Float(10000),
+			}))
 
-	// Wait for job form to load
-	require.NoError(t, expect.Locator(page.Locator("#job-form")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
-		Timeout: playwright.Float(5000),
-	}))
+			require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "View job"}).First().Click())
 
-	// Verify partial salary information
-	require.NoError(t, expect.Locator(page.Locator("#job-form #salary_currency")).ToHaveValue("CAD"))
-	require.NoError(t, expect.Locator(page.Locator("#job-form #salary_min")).ToHaveValue("70000"))
-	require.NoError(t, expect.Locator(page.Locator("#job-form #salary_max")).ToHaveValue(""))
+			require.NoError(t, expect.Locator(page.Locator("#job-form")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
+				Timeout: playwright.Float(5000),
+			}))
+
+			require.NoError(t, expect.Locator(page.Locator("#job-form #salary_currency")).ToHaveValue(tc.expectedCurrency))
+			require.NoError(t, expect.Locator(page.Locator("#job-form #salary_min")).ToHaveValue(tc.expectedMin))
+			require.NoError(t, expect.Locator(page.Locator("#job-form #salary_max")).ToHaveValue(tc.expectedMax))
+		})
+	}
 }
 
 func TestSalary_AllCurrencyOptions(t *testing.T) {
+	testCases := []struct {
+		name     string
+		currency string
+		minSal   string
+		maxSal   string
+	}{
+		{"USD currency", "USD", "50000", "80000"},
+		{"EUR currency", "EUR", "45000", "70000"},
+		{"GBP currency", "GBP", "40000", "65000"},
+		{"CAD currency", "CAD", "55000", "85000"},
+		{"AUD currency", "AUD", "60000", "90000"},
+		{"JPY currency", "JPY", "5000000", "8000000"},
+		{"CHF currency", "CHF", "48000", "75000"},
+	}
+
 	beforeEach(t)
 	createUserAndSignIn(t)
 
-	currencies := []string{"USD", "EUR", "GBP", "CAD", "AUD", "JPY", "CHF"}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			companyName := "Currency Test " + tc.currency
 
-	for _, currency := range currencies {
-		companyName := "Currency Test " + currency
+			require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "Add"}).First().Click())
+			require.NoError(t, page.Locator("#new-job-form #company").Fill(companyName))
+			require.NoError(t, page.Locator("#new-job-form #title").Fill("Software Engineer"))
+			require.NoError(t, page.Locator("#new-job-form #url").Fill("https://currencytest"+tc.currency+".com"))
 
-		require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "Add"}).First().Click())
-		require.NoError(t, page.Locator("#new-job-form #company").Fill(companyName))
-		require.NoError(t, page.Locator("#new-job-form #title").Fill("Software Engineer"))
-		require.NoError(t, page.Locator("#new-job-form #url").Fill("https://currencytest"+currency+".com"))
+			_, err := page.Locator("#new-job-form #new-salary_currency").SelectOption(playwright.SelectOptionValues{Values: &[]string{tc.currency}})
+			require.NoError(t, err)
+			require.NoError(t, page.Locator("#new-job-form #new-salary_min").Fill(tc.minSal))
+			require.NoError(t, page.Locator("#new-job-form #new-salary_max").Fill(tc.maxSal))
 
-		// Set currency
-		_, err := page.Locator("#new-job-form #new-salary_currency").SelectOption(playwright.SelectOptionValues{Values: &[]string{currency}})
-		require.NoError(t, err)
-		require.NoError(t, page.Locator("#new-job-form #new-salary_min").Fill("50000"))
-		require.NoError(t, page.Locator("#new-job-form #new-salary_max").Fill("80000"))
+			require.NoError(t, page.Locator("#new-job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Add"}).Click())
 
-		require.NoError(t, page.Locator("#new-job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Add"}).Click())
+			require.NoError(t, expect.Locator(page.GetByText(companyName)).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
+				Timeout: playwright.Float(10000),
+			}))
 
-		// Wait for the job to be added
-		require.NoError(t, expect.Locator(page.GetByText(companyName)).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
-			Timeout: playwright.Float(10000),
-		}))
-	}
+			jobRow := page.GetByText(companyName).Locator("xpath=ancestor::li")
+			require.NoError(t, jobRow.GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "View job"}).Click())
 
-	// Verify all jobs were added
-	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(len(currencies)))
+			require.NoError(t, expect.Locator(page.Locator("#job-form")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
+				Timeout: playwright.Float(5000),
+			}))
 
-	// Test each currency by opening job details
-	for _, currency := range currencies {
-		companyName := "Currency Test " + currency
+			require.NoError(t, expect.Locator(page.Locator("#job-form #salary_currency")).ToHaveValue(tc.currency))
+			require.NoError(t, expect.Locator(page.Locator("#job-form #salary_min")).ToHaveValue(tc.minSal))
+			require.NoError(t, expect.Locator(page.Locator("#job-form #salary_max")).ToHaveValue(tc.maxSal))
 
-		// Find and click the specific job
-		jobRow := page.GetByText(companyName).Locator("xpath=ancestor::li")
-		require.NoError(t, jobRow.GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "View job"}).Click())
-
-		// Wait for job form to load
-		require.NoError(t, expect.Locator(page.Locator("#job-form")).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
-			Timeout: playwright.Float(5000),
-		}))
-
-		// Verify currency is correctly set
-		require.NoError(t, expect.Locator(page.Locator("#job-form #salary_currency")).ToHaveValue(currency))
-
-		// Click somewhere else to close the details
-		require.NoError(t, page.Locator("body").Click())
-		page.WaitForTimeout(500)
+			require.NoError(t, page.Locator("body").Click())
+		})
 	}
 }
 
@@ -256,11 +377,6 @@ func TestSalary_ClearSalaryInformation(t *testing.T) {
 	require.NoError(t, page.Locator("#job-form #salary_max").Fill(""))
 
 	require.NoError(t, page.Locator("#job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Update"}).Click())
-
-	// Wait for update to complete
-	page.WaitForTimeout(1500)
-
-	// Verify salary information was cleared
 	require.NoError(t, expect.Locator(page.Locator("#job-form #salary_currency")).ToHaveValue(""))
 	require.NoError(t, expect.Locator(page.Locator("#job-form #salary_min")).ToHaveValue(""))
 	require.NoError(t, expect.Locator(page.Locator("#job-form #salary_max")).ToHaveValue(""))
