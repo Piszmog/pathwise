@@ -10,6 +10,7 @@ import (
 )
 
 func TestGetFirstElementID(t *testing.T) {
+	t.Parallel()
 	now := time.Now()
 
 	tests := []struct {
@@ -58,6 +59,7 @@ func TestGetFirstElementID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := utils.GetFirstElementID(tt.vals)
 			assert.Equal(t, tt.expected, result)
 		})
@@ -65,6 +67,7 @@ func TestGetFirstElementID(t *testing.T) {
 }
 
 func TestGetFirstElementType(t *testing.T) {
+	t.Parallel()
 	now := time.Now()
 
 	tests := []struct {
@@ -135,6 +138,7 @@ func TestGetFirstElementType(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := utils.GetFirstElementType(tt.vals)
 			assert.Equal(t, tt.expected, result)
 		})

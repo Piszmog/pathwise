@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"database/sql"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -21,23 +22,23 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 		isHxRequest := r.Header.Get("HX-Request") == "true"
 		cookie, err := r.Cookie("session")
 		if err != nil {
-			if err == http.ErrNoCookie {
-				m.Logger.Warn("no session cookie", "err", err)
+			if errors.Is(err, http.ErrNoCookie) {
+				m.Logger.WarnContext(r.Context(), "no session cookie", "err", err)
 				w.Header().Set("HX-Redirect", "/signin")
 				if !isHxRequest {
 					http.Redirect(w, r, "/signin", http.StatusSeeOther)
 				}
 				return
 			}
-			m.Logger.Error("failed to get session cookie", "err", err)
+			m.Logger.ErrorContext(r.Context(), "failed to get session cookie", "err", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		session, err := m.Database.Queries().GetSessionByToken(r.Context(), cookie.Value)
 		if err != nil {
-			if err != sql.ErrNoRows {
-				m.Logger.Error("failed to get session", "err", err)
+			if !errors.Is(err, sql.ErrNoRows) {
+				m.Logger.ErrorContext(r.Context(), "failed to get session", "err", err)
 			}
 			w.Header().Set("HX-Redirect", "/signin")
 			if !isHxRequest {
@@ -47,10 +48,10 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 		}
 
 		if session.ExpiresAt.Before(time.Now()) {
-			m.Logger.Debug("session expired", "session", session)
+			m.Logger.DebugContext(r.Context(), "session expired", "session", session)
 			err = m.Database.Queries().DeleteSessionByToken(r.Context(), cookie.Value)
 			if err != nil {
-				m.Logger.Error("failed to delete session", "err", err)
+				m.Logger.ErrorContext(r.Context(), "failed to delete session", "err", err)
 			}
 			w.Header().Set("HX-Redirect", "/signin")
 			if !isHxRequest {
@@ -60,10 +61,10 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 		}
 
 		if session.ExpiresAt.Sub(session.CreatedAt) < 5 {
-			m.Logger.Debug("refreshing session", "session", session)
+			m.Logger.DebugContext(r.Context(), "refreshing session", "session", session)
 			err = m.Database.Queries().UpdateSessionExpiresAt(r.Context(), queries.UpdateSessionExpiresAtParams{Token: session.Token, ExpiresAt: session.ExpiresAt.Add(24 * 7)})
 			if err != nil {
-				m.Logger.Error("failed to refresh session", "err", err)
+				m.Logger.ErrorContext(r.Context(), "failed to refresh session", "err", err)
 			} else {
 				http.SetCookie(w, &http.Cookie{
 					Name:     "session",

@@ -8,6 +8,7 @@ import (
 )
 
 func TestJobRowID(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		id       int64
@@ -37,6 +38,7 @@ func TestJobRowID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := utils.JobRowID(tt.id)
 			assert.Equal(t, tt.expected, result)
 		})
@@ -44,6 +46,7 @@ func TestJobRowID(t *testing.T) {
 }
 
 func TestJobRowMetadata(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		id       int64
@@ -73,6 +76,7 @@ func TestJobRowMetadata(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := utils.JobRowMetadata(tt.id)
 			assert.Equal(t, tt.expected, result)
 		})
@@ -80,6 +84,7 @@ func TestJobRowMetadata(t *testing.T) {
 }
 
 func TestTimelineStatusRowID(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		id       int64
@@ -104,6 +109,7 @@ func TestTimelineStatusRowID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := utils.TimelineStatusRowID(tt.id)
 			assert.Equal(t, tt.expected, result)
 		})
@@ -111,6 +117,7 @@ func TestTimelineStatusRowID(t *testing.T) {
 }
 
 func TestTimelineStatusRowStringID(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		id       string
@@ -140,6 +147,7 @@ func TestTimelineStatusRowStringID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := utils.TimelineStatusRowStringID(tt.id)
 			assert.Equal(t, tt.expected, result)
 		})
@@ -147,6 +155,7 @@ func TestTimelineStatusRowStringID(t *testing.T) {
 }
 
 func TestTimelineNoteRowID(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		id       int64
@@ -171,6 +180,7 @@ func TestTimelineNoteRowID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := utils.TimelineNoteRowID(tt.id)
 			assert.Equal(t, tt.expected, result)
 		})
@@ -178,6 +188,7 @@ func TestTimelineNoteRowID(t *testing.T) {
 }
 
 func TestTimelineNoteRowStringID(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		id       string
@@ -207,6 +218,7 @@ func TestTimelineNoteRowStringID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := utils.TimelineNoteRowStringID(tt.id)
 			assert.Equal(t, tt.expected, result)
 		})

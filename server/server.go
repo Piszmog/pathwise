@@ -57,9 +57,9 @@ func (s *Server) StartAndWait() {
 
 func (s *Server) Start() {
 	go func() {
-		s.logger.Info("starting server", "port", "8080")
+		s.logger.InfoContext(context.Background(), "starting server", "port", "8080")
 		if err := s.srv.ListenAndServe(); err != nil {
-			s.logger.Warn("failed to start server", "error", err)
+			s.logger.WarnContext(context.Background(), "failed to start server", "error", err)
 		}
 	}()
 }
@@ -82,6 +82,5 @@ func (s *Server) GracefulShutdown() {
 	// Optionally, you could run srv.Shutdown in a goroutine and block on
 	// <-ctx.Done() if your application should wait for other services
 	// to finalize based on context cancellation.
-	s.logger.Info("shutting down")
-	os.Exit(0)
+	s.logger.InfoContext(context.Background(), "shutting down")
 }

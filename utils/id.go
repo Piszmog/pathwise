@@ -8,7 +8,6 @@ func JobRowID(id int64) string {
 
 func JobRowMetadata(id int64) string {
 	return "job-" + strconv.FormatInt(id, 10) + "-row-metadata"
-
 }
 
 func TimelineStatusRowID(id int64) string {

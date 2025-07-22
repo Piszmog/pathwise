@@ -1,0 +1,26 @@
+version: "2"
+linters:
+  default: all
+  disable:
+    - canonicalheader
+    - cyclop
+    - depguard
+    - dupl
+    - exhaustruct
+    - forcetypeassert
+    - funlen
+    - gochecknoglobals
+    - gocognit
+    - godot
+    - gocyclo
+    - ireturn
+    - lll
+    - maintidx
+    - mnd
+    - nlreturn
+    - noinlineerr
+    - revive
+    - varnamelen
+    - wrapcheck
+    - wsl
+    - wsl_v5

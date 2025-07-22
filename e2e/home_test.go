@@ -293,12 +293,6 @@ func filterByStatus(t *testing.T, status string) {
 	// Wait for HTMX request to complete
 	waitForHTMXRequest(t)
 }
-func filterByCompanyAndStatus(t *testing.T, company, status string) {
-	require.NoError(t, page.Locator("#filter-form #company").Fill(company))
-	_, err := page.Locator("#filter-form #status-select").SelectOption(playwright.SelectOptionValues{Values: &[]string{status}})
-	require.NoError(t, err)
-	require.NoError(t, page.Locator("#filter-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Filter"}).Click())
-}
 
 func clearFilter(t *testing.T) {
 	require.NoError(t, page.Locator("#filter-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Clear"}).Click())

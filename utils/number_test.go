@@ -8,6 +8,7 @@ import (
 )
 
 func TestGetActualMin(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		start    int64
@@ -78,6 +79,7 @@ func TestGetActualMin(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := utils.GetActualMin(tt.start, tt.total)
 			assert.Equal(t, tt.expected, result)
 		})
@@ -85,6 +87,7 @@ func TestGetActualMin(t *testing.T) {
 }
 
 func TestGetActualMax(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		end      int64
@@ -155,6 +158,7 @@ func TestGetActualMax(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			result := utils.GetActualMax(tt.end, tt.total)
 			assert.Equal(t, tt.expected, result)
 		})
