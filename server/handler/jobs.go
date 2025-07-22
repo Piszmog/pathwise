@@ -13,7 +13,7 @@ import (
 func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	userID, err := getUserID(r)
 	if err != nil {
-		h.Logger.Error("failed to parse user id", "error", err)
+		h.Logger.ErrorContext(r.Context(), "failed to parse user id", "error", err)
 		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Something went wrong", "Bad request."))
 		return
 	}
@@ -24,7 +24,7 @@ func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	if archivedStr != "" {
 		archived, err = strconv.ParseBool(archivedStr)
 		if err != nil {
-			h.Logger.Warn("failed to parse archived query", "error", err)
+			h.Logger.WarnContext(r.Context(), "failed to parse archived query", "error", err)
 			h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Something went wrong", "Bad request."))
 			return
 		}
@@ -32,7 +32,7 @@ func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 
 	page, perPage, err := getPageOpts(r)
 	if err != nil {
-		h.Logger.Error("failed to get page opts", "error", err)
+		h.Logger.ErrorContext(r.Context(), "failed to get page opts", "error", err)
 		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Something went wrong", "Bad request."))
 		return
 	}
@@ -40,7 +40,7 @@ func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 
 	jobs, total, err := h.filterJobs(r.Context(), userID, archived, filterOpts, page, perPage)
 	if err != nil {
-		h.Logger.Error("failed to get jobs", "error", err)
+		h.Logger.ErrorContext(r.Context(), "failed to get jobs", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 		return
 	}
@@ -83,7 +83,7 @@ func getPageOpts(r *http.Request) (int64, int64, error) {
 }
 
 func (h *Handler) filterJobs(ctx context.Context, userID int64, archived bool, filterOpts types.FilterOpts, page int64, perPage int64) ([]types.JobApplication, int64, error) {
-	h.Logger.Debug("filtering jobs", "filterOpts", filterOpts)
+	h.Logger.DebugContext(ctx, "filtering jobs", "filterOpts", filterOpts)
 	offset := page * perPage
 	archivedVal := int64(0)
 	if archived {
@@ -120,7 +120,7 @@ func (h *Handler) filterJobs(ctx context.Context, userID int64, archived bool, f
 }
 
 func (h *Handler) getJobApplicationsByUserIDAndCompany(ctx context.Context, userID int64, archived int64, company string, perPage, offset int64) ([]types.JobApplication, int64, error) {
-	h.Logger.Debug("getting job applications by user id and company", "userID", userID, "company", company)
+	h.Logger.DebugContext(ctx, "getting job applications by user id and company", "userID", userID, "company", company)
 	j, err := h.Database.Queries().GetJobApplicationsByUserIDAndCompany(
 		ctx,
 		queries.GetJobApplicationsByUserIDAndCompanyParams{
@@ -158,7 +158,7 @@ func (h *Handler) getJobApplicationsByUserIDAndCompany(ctx context.Context, user
 }
 
 func (h *Handler) getJobApplictionsByUserIDAndCompanyAndStatus(ctx context.Context, userID int64, archived int64, company string, status types.JobApplicationStatus, perPage, offset int64) ([]types.JobApplication, int64, error) {
-	h.Logger.Debug("getting job applications by user id, company, and status", "userID", userID, "company", company, "status", status)
+	h.Logger.DebugContext(ctx, "getting job applications by user id, company, and status", "userID", userID, "company", company, "status", status)
 	j, err := h.Database.Queries().GetJobApplicationsByUserIDAndCompanyAndStatus(
 		ctx,
 		queries.GetJobApplicationsByUserIDAndCompanyAndStatusParams{
@@ -198,7 +198,7 @@ func (h *Handler) getJobApplictionsByUserIDAndCompanyAndStatus(ctx context.Conte
 }
 
 func (h *Handler) getJobApplicationsByUserIDAndStatus(ctx context.Context, userID int64, archived int64, status types.JobApplicationStatus, perPage, offset int64) ([]types.JobApplication, int64, error) {
-	h.Logger.Debug("getting job applications by user id and status", "userID", userID, "status", status)
+	h.Logger.DebugContext(ctx, "getting job applications by user id and status", "userID", userID, "status", status)
 	j, err := h.Database.Queries().GetJobApplicationsByUserIDAndStatus(
 		ctx,
 		queries.GetJobApplicationsByUserIDAndStatusParams{
@@ -236,7 +236,7 @@ func (h *Handler) getJobApplicationsByUserIDAndStatus(ctx context.Context, userI
 }
 
 func (h *Handler) getJobApplicationsByUserID(ctx context.Context, userID int64, archived int64, perPage, offset int64) ([]types.JobApplication, error) {
-	h.Logger.Debug("getting job applications by user id", "userID", userID)
+	h.Logger.DebugContext(ctx, "getting job applications by user id", "userID", userID)
 	j, err := h.Database.Queries().GetJobApplicationsByUserID(
 		ctx,
 		queries.GetJobApplicationsByUserIDParams{

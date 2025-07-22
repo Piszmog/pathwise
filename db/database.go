@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"embed"
 	"fmt"
@@ -33,7 +34,7 @@ func New(logger *slog.Logger, opts DatabaseOpts) (Database, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err = db.DB().Ping(); err != nil {
+	if err = db.DB().PingContext(context.Background()); err != nil {
 		return nil, err
 	}
 	return db, nil

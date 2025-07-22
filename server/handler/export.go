@@ -13,14 +13,14 @@ import (
 func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
 	userID, err := getUserID(r)
 	if err != nil {
-		h.Logger.Error("failed to get user ID", "error", err)
+		h.Logger.ErrorContext(r.Context(), "failed to get user ID", "error", err)
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
 	jobApplications, err := h.Database.Queries().GetAllJobApplicationsByUserID(r.Context(), userID)
 	if err != nil {
-		h.Logger.Error("failed to get job applications for export", "error", err, "userID", userID)
+		h.Logger.ErrorContext(r.Context(), "failed to get job applications for export", "error", err, "userID", userID)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -46,7 +46,7 @@ func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
 		"Last Updated",
 	}
 	if err := writer.Write(header); err != nil {
-		h.Logger.Error("failed to write CSV header", "error", err)
+		h.Logger.ErrorContext(r.Context(), "failed to write CSV header", "error", err)
 		return
 	}
 
@@ -79,10 +79,10 @@ func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if err := writer.Write(record); err != nil {
-			h.Logger.Error("failed to write CSV record", "error", err)
+			h.Logger.ErrorContext(r.Context(), "failed to write CSV record", "error", err)
 			return
 		}
 	}
 
-	h.Logger.Info("CSV export completed", "userID", userID, "recordCount", len(jobApplications))
+	h.Logger.InfoContext(r.Context(), "CSV export completed", "userID", userID, "recordCount", len(jobApplications))
 }

@@ -18,7 +18,9 @@ linters:
     - maintidx
     - mnd
     - nlreturn
+    - noinlineerr
     - revive
     - varnamelen
     - wrapcheck
     - wsl
+    - wsl_v5

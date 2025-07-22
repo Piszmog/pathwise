@@ -27,15 +27,15 @@ func (h *Handler) html(ctx context.Context, w http.ResponseWriter, status int, t
 	w.WriteHeader(status)
 
 	if err := t.Render(ctx, w); err != nil {
-		h.Logger.Error("failed to render template", "error", err)
+		h.Logger.ErrorContext(ctx, "failed to render template", "error", err)
 	}
 }
 
-func (h *Handler) htmlStatic(w http.ResponseWriter, status int, html []byte) {
+func (h *Handler) htmlStatic(ctx context.Context, w http.ResponseWriter, status int, html []byte) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	if _, err := w.Write(html); err != nil {
-		h.Logger.Error("Failed to write response", "error", err)
+		h.Logger.ErrorContext(ctx, "Failed to write response", "error", err)
 	}
 }
 

@@ -8,13 +8,13 @@ import (
 func (h *Handler) Signout(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session")
 	if err != nil {
-		h.Logger.Error("failed to get session cookie", "error", err)
+		h.Logger.ErrorContext(r.Context(), "failed to get session cookie", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if err = h.Database.Queries().DeleteSessionByToken(r.Context(), cookie.Value); err != nil {
-		h.Logger.Error("failed to delete session", "error", err)
+		h.Logger.ErrorContext(r.Context(), "failed to delete session", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

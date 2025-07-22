@@ -13,14 +13,14 @@ import (
 func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) {
 	userID, err := getUserID(r)
 	if err != nil {
-		h.Logger.Error("failed to parse user id", "error", err)
+		h.Logger.ErrorContext(r.Context(), "failed to parse user id", "error", err)
 		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Something went wrong", "Bad request."))
 		return
 	}
 
 	stats, err := h.getStats(r.Context(), userID)
 	if err != nil {
-		h.Logger.Error("failed to get stats", "error", err)
+		h.Logger.ErrorContext(r.Context(), "failed to get stats", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 		return
 	}
