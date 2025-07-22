@@ -22,7 +22,7 @@ func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
 		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 		return
 	}
-	job, err := h.Database.Queries().GetJobApplicationByID(r.Context(), int64(id))
+	job, err := h.Database.Queries().GetJobApplicationByID(r.Context(), id)
 	if err != nil {
 		h.Logger.Error("failed to get job", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
@@ -54,7 +54,7 @@ func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) getTimelineEntries(ctx context.Context, id int64) ([]types.JobApplicationTimelineEntry, error) {
-	notes, err := h.Database.Queries().GetJobApplicationNotesByJobApplicationID(ctx, int64(id))
+	notes, err := h.Database.Queries().GetJobApplicationNotesByJobApplicationID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -402,7 +402,7 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 	var stats types.StatsOpts
 	var newTimelineEntry types.NewTimelineEntry
 	if previousStatus != status {
-		latestStatus, latestErr := h.Database.Queries().GetLatestJobApplicationStatusHistoryByID(r.Context(), int64(id))
+		latestStatus, latestErr := h.Database.Queries().GetLatestJobApplicationStatusHistoryByID(r.Context(), id)
 		if latestErr != nil {
 			h.Logger.Error("failed to get latest status", "error", err)
 			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
@@ -555,6 +555,7 @@ func (h *Handler) ArchiveJobs(w http.ResponseWriter, r *http.Request) {
 			statArgs.TotalWatching += 1
 		case types.JobApplicationStatusWithdrawn:
 			statArgs.TotalWatching += 1
+		case types.JobApplicationStatusClosed:
 		}
 	}
 
@@ -774,6 +775,7 @@ func getStatsDiff(currentStatus types.JobApplicationStatus, newStatus types.JobA
 		params.TotalWatching = -1
 	case types.JobApplicationStatusWithdrawn:
 		params.TotalWidthdrawn = -1
+	case types.JobApplicationStatusClosed:
 	}
 
 	switch newStatus {
@@ -795,6 +797,7 @@ func getStatsDiff(currentStatus types.JobApplicationStatus, newStatus types.JobA
 		params.TotalWatching = 1
 	case types.JobApplicationStatusWithdrawn:
 		params.TotalWidthdrawn = 1
+	case types.JobApplicationStatusClosed:
 	}
 	return params
 }
@@ -858,6 +861,7 @@ func (h *Handler) recalculateStats(ctx context.Context, qtx *queries.Queries, us
 			statArgs.TotalWatching += 1
 		case types.JobApplicationStatusWithdrawn:
 			statArgs.TotalWatching += 1
+		case types.JobApplicationStatusClosed:
 		}
 	}
 

@@ -9,6 +9,7 @@ import (
 )
 
 func TestHashPassword(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name     string
 		password string
@@ -37,6 +38,7 @@ func TestHashPassword(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			hash, err := utils.HashPassword([]byte(tt.password), 4)
 
 			require.NoError(t, err)
@@ -51,6 +53,7 @@ func TestHashPassword(t *testing.T) {
 }
 
 func TestCheckPasswordHash(t *testing.T) {
+	t.Parallel()
 	password := "testpassword123"
 	hash, err := utils.HashPassword([]byte(password), 4)
 	require.NoError(t, err)
@@ -95,6 +98,7 @@ func TestCheckPasswordHash(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			err := utils.CheckPasswordHash(tt.hash, []byte(tt.password))
 
 			if tt.expectError {
@@ -107,6 +111,7 @@ func TestCheckPasswordHash(t *testing.T) {
 }
 
 func TestHashPasswordConsistency(t *testing.T) {
+	t.Parallel()
 	password := "consistencytest"
 
 	hash1, err1 := utils.HashPassword([]byte(password), 4)

@@ -18,9 +18,10 @@ var (
 )
 
 func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	signupOnce.Do(func() {
 		var buf bytes.Buffer
-		if err := components.Signup().Render(r.Context(), &buf); err != nil {
+		if err := components.Signup().Render(ctx, &buf); err != nil {
 			h.Logger.Error("failed to render signup", "error", err)
 			return
 		}

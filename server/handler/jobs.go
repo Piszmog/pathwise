@@ -82,20 +82,21 @@ func getPageOpts(r *http.Request) (int64, int64, error) {
 	return page, perPage, nil
 }
 
-func (h Handler) filterJobs(ctx context.Context, userID int64, archived bool, filterOpts types.FilterOpts, page int64, perPage int64) ([]types.JobApplication, int64, error) {
+func (h *Handler) filterJobs(ctx context.Context, userID int64, archived bool, filterOpts types.FilterOpts, page int64, perPage int64) ([]types.JobApplication, int64, error) {
 	h.Logger.Debug("filtering jobs", "filterOpts", filterOpts)
 	offset := page * perPage
 	archivedVal := int64(0)
 	if archived {
 		archivedVal = int64(1)
 	}
-	if filterOpts.Company != "" && filterOpts.Status != "" {
+	switch {
+	case filterOpts.Company != "" && filterOpts.Status != "":
 		return h.getJobApplictionsByUserIDAndCompanyAndStatus(ctx, userID, archivedVal, "%"+filterOpts.Company+"%", filterOpts.Status, perPage, offset)
-	} else if filterOpts.Company != "" && filterOpts.Status == "" {
+	case filterOpts.Company != "" && filterOpts.Status == "":
 		return h.getJobApplicationsByUserIDAndCompany(ctx, userID, archivedVal, "%"+filterOpts.Company+"%", perPage, offset)
-	} else if filterOpts.Company == "" && filterOpts.Status != "" {
+	case filterOpts.Company == "" && filterOpts.Status != "":
 		return h.getJobApplicationsByUserIDAndStatus(ctx, userID, archivedVal, filterOpts.Status, perPage, offset)
-	} else {
+	default:
 		apps, err := h.getJobApplicationsByUserID(ctx, userID, archivedVal, perPage, offset)
 		if err != nil {
 			return nil, 0, err

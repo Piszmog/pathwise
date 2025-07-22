@@ -21,9 +21,10 @@ var (
 )
 
 func (h *Handler) Signin(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	signinOnce.Do(func() {
 		var buf bytes.Buffer
-		if err := components.Signin().Render(r.Context(), &buf); err != nil {
+		if err := components.Signin().Render(ctx, &buf); err != nil {
 			h.Logger.Error("failed to render signin", "error", err)
 			return
 		}

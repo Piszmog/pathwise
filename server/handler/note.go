@@ -24,7 +24,7 @@ func (h *Handler) AddNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	job, err := h.Database.Queries().GetJobApplicationByIDAndUserID(r.Context(), queries.GetJobApplicationByIDAndUserIDParams{ID: int64(id), UserID: int64(userID)})
+	job, err := h.Database.Queries().GetJobApplicationByIDAndUserID(r.Context(), queries.GetJobApplicationByIDAndUserIDParams{ID: int64(id), UserID: userID})
 	if err != nil {
 		h.Logger.Error("failed to get job", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))

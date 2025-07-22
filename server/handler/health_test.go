@@ -15,6 +15,7 @@ import (
 )
 
 func TestHealthEndpoint(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		method         string
@@ -36,12 +37,13 @@ func TestHealthEndpoint(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
 			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 			handler := router.New(logger, nil)
 			server := httptest.NewServer(handler)
 			defer server.Close()
 
-			req, err := http.NewRequest(test.method, server.URL+test.path, nil)
+			req, err := http.NewRequestWithContext(t.Context(), test.method, server.URL+test.path, nil)
 			require.NoError(t, err)
 
 			client := &http.Client{}
