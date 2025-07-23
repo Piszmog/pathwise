@@ -386,8 +386,9 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 
 	statChanged := hasChanged(statParams)
 	if statChanged {
-		if err = qtx.UpdateJobApplicationStat(r.Context(), statParams); err != nil {
-			h.Logger.ErrorContext(r.Context(), "failed to update job application stat", "error", err)
+		err = h.recalculateStats(r.Context(), qtx, userID)
+		if err != nil {
+			h.Logger.ErrorContext(r.Context(), "failed to recalculate stats", "error", err)
 			h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
 			return
 		}
@@ -826,6 +827,8 @@ func (h *Handler) recalculateStats(ctx context.Context, qtx *queries.Queries, us
 	}
 
 	statArgs := queries.SetJobApplicationStatParams{TotalCompanies: companyCount, UserID: userID}
+	var allDays []int64
+
 	for _, j := range jobs {
 		statArgs.TotalApplications += 1
 		if j.HeardBackAt != nil {
@@ -835,12 +838,7 @@ func (h *Handler) recalculateStats(ctx context.Context, qtx *queries.Queries, us
 			}
 			diff := heardBackAt.Sub(j.AppliedAt)
 			daysSince := int64(diff.Hours() / 24)
-
-			if statArgs.AverageTimeToHearBack == 0 {
-				statArgs.AverageTimeToHearBack = daysSince
-			} else {
-				statArgs.AverageTimeToHearBack = (daysSince + statArgs.AverageTimeToHearBack) / 2
-			}
+			allDays = append(allDays, daysSince)
 		}
 		switch types.JobApplicationStatus(j.Status) {
 		case types.JobApplicationStatusAccepted:
@@ -863,6 +861,14 @@ func (h *Handler) recalculateStats(ctx context.Context, qtx *queries.Queries, us
 			statArgs.TotalWatching += 1
 		case types.JobApplicationStatusClosed:
 		}
+	}
+
+	if len(allDays) > 0 {
+		sum := int64(0)
+		for _, days := range allDays {
+			sum += days
+		}
+		statArgs.AverageTimeToHearBack = sum / int64(len(allDays))
 	}
 
 	return qtx.SetJobApplicationStat(ctx, statArgs)

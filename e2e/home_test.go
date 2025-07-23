@@ -322,3 +322,16 @@ func waitForHTMXRequest(t *testing.T) {
 		Timeout: playwright.Float(10000),
 	})
 }
+
+func TestStats_TimeToHearBackCalculation(t *testing.T) {
+	beforeEach(t)
+	signin(t, "existing-user@test.com", "password")
+
+	assertStats(t, "1", "1", "0 days", "0%", "0%")
+
+	updateJobApplication(t, "", "", "", "interviewing")
+	assertStats(t, "1", "1", "2 days", "100%", "0%")
+
+	updateJobApplication(t, "", "", "", "rejected")
+	assertStats(t, "1", "1", "2 days", "0%", "100%")
+}
