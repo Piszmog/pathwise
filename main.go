@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	l := logger.New(os.Getenv("LOG_LEVEL"))
+	l := logger.New(os.Getenv("LOG_LEVEL"), os.Getenv("LOG_OUTPUT"))
 
 	dbURL := os.Getenv("DB_URL")
 	if dbURL == "" {

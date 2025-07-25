@@ -15,6 +15,7 @@ Pathwise is a job application tracking web application built with Go, templ, HTM
 ## Environment Variables
 - **PORT**: Server port (default: 8080)
 - **LOG_LEVEL**: Logging level (debug, info, warn, error)
+- **LOG_OUTPUT**: Log output destination (default: stdout, or file path for rotating logs)
 - **DB_URL**: Database URL (default: ./db.sqlite3 for local SQLite)
 - **DB_TOKEN**: Database token (for remote databases like Turso)
 - **VERSION**: Application version string
