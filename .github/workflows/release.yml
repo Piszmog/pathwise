@@ -182,25 +182,25 @@ jobs:
           # Create systemd service file
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             sudo cat > /etc/systemd/system/pathwise.service << 'SERVICE'
-[Unit]
-Description=Pathwise Job Application Tracker
-After=network.target
+            [Unit]
+            Description=Pathwise Job Application Tracker
+            After=network.target
 
-[Service]
-Type=simple
-User=ubuntu
-WorkingDirectory=/home/ubuntu/apps/pathwise
-ExecStart=/home/ubuntu/apps/pathwise/pathwise
-Restart=always
-RestartSec=5
-Environment=DB_TOKEN=${{ secrets.DB_TOKEN }}
-Environment=DB_URL=${{ secrets.DB_URL }}
-Environment=LOG_OUTPUT=/var/log/pathwise/pathwise.log
-Environment=PORT=8080
+            [Service]
+            Type=simple
+            User=ubuntu
+            WorkingDirectory=/home/ubuntu/apps/pathwise
+            ExecStart=/home/ubuntu/apps/pathwise/pathwise
+            Restart=always
+            RestartSec=5
+            Environment=DB_TOKEN=${{ secrets.DB_TOKEN }}
+            Environment=DB_URL=${{ secrets.DB_URL }}
+            Environment=LOG_OUTPUT=/var/log/pathwise/pathwise.log
+            Environment=PORT=8080
 
-[Install]
-WantedBy=multi-user.target
-SERVICE
+            [Install]
+            WantedBy=multi-user.target
+            SERVICE
           EOF
 
           # Start service and health check
