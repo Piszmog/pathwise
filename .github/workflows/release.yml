@@ -152,9 +152,34 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Create systemd service file
+        run: |
+          cat > pathwise.service << 'EOF'
+          [Unit]
+          Description=Pathwise Job Application Tracker
+          After=network.target
+
+          [Service]
+          Type=simple
+          User=ubuntu
+          WorkingDirectory=/home/ubuntu/apps/pathwise
+          ExecStart=/home/ubuntu/apps/pathwise/pathwise
+          Restart=always
+          RestartSec=5
+          Environment=DB_TOKEN=${{ secrets.DB_TOKEN }}
+          Environment=DB_URL=${{ secrets.DB_URL }}
+          Environment=LOG_OUTPUT=/var/log/pathwise/pathwise.log
+          Environment=PORT=8080
+
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+
       - name: Deploy to VM
         run: |
+          # Copy artifact and service file to VM
           scp ./artifacts/pathwise_Linux_x86_64.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
+          scp pathwise.service ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
 
           # Extract and deploy on VM
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
@@ -177,30 +202,9 @@ jobs:
             # Create log directory
             sudo mkdir -p /var/log/pathwise
             sudo chown ubuntu:ubuntu /var/log/pathwise
-          EOF
 
-          # Create systemd service file
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            sudo cat > /etc/systemd/system/pathwise.service << 'SERVICE'
-            [Unit]
-            Description=Pathwise Job Application Tracker
-            After=network.target
-
-            [Service]
-            Type=simple
-            User=ubuntu
-            WorkingDirectory=/home/ubuntu/apps/pathwise
-            ExecStart=/home/ubuntu/apps/pathwise/pathwise
-            Restart=always
-            RestartSec=5
-            Environment=DB_TOKEN=${{ secrets.DB_TOKEN }}
-            Environment=DB_URL=${{ secrets.DB_URL }}
-            Environment=LOG_OUTPUT=/var/log/pathwise/pathwise.log
-            Environment=PORT=8080
-
-            [Install]
-            WantedBy=multi-user.target
-            SERVICE
+            # Install systemd service file
+            sudo mv /tmp/pathwise.service /etc/systemd/system/
           EOF
 
           # Start service and health check
