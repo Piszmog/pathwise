@@ -158,8 +158,10 @@ jobs:
 
           # Extract and deploy on VM
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            # Stop existing service if running
-            sudo systemctl stop pathwise || true
+            # Stop existing service if it exists
+            if sudo systemctl is-active --quiet pathwise; then
+              sudo systemctl stop pathwise
+            fi
 
             # Create app directory if it doesn't exist
             mkdir -p /home/ubuntu/apps/pathwise
@@ -177,8 +179,9 @@ jobs:
             sudo chown ubuntu:ubuntu /var/log/pathwise
           EOF
 
-          # Create systemd service file (separate SSH command to avoid nested here-docs)
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "sudo tee /etc/systemd/system/pathwise.service > /dev/null" << 'EOF'
+          # Create systemd service file
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            sudo cat > /etc/systemd/system/pathwise.service << 'SERVICE'
 [Unit]
 Description=Pathwise Job Application Tracker
 After=network.target
@@ -197,7 +200,8 @@ Environment=PORT=8080
 
 [Install]
 WantedBy=multi-user.target
-EOF
+SERVICE
+          EOF
 
           # Start service and health check
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
