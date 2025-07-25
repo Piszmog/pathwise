@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -18,16 +19,11 @@ func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	urlQueries := r.URL.Query()
-	archivedStr := urlQueries.Get("archived")
-	archived := false
-	if archivedStr != "" {
-		archived, err = strconv.ParseBool(archivedStr)
-		if err != nil {
-			h.Logger.WarnContext(r.Context(), "failed to parse archived query", "error", err)
-			h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Something went wrong", "Bad request."))
-			return
-		}
+	filterOpts, err := getFilterOpts(r)
+	if err != nil {
+		h.Logger.ErrorContext(r.Context(), "failed to get filter options", "error", err)
+		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Something went wrong", "Bad request."))
+		return
 	}
 
 	page, perPage, err := getPageOpts(r)
@@ -36,9 +32,8 @@ func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Something went wrong", "Bad request."))
 		return
 	}
-	filterOpts := getFilterOpts(r)
 
-	jobs, total, err := h.filterJobs(r.Context(), userID, archived, filterOpts, page, perPage)
+	jobs, total, err := h.filterJobs(r.Context(), userID, filterOpts, page, perPage)
 	if err != nil {
 		h.Logger.ErrorContext(r.Context(), "failed to get jobs", "error", err)
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
@@ -52,12 +47,22 @@ func (h *Handler) GetJobs(w http.ResponseWriter, r *http.Request) {
 	))
 }
 
-func getFilterOpts(r *http.Request) types.FilterOpts {
+func getFilterOpts(r *http.Request) (types.FilterOpts, error) {
 	queries := r.URL.Query()
-	return types.FilterOpts{
-		Company: queries.Get("company"),
-		Status:  types.ToJobApplicationStatus(queries.Get("status")),
+	archivedStr := queries.Get("archived")
+	archived := false
+	var err error
+	if archivedStr != "" {
+		archived, err = strconv.ParseBool(archivedStr)
+		if err != nil {
+			return types.FilterOpts{}, fmt.Errorf("failed to parse archive query: %w", err)
+		}
 	}
+	return types.FilterOpts{
+		Company:    queries.Get("company"),
+		Status:     types.ToJobApplicationStatus(queries.Get("status")),
+		IsArchived: archived,
+	}, nil
 }
 
 func getPageOpts(r *http.Request) (int64, int64, error) {
@@ -82,11 +87,11 @@ func getPageOpts(r *http.Request) (int64, int64, error) {
 	return page, perPage, nil
 }
 
-func (h *Handler) filterJobs(ctx context.Context, userID int64, archived bool, filterOpts types.FilterOpts, page int64, perPage int64) ([]types.JobApplication, int64, error) {
+func (h *Handler) filterJobs(ctx context.Context, userID int64, filterOpts types.FilterOpts, page int64, perPage int64) ([]types.JobApplication, int64, error) {
 	h.Logger.DebugContext(ctx, "filtering jobs", "filterOpts", filterOpts)
 	offset := page * perPage
 	archivedVal := int64(0)
-	if archived {
+	if filterOpts.IsArchived {
 		archivedVal = int64(1)
 	}
 	switch {
@@ -102,7 +107,7 @@ func (h *Handler) filterJobs(ctx context.Context, userID int64, archived bool, f
 			return nil, 0, err
 		}
 		var totalApps int64
-		if !archived {
+		if !filterOpts.IsArchived {
 			stats, err := h.getStats(ctx, userID)
 			if err != nil {
 				return nil, 0, err
