@@ -41,6 +41,12 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pathwise_Linux_x86_64.tar.gz
+          path: goreleaser-dist/pathwise_Linux_x86_64.tar.gz
+          retention-days: 1
   publish:
     name: Publish Docker
     runs-on: ubuntu-latest
@@ -68,8 +74,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             VERSION=$${{ github.event.inputs.version }}
-  deploy:
-    name: Deploy
+  deploy-gae:
+    name: Deploy to GAE
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
@@ -128,3 +134,88 @@ jobs:
         uses: 'google-github-actions/deploy-appengine@v2'
         with:
           version: ${{ env.VERSION_GCP }}
+  deploy-vm:
+    name: Deploy to VM
+    runs-on: ubuntu-latest
+    needs: [ release ]
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: pathwise_Linux_x86_64.tar.gz
+          path: ./artifacts
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to VM
+        run: |
+          scp ./artifacts/pathwise_Linux_x86_64.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
+
+          # Extract and deploy on VM
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            # Stop existing service if running
+            sudo systemctl stop pathwise || true
+
+            # Create app directory if it doesn't exist
+            mkdir -p /home/ubuntu/apps/pathwise
+
+            # Extract new version
+            cd /tmp
+            tar -xzf pathwise_Linux_x86_64.tar.gz
+
+            # Move binary to app directory
+            mv pathwise /home/ubuntu/apps/pathwise/
+            chmod +x /home/ubuntu/apps/pathwise/pathwise
+
+            # Create/update systemd service file with environment variables
+            sudo tee /etc/systemd/system/pathwise.service > /dev/null << 'SERVICE'
+            [Unit]
+            Description=Pathwise Job Application Tracker
+            After=network.target
+
+            [Service]
+            Type=simple
+            User=ubuntu
+            WorkingDirectory=/home/ubuntu/apps/pathwise
+            ExecStart=/home/ubuntu/apps/pathwise/pathwise
+            Restart=always
+            RestartSec=5
+            Environment=DB_TOKEN=${{ secrets.DB_TOKEN }}
+            Environment=DB_URL=${{ secrets.DB_URL }}
+            Environment=LOG_OUTPUT=/var/log/pathwise/pathwise.log
+            Environment=PORT=8080
+
+            [Install]
+            WantedBy=multi-user.target
+            SERVICE
+
+            # Create log directory
+            sudo mkdir -p /var/log/pathwise
+            sudo chown ubuntu:ubuntu /var/log/pathwise
+
+            # Reload systemd and start service
+            sudo systemctl daemon-reload
+            sudo systemctl start pathwise
+            sudo systemctl enable pathwise
+
+            # Check status
+            sudo systemctl status pathwise
+            # Wait for service to start
+            sleep 10
+            # Health check
+            if curl -f http://localhost:8080/health; then
+              echo "✅ Health check passed - app is running"
+            else
+              echo "❌ Health check failed - app is not responding"
+              exit 1
+            fi
+          EOF
+
+      - name: Cleanup
+        run: |
+          rm -f ~/.ssh/id_rsa
