@@ -1,12 +1,15 @@
 package logger
 
 import (
+	"io"
 	"log/slog"
 	"os"
 	"strings"
+
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func New(logLevel string) *slog.Logger {
+func New(logLevel, logOutput string) *slog.Logger {
 	var level slog.Level
 	switch strings.ToLower(logLevel) {
 	case "debug":
@@ -20,9 +23,20 @@ func New(logLevel string) *slog.Logger {
 	default:
 		level = slog.LevelInfo
 	}
+	var writer io.Writer = os.Stdout
+	if logOutput != "" && logOutput != "stdout" {
+		writer = &lumberjack.Logger{
+			Filename:   logOutput,
+			MaxSize:    100,
+			MaxBackups: 3,
+			MaxAge:     28,
+			Compress:   true,
+		}
+	}
+
 	return slog.New(
 		slog.NewTextHandler(
-			os.Stdout,
+			writer,
 			&slog.HandlerOptions{Level: level},
 		),
 	)
