@@ -172,32 +172,35 @@ jobs:
             mv pathwise /home/ubuntu/apps/pathwise/
             chmod +x /home/ubuntu/apps/pathwise/pathwise
 
-            # Create/update systemd service file with environment variables
-            sudo tee /etc/systemd/system/pathwise.service > /dev/null << 'SERVICE'
-            [Unit]
-            Description=Pathwise Job Application Tracker
-            After=network.target
-
-            [Service]
-            Type=simple
-            User=ubuntu
-            WorkingDirectory=/home/ubuntu/apps/pathwise
-            ExecStart=/home/ubuntu/apps/pathwise/pathwise
-            Restart=always
-            RestartSec=5
-            Environment=DB_TOKEN=${{ secrets.DB_TOKEN }}
-            Environment=DB_URL=${{ secrets.DB_URL }}
-            Environment=LOG_OUTPUT=/var/log/pathwise/pathwise.log
-            Environment=PORT=8080
-
-            [Install]
-            WantedBy=multi-user.target
-            SERVICE
-
             # Create log directory
             sudo mkdir -p /var/log/pathwise
             sudo chown ubuntu:ubuntu /var/log/pathwise
+          EOF
 
+          # Create systemd service file (separate SSH command to avoid nested here-docs)
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "sudo tee /etc/systemd/system/pathwise.service > /dev/null" << 'EOF'
+[Unit]
+Description=Pathwise Job Application Tracker
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/apps/pathwise
+ExecStart=/home/ubuntu/apps/pathwise/pathwise
+Restart=always
+RestartSec=5
+Environment=DB_TOKEN=${{ secrets.DB_TOKEN }}
+Environment=DB_URL=${{ secrets.DB_URL }}
+Environment=LOG_OUTPUT=/var/log/pathwise/pathwise.log
+Environment=PORT=8080
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+          # Start service and health check
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
             # Reload systemd and start service
             sudo systemctl daemon-reload
             sudo systemctl start pathwise
@@ -207,6 +210,7 @@ jobs:
             sudo systemctl status pathwise
             # Wait for service to start
             sleep 10
+            
             # Health check
             if curl -f http://localhost:8080/health; then
               echo "✅ Health check passed - app is running"
