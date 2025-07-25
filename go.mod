@@ -12,6 +12,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/tursodatabase/libsql-client-go v0.0.0-20240902231107-85af5b9d094d
 	golang.org/x/crypto v0.40.0
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	modernc.org/sqlite v1.38.0
 )
 
@@ -78,7 +79,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250721164621-a45f3dfb1074 // indirect
 	google.golang.org/grpc v1.74.2 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
-	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/libc v1.66.3 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
