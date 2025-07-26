@@ -71,6 +71,10 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "Calculated new version: $NEW_VERSION (from $LATEST_TAG using $INCREMENT increment)"
 
+      - name: Announce new version
+        run: |
+          echo "::notice title=New Release Version::Releasing ${{ steps.version.outputs.new_version }} (increment: ${{ github.event.inputs.increment }})"
+
   tag:
     name: Tag
     runs-on: ubuntu-latest
