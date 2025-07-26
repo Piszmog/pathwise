@@ -100,6 +100,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
+          cache: false
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
@@ -154,6 +155,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
+          cache: false
       - name: Get Version
         run: |
           VERSION="${{ needs.calculate-version.outputs.new_version }}"

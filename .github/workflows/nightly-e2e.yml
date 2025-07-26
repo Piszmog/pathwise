@@ -11,6 +11,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
+          cache: false
       - run: go mod download
       - run: go tool templ generate -path ./components
       - run: go tool sqlc generate
