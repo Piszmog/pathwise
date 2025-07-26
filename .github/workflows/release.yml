@@ -2,29 +2,92 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: The version to release (e.g. v1.0.0)
+      increment:
+        description: 'Version increment type'
         required: true
-        type: string
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: patch
 permissions:
   contents: write
 jobs:
+  calculate-version:
+    name: Calculate Version
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.version.outputs.new_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest release
+        id: latest_release
+        run: |
+          LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
+          if [ -z "$LATEST_TAG" ] || [ "$LATEST_TAG" = "null" ]; then
+            LATEST_TAG="v0.0.0"
+          fi
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Calculate new version
+        id: version
+        run: |
+          LATEST_TAG="${{ steps.latest_release.outputs.latest_tag }}"
+          INCREMENT="${{ github.event.inputs.increment }}"
+          
+          # Remove 'v' prefix if present
+          VERSION=${LATEST_TAG#v}
+          
+          # Split version into parts
+          IFS='.' read -ra VERSION_PARTS <<< "$VERSION"
+          MAJOR=${VERSION_PARTS[0]:-0}
+          MINOR=${VERSION_PARTS[1]:-0}
+          PATCH=${VERSION_PARTS[2]:-0}
+          
+          # Calculate new version based on increment type
+          case $INCREMENT in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+          
+          NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "Calculated new version: $NEW_VERSION (from $LATEST_TAG using $INCREMENT increment)"
+
   tag:
     name: Tag
     runs-on: ubuntu-latest
+    needs: [calculate-version]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Create Tag
         uses: piszmog/create-tag@v1
         with:
-          version: ${{ github.event.inputs.version }}
-          message: ${{ github.event.inputs.version }}
+          version: ${{ needs.calculate-version.outputs.new_version }}
+          message: ${{ needs.calculate-version.outputs.new_version }}
           token: ${{ secrets.GITHUB_TOKEN }}
   release:
     name: Release
     runs-on: ubuntu-latest
-    needs: [ tag ]
+    needs: [tag]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,7 +116,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    needs: [ tag ]
+    needs: [calculate-version, tag]
     steps:
       - uses: actions/checkout@v4
       - uses: docker/login-action@v3
@@ -66,14 +129,14 @@ jobs:
         with:
           images: ghcr.io/piszmog/pathwise
           tags: |
-            type=raw,value=${{ github.event.inputs.version }}
+            type=raw,value=${{ needs.calculate-version.outputs.new_version }}
       - uses: docker/build-push-action@v5
         with:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            VERSION=$${{ github.event.inputs.version }}
+            VERSION=${{ needs.calculate-version.outputs.new_version }}
   deploy-gae:
     name: Deploy to GAE
     if: false
@@ -81,7 +144,7 @@ jobs:
     permissions:
       contents: 'read'
       id-token: 'write'
-    needs: [ tag ]
+    needs: [calculate-version, tag]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -89,17 +152,17 @@ jobs:
           go-version-file: 'go.mod'
       - name: Get Version
         run: |
-          VERSION="${{ github.event.inputs.version }}"
+          VERSION="${{ needs.calculate-version.outputs.new_version }}"
           MODIFIED_VERSION="${VERSION//./-}"
           echo "VERSION_GCP=$MODIFIED_VERSION" >> $GITHUB_ENV
       - run: go mod download
       - run: go tool templ generate -path ./components
       - run: go tool sqlc generate
-      - run: go tool go-tw -i ./styles/input.css -o ./dist/assets/css/output@${{ github.event.inputs.version }}.css --minify
+      - run: go tool go-tw -i ./styles/input.css -o ./dist/assets/css/output@${{ needs.calculate-version.outputs.new_version }}.css --minify
       - name: Replace version
         run: sed -i 's/\${version}/'"$VERSION"'/' app.yaml
         env:
-          VERSION: ${{ github.event.inputs.version }}
+          VERSION: ${{ needs.calculate-version.outputs.new_version }}
       - name: Replace token secret
         run: sed -i 's/\${secrets.DB_TOKEN}/'"$DB_TOKEN"'/' app.yaml
         env:
@@ -138,7 +201,7 @@ jobs:
   deploy-vm:
     name: Deploy to VM
     runs-on: ubuntu-latest
-    needs: [ release ]
+    needs: [release]
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
