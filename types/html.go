@@ -73,8 +73,9 @@ type NewTimelineEntry struct {
 }
 
 type FilterOpts struct {
-	Company string
-	Status  JobApplicationStatus
+	Company    string
+	Status     JobApplicationStatus
+	IsArchived bool
 }
 
 type PaginationOpts struct {

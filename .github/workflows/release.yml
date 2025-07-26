@@ -76,6 +76,7 @@ jobs:
             VERSION=$${{ github.event.inputs.version }}
   deploy-gae:
     name: Deploy to GAE
+    if: false
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
