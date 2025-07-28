@@ -1,14 +1,18 @@
-name: CI
+name: CI UI
 on:
   workflow_dispatch:
   push:
     branches:
       - main
+    paths:
+      - 'ui/**'
     paths-ignore:
       - '.github/**'
   pull_request:
     branches:
       - main
+    paths:
+      - 'ui/**'
 jobs:
   lint:
     name: Lint

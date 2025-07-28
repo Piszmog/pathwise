@@ -1,4 +1,4 @@
-name: Release
+name: Release UI
 on:
   workflow_dispatch:
     inputs:
@@ -17,6 +17,9 @@ jobs:
   calculate-version:
     name: Calculate Version
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
     outputs:
       new_version: ${{ steps.version.outputs.new_version }}
     steps:
@@ -79,6 +82,9 @@ jobs:
     name: Tag
     runs-on: ubuntu-latest
     needs: [calculate-version]
+    defaults:
+      run:
+        working-directory: ./ui
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -92,6 +98,9 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     needs: [tag]
+    defaults:
+      run:
+        working-directory: ./ui
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -118,6 +127,9 @@ jobs:
   publish:
     name: Publish Docker
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
     permissions:
       contents: read
       packages: write
@@ -146,6 +158,9 @@ jobs:
     name: Deploy to GAE
     if: false
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -207,6 +222,9 @@ jobs:
   deploy-vm:
     name: Deploy to VM
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
     needs: [release]
     steps:
       - name: Download artifacts
