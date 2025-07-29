@@ -5,7 +5,7 @@ ARG VERSION='dev'
 
 WORKDIR /app
 
-COPY ./ /app
+COPY ./ui /app
 
 RUN apt-get update \
     && go mod download \
