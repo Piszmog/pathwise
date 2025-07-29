@@ -6,11 +6,14 @@ jobs:
   e2e:
     name: End-to-End
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: 'ui/go.mod'
           cache: false
       - run: go mod download
       - run: go tool templ generate -path ./components

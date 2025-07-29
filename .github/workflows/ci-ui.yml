@@ -1,23 +1,28 @@
-name: CI
+name: CI UI
 on:
   workflow_dispatch:
   push:
     branches:
       - main
-    paths-ignore:
-      - '.github/**'
+    paths:
+      - 'ui/**'
   pull_request:
     branches:
       - main
+    paths:
+      - 'ui/**'
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: 'ui/go.mod'
           cache: false
       - run: go mod download
       - run: go tool templ generate -path ./components
@@ -27,14 +32,18 @@ jobs:
         uses: golangci/golangci-lint-action@v8
         with:
           version: latest
+          working-directory: ui
   test:
     name: Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: 'ui/go.mod'
           cache: false
       - run: go mod download
       - run: go tool templ generate -path ./components
@@ -44,11 +53,14 @@ jobs:
   e2e:
     name: End-to-End
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: 'ui/go.mod'
           cache: false
       - run: go mod download
       - run: go tool templ generate -path ./components
@@ -57,6 +69,9 @@ jobs:
   docker-publish:
     name: Docker
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
     permissions:
       contents: read
       packages: write
@@ -77,6 +92,7 @@ jobs:
           images: ghcr.io/piszmog/pathwise
       - uses: docker/build-push-action@v5
         with:
+          context: ui
           push: ${{ github.ref == 'refs/heads/main' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
