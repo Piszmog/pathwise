@@ -169,7 +169,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pathwise_Linux_x86_64.tar.gz
-          path: goreleaser-dist/pathwise_Linux_x86_64.tar.gz
+          path: ui/goreleaser-dist/pathwise_Linux_x86_64.tar.gz
           retention-days: 1
   publish:
     name: Publish Docker
