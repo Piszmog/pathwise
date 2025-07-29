@@ -284,6 +284,7 @@ jobs:
         uses: 'google-github-actions/deploy-appengine@v2'
         with:
           version: ${{ env.VERSION_GCP }}
+          deliverables: ui/app.yaml
   deploy-vm:
     name: Deploy to VM
     runs-on: ubuntu-latest
