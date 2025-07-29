@@ -17,6 +17,9 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -34,6 +37,9 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -48,6 +54,9 @@ jobs:
   e2e:
     name: End-to-End
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -61,6 +70,9 @@ jobs:
   docker-publish:
     name: Docker
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
     permissions:
       contents: read
       packages: write
