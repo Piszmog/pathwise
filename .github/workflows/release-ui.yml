@@ -147,7 +147,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: 'ui/go.mod'
           cache: false
       - name: Extract version for GoReleaser
         id: goreleaser_version
@@ -195,7 +195,6 @@ jobs:
           DOCKER_TAG="${{ needs.calculate-version.outputs.new_version }}"
           DOCKER_TAG="${DOCKER_TAG#ui/}"
           echo "tag=$DOCKER_TAG" >> $GITHUB_OUTPUT
-      
       - uses: docker/metadata-action@v5
         id: meta
         with:
@@ -224,7 +223,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: 'ui/go.mod'
           cache: false
       - name: Get Version
         run: |
