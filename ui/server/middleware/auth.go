@@ -65,7 +65,8 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		if time.Until(session.ExpiresAt) < sessionRefreshWindow {
+		timeUntilExpiry := time.Until(session.ExpiresAt)
+		if timeUntilExpiry > 0 && timeUntilExpiry < sessionRefreshWindow {
 			m.Logger.DebugContext(r.Context(), "refreshing session", "session", session)
 			newExpiry := time.Now().Add(SessionDuration)
 			err = m.Database.Queries().UpdateSessionExpiresAt(r.Context(), queries.UpdateSessionExpiresAtParams{Token: session.Token, ExpiresAt: newExpiry})
