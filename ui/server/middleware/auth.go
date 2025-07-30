@@ -60,16 +60,17 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		if session.ExpiresAt.Sub(session.CreatedAt) < 5 {
+		if time.Until(session.ExpiresAt) < 24*time.Hour {
 			m.Logger.DebugContext(r.Context(), "refreshing session", "session", session)
-			err = m.Database.Queries().UpdateSessionExpiresAt(r.Context(), queries.UpdateSessionExpiresAtParams{Token: session.Token, ExpiresAt: session.ExpiresAt.Add(24 * 7)})
+			newExpiry := time.Now().Add(24 * time.Hour * 7)
+			err = m.Database.Queries().UpdateSessionExpiresAt(r.Context(), queries.UpdateSessionExpiresAtParams{Token: session.Token, ExpiresAt: newExpiry})
 			if err != nil {
 				m.Logger.ErrorContext(r.Context(), "failed to refresh session", "err", err)
 			} else {
 				http.SetCookie(w, &http.Cookie{
 					Name:     "session",
 					Value:    session.Token,
-					Expires:  session.ExpiresAt,
+					Expires:  newExpiry,
 					HttpOnly: true,
 					SameSite: http.SameSiteStrictMode,
 				})
