@@ -4,6 +4,7 @@ package e2e_test
 
 import (
 	"database/sql"
+	"strconv"
 	"testing"
 	"time"
 
@@ -74,8 +75,7 @@ func TestAuth_SessionRefresh(t *testing.T) {
 
 func TestAuth_Signout(t *testing.T) {
 	beforeEach(t)
-	email := createUserAndSignIn(t)
-	_ = email
+	createUserAndSignIn(t)
 
 	require.NoError(t, expect.Page(page).ToHaveURL(getFullPath("")+"/", playwright.PageAssertionsToHaveURLOptions{
 		Timeout: playwright.Float(5000),
@@ -204,7 +204,7 @@ func createMultipleSessions(t *testing.T, email string, count int) {
 	require.NoError(t, err)
 
 	for i := 0; i < count; i++ {
-		sessionToken := "old-session-" + email + "-" + string(rune(i))
+		sessionToken := "old-session-" + email + "-" + strconv.Itoa(i)
 		expiresAt := time.Now().Add(24 * time.Hour)
 		_, err = db.Exec(`
 			INSERT INTO sessions (user_id, token, expires_at, user_agent, ip_address) 
