@@ -11,6 +11,7 @@ import (
 
 	"github.com/Piszmog/pathwise/components"
 	"github.com/Piszmog/pathwise/db/queries"
+	"github.com/Piszmog/pathwise/server/middleware"
 	"github.com/Piszmog/pathwise/types"
 	"github.com/Piszmog/pathwise/utils"
 	"github.com/google/uuid"
@@ -102,7 +103,7 @@ func (h *Handler) newSession(ctx context.Context, userID int64, userAgent string
 	session := queries.InsertSessionParams{
 		UserID:    userID,
 		Token:     token,
-		ExpiresAt: time.Now().Add(24 * time.Hour),
+		ExpiresAt: time.Now().Add(middleware.SessionDuration),
 		UserAgent: userAgent,
 		IpAddress: ipAddress,
 	}

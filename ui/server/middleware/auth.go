@@ -12,6 +12,11 @@ import (
 	"github.com/Piszmog/pathwise/db/queries"
 )
 
+const (
+	SessionDuration      = 7 * 24 * time.Hour
+	sessionRefreshWindow = 24 * time.Hour
+)
+
 type AuthMiddleware struct {
 	Logger   *slog.Logger
 	Database db.Database
@@ -60,16 +65,18 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		if session.ExpiresAt.Sub(session.CreatedAt) < 5 {
+		timeUntilExpiry := time.Until(session.ExpiresAt)
+		if timeUntilExpiry > 0 && timeUntilExpiry < sessionRefreshWindow {
 			m.Logger.DebugContext(r.Context(), "refreshing session", "session", session)
-			err = m.Database.Queries().UpdateSessionExpiresAt(r.Context(), queries.UpdateSessionExpiresAtParams{Token: session.Token, ExpiresAt: session.ExpiresAt.Add(24 * 7)})
+			newExpiry := time.Now().Add(SessionDuration)
+			err = m.Database.Queries().UpdateSessionExpiresAt(r.Context(), queries.UpdateSessionExpiresAtParams{Token: session.Token, ExpiresAt: newExpiry})
 			if err != nil {
 				m.Logger.ErrorContext(r.Context(), "failed to refresh session", "err", err)
 			} else {
 				http.SetCookie(w, &http.Cookie{
 					Name:     "session",
 					Value:    session.Token,
-					Expires:  session.ExpiresAt,
+					Expires:  newExpiry,
 					HttpOnly: true,
 					SameSite: http.SameSiteStrictMode,
 				})
