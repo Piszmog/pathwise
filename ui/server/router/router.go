@@ -4,10 +4,10 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/Piszmog/pathwise/db"
-	"github.com/Piszmog/pathwise/dist"
-	"github.com/Piszmog/pathwise/server/handler"
-	"github.com/Piszmog/pathwise/server/middleware"
+	"github.com/Piszmog/pathwise/ui/db"
+	"github.com/Piszmog/pathwise/ui/dist"
+	"github.com/Piszmog/pathwise/ui/server/handler"
+	"github.com/Piszmog/pathwise/ui/server/middleware"
 )
 
 func New(logger *slog.Logger, database db.Database) http.Handler {

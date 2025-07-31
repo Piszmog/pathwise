@@ -9,11 +9,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Piszmog/pathwise/components"
-	"github.com/Piszmog/pathwise/db/queries"
-	"github.com/Piszmog/pathwise/server/middleware"
-	"github.com/Piszmog/pathwise/types"
-	"github.com/Piszmog/pathwise/utils"
+	"github.com/Piszmog/pathwise/ui/components"
+	"github.com/Piszmog/pathwise/ui/db/queries"
+	"github.com/Piszmog/pathwise/ui/server/middleware"
+	"github.com/Piszmog/pathwise/ui/types"
+	"github.com/Piszmog/pathwise/ui/utils"
 	"github.com/google/uuid"
 )
 

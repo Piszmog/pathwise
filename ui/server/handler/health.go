@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Piszmog/pathwise/version"
+	"github.com/Piszmog/pathwise/ui/version"
 )
 
 type healthResponse struct {

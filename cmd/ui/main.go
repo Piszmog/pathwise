@@ -4,11 +4,11 @@ import (
 	"errors"
 	"os"
 
-	"github.com/Piszmog/pathwise/db"
-	"github.com/Piszmog/pathwise/logger"
-	"github.com/Piszmog/pathwise/server"
-	"github.com/Piszmog/pathwise/server/router"
-	"github.com/Piszmog/pathwise/version"
+	"github.com/Piszmog/pathwise/ui/db"
+	"github.com/Piszmog/pathwise/ui/logger"
+	"github.com/Piszmog/pathwise/ui/server"
+	"github.com/Piszmog/pathwise/ui/server/router"
+	"github.com/Piszmog/pathwise/ui/version"
 	"github.com/golang-migrate/migrate/v4"
 )
 

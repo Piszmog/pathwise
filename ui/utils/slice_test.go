@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Piszmog/pathwise/types"
-	"github.com/Piszmog/pathwise/utils"
+	"github.com/Piszmog/pathwise/ui/types"
+	"github.com/Piszmog/pathwise/ui/utils"
 	"github.com/stretchr/testify/assert"
 )
 

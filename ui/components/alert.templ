@@ -1,6 +1,6 @@
 package components
 
-import "github.com/Piszmog/pathwise/types"
+import "github.com/Piszmog/pathwise/ui/types"
 
 templ Alert(alertType types.AlertType, title string, messages ...string) {
 	<div class={ "rounded-md p-4", templ.KV("bg-yellow-50", alertType == types.AlertTypeWarning), templ.KV("bg-red-50", alertType == types.AlertTypeError), templ.KV("bg-green-50", alertType == types.AlertTypeSuccess) }>

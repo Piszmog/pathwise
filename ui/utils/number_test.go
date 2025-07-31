@@ -3,7 +3,7 @@ package utils_test
 import (
 	"testing"
 
-	"github.com/Piszmog/pathwise/utils"
+	"github.com/Piszmog/pathwise/ui/utils"
 	"github.com/stretchr/testify/assert"
 )
 
