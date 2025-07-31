@@ -4,10 +4,11 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/Piszmog/pathwise/ui/db"
+	"github.com/Piszmog/pathwise/internal/server/middleware"
+	"github.com/Piszmog/pathwise/internal/db"
 	"github.com/Piszmog/pathwise/ui/dist"
 	"github.com/Piszmog/pathwise/ui/server/handler"
-	"github.com/Piszmog/pathwise/ui/server/middleware"
+	uimiddleware "github.com/Piszmog/pathwise/ui/server/middleware"
 )
 
 func New(logger *slog.Logger, database db.Database) http.Handler {
@@ -17,7 +18,7 @@ func New(logger *slog.Logger, database db.Database) http.Handler {
 	}
 
 	router := http.NewServeMux()
-	router.Handle(http.MethodGet+" /assets/", middleware.Cache(http.FileServer(http.FS(dist.AssetsDir))))
+	router.Handle(http.MethodGet+" /assets/", uimiddleware.Cache(http.FileServer(http.FS(dist.AssetsDir))))
 	router.HandleFunc(http.MethodGet+" /favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/assets/img/favicon.ico", http.StatusSeeOther)
 	})
@@ -28,7 +29,7 @@ func New(logger *slog.Logger, database db.Database) http.Handler {
 	router.HandleFunc(http.MethodPost+" /signin", h.Authenticate)
 
 	protected := http.NewServeMux()
-	authMiddleware := middleware.AuthMiddleware{
+	authMiddleware := uimiddleware.AuthMiddleware{
 		Logger:   logger,
 		Database: database,
 	}

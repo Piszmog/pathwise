@@ -16,7 +16,7 @@ builds:
     main: ./cmd/ui
     binary: pathwise-ui
     ldflags:
-      - -s -w -X github.com/Piszmog/pathwise/ui/version.Value={{ replace .Version "ui/" "" }}
+      - -s -w -X github.com/Piszmog/pathwise/internal/version.Value={{ replace .Version "ui/" "" }}
     goos:
       - linux
       - windows

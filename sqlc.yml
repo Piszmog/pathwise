@@ -1,9 +1,9 @@
 version: 2
 sql:
   - engine: sqlite
-    queries: ui/db/queries/
-    schema: ui/db/migrations
+    queries: internal/db/queries/
+    schema: internal/db/migrations
     gen:
       go:
         package: queries
-        out: ui/db/queries
+        out: internal/db/queries

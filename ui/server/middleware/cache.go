@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/Piszmog/pathwise/ui/version"
+	"github.com/Piszmog/pathwise/internal/version"
 )
 
 func Cache(next http.Handler) http.Handler {

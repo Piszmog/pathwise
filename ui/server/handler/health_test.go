@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/Piszmog/pathwise/ui/server/router"
-	"github.com/Piszmog/pathwise/ui/version"
+	"github.com/Piszmog/pathwise/internal/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

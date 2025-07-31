@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Piszmog/pathwise/ui/db"
-	"github.com/Piszmog/pathwise/ui/db/queries"
+	"github.com/Piszmog/pathwise/internal/db"
+	"github.com/Piszmog/pathwise/internal/db/queries"
 )
 
 const (

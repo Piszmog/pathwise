@@ -12,7 +12,7 @@ RUN apt-get update \
     && go tool templ generate -path ./ui/components \
     && go tool go-tw -i ./ui/styles/input.css -o ./ui/dist/assets/css/output@${VERSION}.css --minify \
     && go tool sqlc generate \
-    && go build -ldflags="-s -w -X github.com/Piszmog/pathwise/ui/version.Value=${VERSION}" -o ui ./cmd/ui
+    && go build -ldflags="-s -w -X github.com/Piszmog/pathwise/internal/version.Value=${VERSION}" -o ui ./cmd/ui
 
 ## Deploy
 FROM gcr.io/distroless/base-debian12

@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/Piszmog/pathwise/ui/components"
-	"github.com/Piszmog/pathwise/ui/db/queries"
+	"github.com/Piszmog/pathwise/internal/db/queries"
 	"github.com/Piszmog/pathwise/ui/types"
 )
 

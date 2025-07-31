@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"log/slog"
 
-	"github.com/Piszmog/pathwise/ui/db/queries"
+	"github.com/Piszmog/pathwise/internal/db/queries"
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	_ "modernc.org/sqlite"
 )
