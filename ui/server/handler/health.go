@@ -19,9 +19,9 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		h.Logger.ErrorContext(r.Context(), "failed to encode health response", "error", err)
 		return
 	}
+	w.WriteHeader(http.StatusOK)
 }

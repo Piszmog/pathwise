@@ -64,7 +64,7 @@ jobs:
       - run: go mod download
       - run: go tool templ generate -path ./ui/components
       - run: go tool sqlc generate
-      - run: go test ./ui/e2e/... -tags=e2e
+      - run: go test ./... -tags=e2e
   docker-publish:
     name: Docker
     runs-on: ubuntu-latest
