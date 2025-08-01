@@ -128,8 +128,6 @@ func TestAuth_HTMXRequests(t *testing.T) {
 	if count > 0 {
 		require.NoError(t, htmxElements.First().Click())
 
-		page.WaitForTimeout(1000)
-
 		require.NoError(t, expect.Page(page).ToHaveURL(getFullPath("")+"/", playwright.PageAssertionsToHaveURLOptions{
 			Timeout: playwright.Float(5000),
 		}))
@@ -154,7 +152,7 @@ func TestAuth_MultipleSessionsCleanup(t *testing.T) {
 
 func createExpiredSession(t *testing.T, email string) {
 	t.Helper()
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	db, err := sql.Open("libsql", dbURL)
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -172,7 +170,7 @@ func createExpiredSession(t *testing.T, email string) {
 
 func createSessionNeedingRefresh(t *testing.T, email string) string {
 	t.Helper()
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	db, err := sql.Open("libsql", dbURL)
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -193,7 +191,7 @@ func createSessionNeedingRefresh(t *testing.T, email string) string {
 
 func verifySessionWasRefreshed(t *testing.T, sessionToken string) {
 	t.Helper()
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	db, err := sql.Open("libsql", dbURL)
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -208,7 +206,7 @@ func verifySessionWasRefreshed(t *testing.T, sessionToken string) {
 
 func createMultipleSessions(t *testing.T, email string, count int) {
 	t.Helper()
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	db, err := sql.Open("libsql", dbURL)
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -229,7 +227,7 @@ func createMultipleSessions(t *testing.T, email string, count int) {
 
 func verifyOldSessionsCleanedUp(t *testing.T, email string) {
 	t.Helper()
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	db, err := sql.Open("libsql", dbURL)
 	require.NoError(t, err)
 	defer db.Close()
 

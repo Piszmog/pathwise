@@ -22,6 +22,12 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+const (
+	dbFile = "test-db.sqlite3"
+	dbPath = "../../" + dbFile
+	dbURL  = "file:" + dbPath
+)
+
 // global variables, can be used in any tests
 var (
 	pw          *playwright.Playwright
@@ -104,11 +110,11 @@ func beforeAll() {
 
 func startApp() error {
 	port := getPort()
-	app = exec.Command("go", "run", "../cmd/ui/main.go")
-	app.Dir = "../"
+	app = exec.Command("go", "run", "./cmd/ui/main.go")
+	app.Dir = "../.."
 	app.Env = append(
 		os.Environ(),
-		"DB_URL=./test-db.sqlite3",
+		"DB_URL=./"+dbFile,
 		fmt.Sprintf("PORT=%d", port),
 		"LOG_LEVEL=DEBUG",
 	)
@@ -180,7 +186,7 @@ func waitForServer() error {
 }
 
 func cleanDB() error {
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	db, err := sql.Open("libsql", dbURL)
 	if err != nil {
 		return err
 	}
@@ -214,7 +220,7 @@ func cleanDB() error {
 }
 
 func seedDB() error {
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	db, err := sql.Open("libsql", dbURL)
 	if err != nil {
 		return err
 	}
@@ -251,7 +257,7 @@ func afterAll() {
 }
 
 func removeDBFile() error {
-	return os.Remove("../test-db.sqlite3")
+	return os.Remove(dbPath)
 }
 
 // beforeEach creates a new context and page for each test,
@@ -315,7 +321,7 @@ func getFullPath(relativePath string) string {
 
 func createTestUser(t *testing.T, email string) {
 	t.Helper()
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	db, err := sql.Open("libsql", dbURL)
 	if err != nil {
 		t.Fatalf("could not open db: %v", err)
 	}
