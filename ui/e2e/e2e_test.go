@@ -113,6 +113,7 @@ func startApp() error {
 	if err != nil {
 		return fmt.Errorf("could not find repo root: %v", err)
 	}
+	fmt.Printf("Root directory %s\n", repoRoot)
 
 	port := getPort()
 	app = exec.Command("go", "run", "./cmd/ui/main.go")
@@ -141,7 +142,7 @@ func startApp() error {
 	if err := app.Start(); err != nil {
 		return err
 	}
-	fmt.Printf("Started app on port %d, pid %d", port, app.Process.Pid)
+	fmt.Printf("Started app on port %d, pid %d\n", port, app.Process.Pid)
 
 	stdoutchan := make(chan string)
 	stderrchan := make(chan string)
