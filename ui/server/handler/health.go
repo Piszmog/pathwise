@@ -23,5 +23,4 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 		h.Logger.ErrorContext(r.Context(), "failed to encode health response", "error", err)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 }
