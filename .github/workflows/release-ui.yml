@@ -128,20 +128,12 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - name: Extract version for GoReleaser
-        id: goreleaser_version
-        run: |
-          # Extract clean version from ui/v3.2.1 -> v3.2.1
-          VERSION="${{ needs.calculate-version.outputs.new_version }}"
-          VERSION="${VERSION#ui/}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-      
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean --config cmd/ui/.goreleaser.yaml --version=${{ steps.goreleaser_version.outputs.version }}
+          args: release --clean --config cmd/ui/.goreleaser.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload Linux artifact
@@ -167,7 +159,6 @@ jobs:
       - name: Extract Docker version
         id: docker_version
         run: |
-          # Extract clean version from ui/v3.2.1 -> v3.2.1
           DOCKER_TAG="${{ needs.calculate-version.outputs.new_version }}"
           DOCKER_TAG="${DOCKER_TAG#ui/}"
           echo "tag=$DOCKER_TAG" >> $GITHUB_OUTPUT
@@ -202,7 +193,6 @@ jobs:
           cache: false
       - name: Get Version
         run: |
-          # Extract clean version from ui/v3.2.1 -> v3.2.1
           VERSION="${{ needs.calculate-version.outputs.new_version }}"
           VERSION="${VERSION#ui/}"
           MODIFIED_VERSION="${VERSION//./-}"
@@ -213,7 +203,6 @@ jobs:
       - name: Extract version for CSS
         id: css_version
         run: |
-          # Extract clean version from ui/v3.2.1 -> v3.2.1
           VERSION="${{ needs.calculate-version.outputs.new_version }}"
           VERSION="${VERSION#ui/}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
