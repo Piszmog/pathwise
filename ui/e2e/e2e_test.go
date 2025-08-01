@@ -139,11 +139,6 @@ func startApp() error {
 		return err
 	}
 
-	if err := app.Start(); err != nil {
-		return err
-	}
-	fmt.Printf("Started app on port %d, pid %d\n", port, app.Process.Pid)
-
 	stdoutchan := make(chan string)
 	stderrchan := make(chan string)
 	go func() {
@@ -171,6 +166,11 @@ func startApp() error {
 			fmt.Println("[STDERR]", line)
 		}
 	}()
+
+	if err := app.Start(); err != nil {
+		return err
+	}
+	fmt.Printf("Started app on port %d, pid %d\n", port, app.Process.Pid)
 	return nil
 }
 
