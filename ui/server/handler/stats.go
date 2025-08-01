@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Piszmog/pathwise/components"
-	"github.com/Piszmog/pathwise/types"
+	"github.com/Piszmog/pathwise/ui/components"
+	"github.com/Piszmog/pathwise/ui/types"
 )
 
 func (h *Handler) GetStats(w http.ResponseWriter, r *http.Request) {

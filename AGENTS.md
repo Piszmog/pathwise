@@ -3,22 +3,22 @@
 ## Project Overview
 Pathwise is a job application tracking web application built with Go, templ, HTMX, and SQLite. It helps users track job applications with features like status updates, notes, salary tracking, and timeline views.
 
-**Note**: This is a mono-repo structure with the main application located in the `ui/` directory. All commands should be run from the `ui/` directory or prefixed with `cd ui &&`.
+**Note**: This follows standard Go project layout with the main application in `cmd/ui/` and private code in `internal/`. Commands should be run from the project root unless otherwise specified.
 
 ## Build & Test Commands
-- **Build**: `cd ui && go build -o ./tmp/main .`
-- **Run dev**: `cd ui && air` (uses .air.toml config with hot reload on port 8080)
-- **Test all**: `cd ui && go test ./...`
-- **Test single**: `cd ui && go test ./path/to/package -run TestName`
-- **E2E tests**: `cd ui && go test -tags=e2e ./e2e/...` (requires Playwright)
-- **Lint**: `cd ui && golangci-lint run` (check for linting errors)
-- **Generate code**: `cd ui && go tool templ generate -path ./components && go tool go-tw -i ./styles/input.css -o ./dist/assets/css/output@dev.css && go tool sqlc generate`
+- **Build**: `go build -o ./tmp/main ./cmd/ui`
+- **Run dev**: `cd cmd/ui && air` (uses .air.toml config with hot reload on port 8080)
+- **Test all**: `go test ./...`
+- **Test single**: `go test ./path/to/package -run TestName`
+- **E2E tests**: `go test -tags=e2e ./ui/e2e/...` (requires Playwright)
+- **Lint**: `golangci-lint run` (check for linting errors)
+- **Generate code**: `go tool templ generate -path ./ui/components && go tool go-tw -i ./ui/styles/input.css -o ./ui/dist/assets/css/output@dev.css && go tool sqlc generate`
 
 ## Environment Variables
 - **PORT**: Server port (default: 8080)
 - **LOG_LEVEL**: Logging level (debug, info, warn, error)
 - **LOG_OUTPUT**: Log output destination (default: stdout, or file path for rotating logs)
-- **DB_URL**: Database URL (default: ./ui/db.sqlite3 for local SQLite)
+- **DB_URL**: Database URL (default: ./db.sqlite3 for local SQLite)
 - **DB_TOKEN**: Database token (for remote databases like Turso)
 - **VERSION**: Application version string
 
@@ -30,7 +30,7 @@ Pathwise is a job application tracking web application built with Go, templ, HTM
 - **Error handling**: Always check errors, use structured logging with slog, return early on errors
 - **Structs**: Group related fields, use receiver methods for behavior, embed time fields (CreatedAt, UpdatedAt)
 - **Constants**: Group related constants with `const ()` blocks, use typed constants for enums
-- **Database**: Use sqlc for queries, enable foreign keys with `PRAGMA foreign_keys = ON`, migrations in ui/db/migrations/
+- **Database**: Use sqlc for queries, enable foreign keys with `PRAGMA foreign_keys = ON`, migrations in internal/db/migrations/
 - **SQLC**: Write SQL queries in .sql files, generate type-safe Go code with `go tool sqlc generate`
 - **HTTP handlers**: Use templ for templates, set proper content types, use structured logging with slog.Logger
 - **Testing**: Use testify for assertions, build tag `//go:build e2e` for E2E tests, use Playwright for browser tests
@@ -73,19 +73,24 @@ Pathwise is a job application tracking web application built with Go, templ, HTM
 - **Integration**: Handlers return templ components via `h.html()`, use URL query parameters for filtering/pagination
 
 ## Project Structure
-- `ui/`: Main application directory containing all Go code and assets
-  - `components/`: Templ templates (.templ files compiled to .go)
+- `cmd/ui/`: Application entry point and configuration
+  - `main.go`: Application entry point
+  - `.air.toml`: Hot reload configuration for development
+  - `Dockerfile`: Container configuration
+- `internal/`: Private application code
   - `db/`: Database migrations (up/down SQL), sqlc queries, connection logic
-  - `server/`: HTTP handlers, middleware (auth, cache, logging), routing
+  - `logger/`: Structured logging setup with slog
+  - `server/`: Core server setup and middleware
+  - `version/`: Application version management
+- `ui/`: Frontend code and assets
+  - `components/`: Templ templates (.templ files compiled to .go)
+  - `server/`: HTTP handlers, middleware (auth, cache), routing
   - `types/`: Domain types and business logic (JobApplication, User, etc.)
   - `e2e/`: End-to-end tests with Playwright (requires `//go:build e2e` tag)
   - `dist/`: Static assets (CSS, JS, images) served by the application
   - `styles/`: Tailwind CSS input files processed by go-tw
-  - `logger/`: Structured logging setup with slog
   - `utils/`: Utility functions (ID generation, slice operations)
-  - `version/`: Application version management
-  - `main.go`: Application entry point
-  - `go.mod`: Go module definition with tools (templ, sqlc, go-tw)
+- `go.mod`: Go module definition with tools (templ, sqlc, go-tw)
 
 ## Database Schema
 - **users**: id, email, password, created_at, updated_at
@@ -96,8 +101,8 @@ Pathwise is a job application tracking web application built with Go, templ, HTM
 - **user_ips**: id, user_id, ip_address, created_at, updated_at
 
 ## SQLC Guidelines (https://docs.sqlc.dev/en/latest/tutorials/getting-started-sqlite.html)
-- **Configuration**: ui/sqlc.yml defines engine (sqlite), queries path (db/queries/), schema (db/migrations), and output (db/queries)
-- **Query Files**: Write SQL queries in .sql files in ui/db/queries/ directory with special comments for code generation
+- **Configuration**: sqlc.yml defines engine (sqlite), queries path (internal/db/queries/), schema (internal/db/migrations), and output (internal/db/queries)
+- **Query Files**: Write SQL queries in .sql files in internal/db/queries/ directory with special comments for code generation
 - **Query Annotations**: Use `-- name: QueryName :one|many|exec` to define query name and return type
   - `:one` - Returns single row (GetUserByID)
   - `:many` - Returns multiple rows (GetJobApplicationsByUserID)  

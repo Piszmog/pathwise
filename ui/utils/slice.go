@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/Piszmog/pathwise/types"
+	"github.com/Piszmog/pathwise/ui/types"
 )
 
 func GetFirstElementID[T types.Record](vals []T) int64 {

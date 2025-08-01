@@ -1,19 +1,22 @@
 version: 2
 
+project_name: pathwise-ui
 dist: goreleaser-dist
 
 before:
   hooks:
     - go mod download
     - go tool sqlc generate
-    - go tool templ generate -path ./components
-    - go tool go-tw -i ./styles/input.css -o ./dist/assets/css/output@{{ replace .Version "ui/" "" }}.css --minify
+    - go tool templ generate -path ./ui/components
+    - go tool go-tw -i ./ui/styles/input.css -o ./ui/dist/assets/css/output@{{ replace .Version "ui/" "" }}.css --minify
 
 builds:
   - env:
       - CGO_ENABLED=0
+    main: ./cmd/ui
+    binary: pathwise-ui
     ldflags:
-      - -s -w -X github.com/Piszmog/pathwise/version.Value={{ replace .Version "ui/" "" }}
+      - -s -w -X github.com/Piszmog/pathwise/internal/version.Value={{ replace .Version "ui/" "" }}
     goos:
       - linux
       - windows

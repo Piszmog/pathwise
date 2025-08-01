@@ -2,7 +2,7 @@
 
 A modern job application tracking web application built with Go, templ, HTMX, and SQLite. Pathwise helps you organize and track your job search with features like status updates, notes, salary tracking, timeline views, and export capabilities.
 
-> **Note**: This is a mono-repo structure. The main application is located in the `ui/` directory. All commands should be run from the `ui/` directory or prefixed with `cd ui &&`.
+> **Note**: This follows standard Go project layout with the main application in `cmd/ui/` and private code in `internal/`. Commands should be run from the project root unless otherwise specified.
 
 ## Features
 
@@ -40,24 +40,24 @@ A modern job application tracking web application built with Go, templ, HTMX, an
 
 2. **Install dependencies**
    ```bash
-   cd ui && go mod download
+   go mod download
    ```
 
 3. **Generate code and build assets**
    ```bash
-   cd ui && go tool templ generate -path ./components
-   cd ui && go tool go-tw -i ./styles/input.css -o ./dist/assets/css/output@dev.css
-   cd ui && go tool sqlc generate
+   go tool templ generate -path ./ui/components
+   go tool go-tw -i ./ui/styles/input.css -o ./ui/dist/assets/css/output@dev.css
+   go tool sqlc generate
    ```
 
 4. **Run the application**
    ```bash
    # Development with hot reload
-   cd ui && air
+   cd cmd/ui && air
 
    # Or build and run manually
-   cd ui && go build -o ./tmp/main .
-   cd ui && ./tmp/main
+   go build -o ./tmp/main ./cmd/ui
+   ./tmp/main
    ```
 
 5. **Open your browser**
@@ -70,7 +70,7 @@ A modern job application tracking web application built with Go, templ, HTMX, an
 | `PORT` | Server port | `8080` |
 | `LOG_LEVEL` | Logging level (debug, info, warn, error) | `info` |
 | `LOG_OUTPUT` | Log output (stdout or file path) | `stdout` |
-| `DB_URL` | Database URL | `./ui/db.sqlite3` |
+| `DB_URL` | Database URL | `./db.sqlite3` |
 | `DB_TOKEN` | Database token (for remote databases) | - |
 | `VERSION` | Application version | - |
 
@@ -80,35 +80,44 @@ A modern job application tracking web application built with Go, templ, HTMX, an
 
 ```bash
 # Development server with hot reload
-cd ui && air
+cd cmd/ui && air
 
 # Build application
-cd ui && go build -o ./tmp/main .
+go build -o ./tmp/main ./cmd/ui
 
 # Run tests
-cd ui && go test ./...
+go test ./...
 
 # Run E2E tests (requires Playwright)
-cd ui && go test -tags=e2e ./e2e/...
+go test -tags=e2e ./ui/e2e/...
 
 # Lint code
-cd ui && golangci-lint run
+golangci-lint run
 
 # Generate code (templates, CSS, SQL)
-cd ui && go tool templ generate -path ./components
-cd ui && go tool go-tw -i ./styles/input.css -o ./dist/assets/css/output@dev.css
-cd ui && go tool sqlc generate
+go tool templ generate -path ./ui/components
+go tool go-tw -i ./ui/styles/input.css -o ./ui/dist/assets/css/output@dev.css
+go tool sqlc generate
 ```
 
 ### Project Structure
 
 ```
 pathwise/
-├── ui/                 # Main application directory
-│   ├── components/     # Templ templates (.templ files)
+├── cmd/
+│   └── ui/            # Application entry point and configuration
+│       ├── main.go    # Application entry point
+│       ├── .air.toml  # Hot reload configuration
+│       └── Dockerfile # Container configuration
+├── internal/          # Private application code
 │   ├── db/
-│   │   ├── migrations/ # Database schema migrations
-│   │   └── queries/    # SQL queries for sqlc
+│   │   ├── migrations/# Database schema migrations
+│   │   └── queries/   # SQL queries for sqlc
+│   ├── logger/        # Structured logging setup
+│   ├── server/        # Core server setup and middleware
+│   └── version/       # Application version management
+├── ui/                # Frontend code and assets
+│   ├── components/    # Templ templates (.templ files)
 │   ├── dist/          # Static assets (CSS, JS, images)
 │   ├── e2e/           # End-to-end tests
 │   ├── server/
@@ -117,12 +126,9 @@ pathwise/
 │   │   └── router/    # Route definitions
 │   ├── styles/        # Tailwind CSS source files
 │   ├── types/         # Domain types and business logic
-│   ├── utils/         # Utility functions
-│   ├── logger/        # Structured logging setup
-│   ├── version/       # Application version management
-│   ├── go.mod         # Go module with tools
-│   └── main.go        # Application entry point
+│   └── utils/         # Utility functions
 ├── .github/           # GitHub workflows
+├── go.mod             # Go module with tools
 ├── README.md
 └── LICENSE
 ```
@@ -149,13 +155,13 @@ The project uses several code generation tools:
 
 ```bash
 # Unit tests
-cd ui && go test ./...
+go test ./...
 
 # E2E tests (requires Playwright setup)
-cd ui && go test -tags=e2e ./e2e/...
+go test -tags=e2e ./ui/e2e/...
 
 # Test specific package
-cd ui && go test ./server/handler -run TestJobHandler
+go test ./ui/server/handler -run TestJobHandler
 ```
 
 ## Deployment
@@ -172,16 +178,16 @@ docker run -p 8080:8080 pathwise
 
 ### Manual Deployment
 
-1. Build the application: `cd ui && go build -o pathwise .`
+1. Build the application: `go build -o pathwise ./cmd/ui`
 2. Set environment variables as needed
-3. Run the binary: `cd ui && ./pathwise`
+3. Run the binary: `./pathwise`
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature-name`
 3. Make your changes and add tests
-4. Run tests and linting: `cd ui && go test ./... && golangci-lint run`
+4. Run tests and linting: `go test ./... && golangci-lint run`
 5. Commit your changes: `git commit -am 'Add feature'`
 6. Push to the branch: `git push origin feature-name`
 7. Submit a pull request

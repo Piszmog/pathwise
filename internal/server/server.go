@@ -57,9 +57,9 @@ func (s *Server) StartAndWait() {
 
 func (s *Server) Start() {
 	go func() {
-		s.logger.InfoContext(context.Background(), "starting server", "port", "8080")
+		s.logger.InfoContext(context.Background(), "starting server", "addr", s.srv.Addr)
 		if err := s.srv.ListenAndServe(); err != nil {
-			s.logger.WarnContext(context.Background(), "failed to start server", "error", err)
+			s.logger.ErrorContext(context.Background(), "failed to start server", "error", err)
 		}
 	}()
 }

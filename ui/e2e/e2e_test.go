@@ -13,6 +13,8 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -20,6 +22,10 @@ import (
 	"github.com/playwright-community/playwright-go"
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	_ "modernc.org/sqlite"
+)
+
+const (
+	dbFile = "test-db.sqlite3"
 )
 
 // global variables, can be used in any tests
@@ -103,17 +109,22 @@ func beforeAll() {
 }
 
 func startApp() error {
+	repoRoot, err := getRepoRoot()
+	if err != nil {
+		return fmt.Errorf("could not find repo root: %v", err)
+	}
+	fmt.Printf("Root directory %s\n", repoRoot)
+
 	port := getPort()
-	app = exec.Command("go", "run", "main.go")
-	app.Dir = "../"
+	app = exec.Command("go", "run", "./cmd/ui")
+	app.Dir = repoRoot
 	app.Env = append(
 		os.Environ(),
-		"DB_URL=./test-db.sqlite3",
+		"DB_URL=./"+dbFile,
 		fmt.Sprintf("PORT=%d", port),
 		"LOG_LEVEL=DEBUG",
 	)
 
-	var err error
 	baseUrL, err = url.Parse(fmt.Sprintf("http://localhost:%d", port))
 	if err != nil {
 		return err
@@ -127,11 +138,6 @@ func startApp() error {
 	if err != nil {
 		return err
 	}
-
-	if err := app.Start(); err != nil {
-		return err
-	}
-	fmt.Printf("Started app on port %d, pid %d", port, app.Process.Pid)
 
 	stdoutchan := make(chan string)
 	stderrchan := make(chan string)
@@ -160,6 +166,11 @@ func startApp() error {
 			fmt.Println("[STDERR]", line)
 		}
 	}()
+
+	if err := app.Start(); err != nil {
+		return err
+	}
+	fmt.Printf("Started app on port %d, pid %d\n", port, app.Process.Pid)
 	return nil
 }
 
@@ -179,8 +190,8 @@ func waitForServer() error {
 	return fmt.Errorf("server not ready after 3 seconds")
 }
 
-func cleanDB() error {
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+func cleanDB(t *testing.T) error {
+	db, err := sql.Open("libsql", getDBURL(t))
 	if err != nil {
 		return err
 	}
@@ -213,14 +224,20 @@ func cleanDB() error {
 	return tx.Commit()
 }
 
-func seedDB() error {
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+func seedDB(t *testing.T) error {
+	db, err := sql.Open("libsql", getDBURL(t))
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	b, err := os.ReadFile("./testdata/seed.sql")
+	repoRoot, err := getRepoRoot()
+	if err != nil {
+		return fmt.Errorf("could not find repo root: %v", err)
+	}
+
+	seedPath := filepath.Join(repoRoot, "ui", "e2e", "testdata", "seed.sql")
+	b, err := os.ReadFile(seedPath)
 	if err != nil {
 		return err
 	}
@@ -251,7 +268,11 @@ func afterAll() {
 }
 
 func removeDBFile() error {
-	return os.Remove("../test-db.sqlite3")
+	p, err := getDBPath()
+	if err != nil {
+		return err
+	}
+	return os.Remove(p)
 }
 
 // beforeEach creates a new context and page for each test,
@@ -275,10 +296,10 @@ func beforeEach(t *testing.T, contextOptions ...playwright.BrowserNewContextOpti
 	}
 
 	// Clean database before each test to ensure isolation
-	if err := cleanDB(); err != nil {
+	if err := cleanDB(t); err != nil {
 		t.Fatalf("could not clean db: %v", err)
 	}
-	if err := seedDB(); err != nil {
+	if err := seedDB(t); err != nil {
 		t.Fatalf("could not seed db: %v", err)
 	}
 }
@@ -315,7 +336,7 @@ func getFullPath(relativePath string) string {
 
 func createTestUser(t *testing.T, email string) {
 	t.Helper()
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	db, err := sql.Open("libsql", getDBURL(t))
 	if err != nil {
 		t.Fatalf("could not open db: %v", err)
 	}
@@ -358,4 +379,32 @@ func createUserAndSignIn(t *testing.T) string {
 	createTestUser(t, email)
 	signin(t, email, "password")
 	return email
+}
+
+func getDBURL(t *testing.T) string {
+	t.Helper()
+	p, err := getDBPath()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return "file:" + p
+}
+
+func getDBPath() (string, error) {
+	root, err := getRepoRoot()
+	if err != nil {
+		return "", err
+	}
+
+	p := filepath.Join(root, dbFile)
+	return p, nil
+}
+
+func getRepoRoot() (string, error) {
+	cmd := exec.Command("go", "list", "-m", "-f", "{{.Dir}}")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(output)), nil
 }

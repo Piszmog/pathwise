@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Piszmog/pathwise/utils"
+	"github.com/Piszmog/pathwise/ui/utils"
 )
 
 func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {

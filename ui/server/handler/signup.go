@@ -6,10 +6,10 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/Piszmog/pathwise/components"
-	"github.com/Piszmog/pathwise/db/queries"
-	"github.com/Piszmog/pathwise/types"
-	"github.com/Piszmog/pathwise/utils"
+	"github.com/Piszmog/pathwise/ui/components"
+	"github.com/Piszmog/pathwise/internal/db/queries"
+	"github.com/Piszmog/pathwise/ui/types"
+	"github.com/Piszmog/pathwise/ui/utils"
 )
 
 var (

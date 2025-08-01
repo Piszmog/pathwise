@@ -17,9 +17,6 @@ jobs:
   calculate-version:
     name: Calculate Version
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./ui
     outputs:
       new_version: ${{ steps.version.outputs.new_version }}
     steps:
@@ -33,7 +30,6 @@ jobs:
         run: |
           # Check if any UI-specific releases exist
           LATEST_UI_TAG=$(gh release list --json tagName --jq '.[] | select(.tagName | startswith("ui/")) | .tagName' | head -1)
-          
           if [ -n "$LATEST_UI_TAG" ] && [ "$LATEST_UI_TAG" != "null" ]; then
             # UI releases exist - use the latest UI release
             LATEST_TAG="$LATEST_UI_TAG"
@@ -42,7 +38,6 @@ jobs:
             # No UI releases exist - this is the migration case
             # Get the latest overall release (current single-app releases)
             LATEST_OVERALL_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
-            
             if [ -n "$LATEST_OVERALL_TAG" ] && [ "$LATEST_OVERALL_TAG" != "null" ]; then
               # Use the latest single-app release as base for first UI release
               LATEST_TAG="$LATEST_OVERALL_TAG"
@@ -53,7 +48,6 @@ jobs:
               echo "No releases found, starting from: $LATEST_TAG"
             fi
           fi
-          
           echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -63,9 +57,7 @@ jobs:
         run: |
           LATEST_TAG="${{ steps.latest_release.outputs.latest_tag }}"
           INCREMENT="${{ github.event.inputs.increment }}"
-          
           echo "Processing tag: $LATEST_TAG with increment: $INCREMENT"
-          
           # Extract version based on tag format
           if [[ $LATEST_TAG == ui/v* ]]; then
             # UI release format: ui/v3.2.1 -> 3.2.1
@@ -80,17 +72,13 @@ jobs:
             VERSION="0.0.0"
             echo "Using fallback version"
           fi
-          
           echo "Extracted version: $VERSION"
-          
           # Split version into parts
           IFS='.' read -ra VERSION_PARTS <<< "$VERSION"
           MAJOR=${VERSION_PARTS[0]:-0}
           MINOR=${VERSION_PARTS[1]:-0}
           PATCH=${VERSION_PARTS[2]:-0}
-          
           echo "Current version parts - Major: $MAJOR, Minor: $MINOR, Patch: $PATCH"
-          
           # Calculate new version based on increment type
           case $INCREMENT in
             major)
@@ -106,24 +94,18 @@ jobs:
               PATCH=$((PATCH + 1))
               ;;
           esac
-          
           # Always create new version in UI format
           NEW_VERSION="ui/v${MAJOR}.${MINOR}.${PATCH}"
-          
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "Calculated new UI version: $NEW_VERSION"
 
       - name: Announce new version
         run: |
           echo "::notice title=New Release Version::Releasing ${{ steps.version.outputs.new_version }} (increment: ${{ github.event.inputs.increment }})"
-
   tag:
     name: Tag
     runs-on: ubuntu-latest
     needs: [calculate-version]
-    defaults:
-      run:
-        working-directory: ./ui
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -137,9 +119,6 @@ jobs:
     name: Release
     runs-on: ubuntu-latest
     needs: [tag]
-    defaults:
-      run:
-        working-directory: ./ui
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -147,7 +126,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'ui/go.mod'
+          go-version-file: 'go.mod'
           cache: false
       - name: Extract version for GoReleaser
         id: goreleaser_version
@@ -162,21 +141,18 @@ jobs:
         with:
           distribution: goreleaser
           version: '~> v2'
-          args: release --clean --version=${{ steps.goreleaser_version.outputs.version }}
+          args: release --clean --config cmd/ui/.goreleaser.yaml --version=${{ steps.goreleaser_version.outputs.version }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pathwise_Linux_x86_64.tar.gz
-          path: ui/goreleaser-dist/pathwise_Linux_x86_64.tar.gz
+          name: pathwise-ui_Linux_x86_64.tar.gz
+          path: cmd/ui/goreleaser-dist/pathwise-ui_Linux_x86_64.tar.gz
           retention-days: 1
   publish:
     name: Publish Docker
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./ui
     permissions:
       contents: read
       packages: write
@@ -203,7 +179,8 @@ jobs:
             type=raw,value=${{ steps.docker_version.outputs.tag }}
       - uses: docker/build-push-action@v5
         with:
-          context: ui
+          context: .
+          file: cmd/ui/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -213,9 +190,6 @@ jobs:
     name: Deploy to GAE
     if: false
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./ui
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -224,7 +198,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'ui/go.mod'
+          go-version-file: 'go.mod'
           cache: false
       - name: Get Version
         run: |
@@ -234,7 +208,7 @@ jobs:
           MODIFIED_VERSION="${VERSION//./-}"
           echo "VERSION_GCP=$MODIFIED_VERSION" >> $GITHUB_ENV
       - run: go mod download
-      - run: go tool templ generate -path ./components
+      - run: go tool templ generate -path ./ui/components
       - run: go tool sqlc generate
       - name: Extract version for CSS
         id: css_version
@@ -243,14 +217,13 @@ jobs:
           VERSION="${{ needs.calculate-version.outputs.new_version }}"
           VERSION="${VERSION#ui/}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-      
-      - run: go tool go-tw -i ./styles/input.css -o ./dist/assets/css/output@${{ steps.css_version.outputs.version }}.css --minify
+      - run: go tool go-tw -i ./ui/styles/input.css -o ./ui/dist/assets/css/output@${{ steps.css_version.outputs.version }}.css --minify
       - name: Replace version
-        run: sed -i 's/\${version}/'"$VERSION"'/' app.yaml
+        run: sed -i 's/\${version}/'"$VERSION"'/' cmd/ui/app.yaml
         env:
           VERSION: ${{ steps.css_version.outputs.version }}
       - name: Replace token secret
-        run: sed -i 's/\${secrets.DB_TOKEN}/'"$DB_TOKEN"'/' app.yaml
+        run: sed -i 's/\${secrets.DB_TOKEN}/'"$DB_TOKEN"'/' cmd/ui/app.yaml
         env:
           DB_TOKEN: ${{ secrets.DB_TOKEN }}
       # Create a service account in IAM with roles
@@ -284,19 +257,16 @@ jobs:
         uses: 'google-github-actions/deploy-appengine@v2'
         with:
           version: ${{ env.VERSION_GCP }}
-          deliverables: ui/app.yaml
+          deliverables: cmd/ui/app.yaml
   deploy-vm:
     name: Deploy to VM
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./ui
     needs: [release]
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: pathwise_Linux_x86_64.tar.gz
+          name: pathwise-ui_Linux_x86_64.tar.gz
           path: ./artifacts
 
       - name: Setup SSH key
@@ -317,7 +287,7 @@ jobs:
           Type=simple
           User=ubuntu
           WorkingDirectory=/home/ubuntu/apps/pathwise
-          ExecStart=/home/ubuntu/apps/pathwise/pathwise
+          ExecStart=/home/ubuntu/apps/pathwise/pathwise-ui
           Restart=always
           RestartSec=5
           Environment=DB_TOKEN=${{ secrets.DB_TOKEN }}
@@ -332,7 +302,7 @@ jobs:
       - name: Deploy to VM
         run: |
           # Copy artifact and service file to VM
-          scp ./artifacts/pathwise_Linux_x86_64.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
+          scp ./artifacts/pathwise-ui_Linux_x86_64.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
           scp pathwise.service ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
 
           # Extract and deploy on VM
@@ -347,11 +317,11 @@ jobs:
 
             # Extract new version
             cd /tmp
-            tar -xzf pathwise_Linux_x86_64.tar.gz
+            tar -xzf pathwise-ui_Linux_x86_64.tar.gz
 
             # Move binary to app directory
-            mv pathwise /home/ubuntu/apps/pathwise/
-            chmod +x /home/ubuntu/apps/pathwise/pathwise
+            mv pathwise-ui /home/ubuntu/apps/pathwise/
+            chmod +x /home/ubuntu/apps/pathwise/pathwise-ui
 
             # Create log directory
             sudo mkdir -p /var/log/pathwise
@@ -372,7 +342,6 @@ jobs:
             sudo systemctl status pathwise
             # Wait for service to start
             sleep 10
-            
             # Health check
             if curl -f http://localhost:8080/health; then
               echo "✅ Health check passed - app is running"
@@ -381,7 +350,6 @@ jobs:
               exit 1
             fi
           EOF
-
       - name: Cleanup
         run: |
           rm -f ~/.ssh/id_rsa

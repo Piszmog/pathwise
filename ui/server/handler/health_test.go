@@ -8,8 +8,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Piszmog/pathwise/server/router"
-	"github.com/Piszmog/pathwise/version"
+	"github.com/Piszmog/pathwise/ui/server/router"
+	"github.com/Piszmog/pathwise/internal/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -81,18 +81,32 @@ func TestAuth_Signout(t *testing.T) {
 		Timeout: playwright.Float(5000),
 	}))
 
-	signoutLocator := page.Locator("a[href='/signout'], button[onclick*='signout']").First()
-	if count, _ := signoutLocator.Count(); count > 0 {
-		require.NoError(t, signoutLocator.Click())
-	} else {
-		_, err := page.Goto(getFullPath("signout"))
-		require.NoError(t, err)
-	}
+	// Wait for the page to fully load
+	require.NoError(t, page.WaitForLoadState(playwright.PageWaitForLoadStateOptions{
+		State: playwright.LoadStateNetworkidle,
+	}))
 
-	require.NoError(t, expect.Page(page).ToHaveURL(getFullPath("signin"), playwright.PageAssertionsToHaveURLOptions{
+	// First, click the user menu button to open the dropdown
+	userMenuButton := page.Locator("#user-menu-button")
+	require.NoError(t, expect.Locator(userMenuButton).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
+		Timeout: playwright.Float(5000),
+	}))
+	require.NoError(t, userMenuButton.Click())
+
+	// Now the signout link should be visible in the dropdown
+	signoutLocator := page.Locator("a[href='/signout']").First()
+	require.NoError(t, expect.Locator(signoutLocator).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
 		Timeout: playwright.Float(5000),
 	}))
 
+	require.NoError(t, signoutLocator.Click())
+
+	// Wait for redirect to signin page
+	require.NoError(t, expect.Page(page).ToHaveURL(getFullPath("signin"), playwright.PageAssertionsToHaveURLOptions{
+		Timeout: playwright.Float(10000),
+	}))
+
+	// Verify that accessing the home page redirects to signin (session is cleared)
 	_, err := page.Goto(getFullPath(""))
 	require.NoError(t, err)
 
@@ -100,7 +114,6 @@ func TestAuth_Signout(t *testing.T) {
 		Timeout: playwright.Float(5000),
 	}))
 }
-
 func TestAuth_HTMXRequests(t *testing.T) {
 	beforeEach(t)
 	createUserAndSignIn(t)
@@ -114,8 +127,6 @@ func TestAuth_HTMXRequests(t *testing.T) {
 
 	if count > 0 {
 		require.NoError(t, htmxElements.First().Click())
-
-		page.WaitForTimeout(1000)
 
 		require.NoError(t, expect.Page(page).ToHaveURL(getFullPath("")+"/", playwright.PageAssertionsToHaveURLOptions{
 			Timeout: playwright.Float(5000),
@@ -141,7 +152,7 @@ func TestAuth_MultipleSessionsCleanup(t *testing.T) {
 
 func createExpiredSession(t *testing.T, email string) {
 	t.Helper()
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	db, err := sql.Open("libsql", getDBURL(t))
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -159,7 +170,7 @@ func createExpiredSession(t *testing.T, email string) {
 
 func createSessionNeedingRefresh(t *testing.T, email string) string {
 	t.Helper()
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	db, err := sql.Open("libsql", getDBURL(t))
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -180,7 +191,7 @@ func createSessionNeedingRefresh(t *testing.T, email string) string {
 
 func verifySessionWasRefreshed(t *testing.T, sessionToken string) {
 	t.Helper()
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	db, err := sql.Open("libsql", getDBURL(t))
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -195,7 +206,7 @@ func verifySessionWasRefreshed(t *testing.T, sessionToken string) {
 
 func createMultipleSessions(t *testing.T, email string, count int) {
 	t.Helper()
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	db, err := sql.Open("libsql", getDBURL(t))
 	require.NoError(t, err)
 	defer db.Close()
 
@@ -216,7 +227,7 @@ func createMultipleSessions(t *testing.T, email string, count int) {
 
 func verifyOldSessionsCleanedUp(t *testing.T, email string) {
 	t.Helper()
-	db, err := sql.Open("libsql", "file:../test-db.sqlite3")
+	db, err := sql.Open("libsql", getDBURL(t))
 	require.NoError(t, err)
 	defer db.Close()
 

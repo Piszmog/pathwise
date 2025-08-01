@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/Piszmog/pathwise/version"
+	"github.com/Piszmog/pathwise/internal/version"
 )
 
 type healthResponse struct {
@@ -21,8 +21,6 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		h.Logger.ErrorContext(r.Context(), "failed to encode health response", "error", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
 }

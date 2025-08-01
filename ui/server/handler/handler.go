@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Piszmog/pathwise/db"
+	"github.com/Piszmog/pathwise/internal/db"
 	"github.com/a-h/templ"
 )
 

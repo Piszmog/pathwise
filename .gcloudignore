@@ -62,11 +62,11 @@ Makefile
 .github
 version.txt
 tailwindcss
-components/*.templ
+**/components/*.templ
 Dockerfile
 README.md
-tailwind.config.js
+**/tailwind.config.js
 LICENSE
-styles/
-db/queries/*.sql
-goreleaser-dist
+**/styles/
+**/db/queries/*.sql
+**/goreleaser-dist
