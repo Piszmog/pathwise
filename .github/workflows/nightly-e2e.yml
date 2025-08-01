@@ -15,4 +15,4 @@ jobs:
       - run: go mod download
       - run: go tool templ generate -path ./ui/components
       - run: go tool sqlc generate
-      - run: go test -v ./ui/e2e/... -tags=e2e
+      - run: go test -v ./... -tags=e2e

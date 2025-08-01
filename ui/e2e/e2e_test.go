@@ -116,7 +116,7 @@ func startApp() error {
 	fmt.Printf("Root directory %s\n", repoRoot)
 
 	port := getPort()
-	app = exec.Command("go", "run", "./cmd/ui/main.go")
+	app = exec.Command("go", "run", "./cmd/ui")
 	app.Dir = repoRoot
 	app.Env = append(
 		os.Environ(),
