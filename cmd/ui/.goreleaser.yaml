@@ -8,7 +8,7 @@ before:
     - go mod download
     - go tool sqlc generate
     - go tool templ generate -path ./ui/components
-    - go tool go-tw -i ./ui/styles/input.css -o ./ui/dist/assets/css/output@{{ replace .Version "ui/" "" }}.css --minify
+    - go tool go-tw -i ./ui/styles/input.css -o ./ui/dist/assets/css/output@{{ .Version }}.css --minify
 
 builds:
   - env:
@@ -16,7 +16,7 @@ builds:
     main: ./cmd/ui
     binary: pathwise-ui
     ldflags:
-      - -s -w -X github.com/Piszmog/pathwise/internal/version.Value={{ replace .Version "ui/" "" }}
+      - -s -w -X github.com/Piszmog/pathwise/internal/version.Value={{ .Version }}
     goos:
       - linux
       - windows
