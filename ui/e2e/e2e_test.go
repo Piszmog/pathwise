@@ -104,7 +104,7 @@ func beforeAll() {
 
 func startApp() error {
 	port := getPort()
-	app = exec.Command("go", "run", "main.go")
+	app = exec.Command("go", "run", "../cmd/ui/main.go")
 	app.Dir = "../"
 	app.Env = append(
 		os.Environ(),
