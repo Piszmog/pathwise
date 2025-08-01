@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/Piszmog/pathwise/internal/db"
@@ -14,7 +13,6 @@ import (
 )
 
 func main() {
-	fmt.Println("starting..")
 	l := logger.New(os.Getenv("LOG_LEVEL"), os.Getenv("LOG_OUTPUT"))
 
 	dbURL := os.Getenv("DB_URL")
@@ -26,7 +24,6 @@ func main() {
 		l,
 		db.DatabaseOpts{URL: dbURL, Token: os.Getenv("DB_TOKEN")},
 	)
-	fmt.Println("db..")
 	if err != nil {
 		l.Error("failed to create database", "error", err)
 		return
@@ -37,13 +34,11 @@ func main() {
 		}
 	}()
 
-	fmt.Println("pragma..")
 	if _, err = database.DB().Exec("PRAGMA foreign_keys = ON;"); err != nil {
 		l.Error("failed to enable foreign keys", "error", err)
 		return
 	}
 
-	fmt.Println("migrate..")
 	if err = db.Migrate(database); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		l.Error("failed to migrate database", "error", err)
 		return
@@ -61,6 +56,5 @@ func main() {
 		port = "8080"
 	}
 
-	fmt.Println("server..")
 	server.New(l, ":"+port, server.WithHandler(r)).StartAndWait()
 }
