@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -24,9 +25,18 @@ import (
 
 const (
 	dbFile = "test-db.sqlite3"
-	dbPath = "../../" + dbFile
+	dbPath = dbFile
 	dbURL  = "file:" + dbPath
 )
+
+func getRepoRoot() (string, error) {
+	cmd := exec.Command("go", "list", "-m", "-f", "{{.Dir}}")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(output)), nil
+}
 
 // global variables, can be used in any tests
 var (
@@ -109,9 +119,14 @@ func beforeAll() {
 }
 
 func startApp() error {
+	repoRoot, err := getRepoRoot()
+	if err != nil {
+		return fmt.Errorf("could not find repo root: %v", err)
+	}
+
 	port := getPort()
 	app = exec.Command("go", "run", "./cmd/ui/main.go")
-	app.Dir = "../.."
+	app.Dir = repoRoot
 	app.Env = append(
 		os.Environ(),
 		"DB_URL=./"+dbFile,
@@ -119,7 +134,6 @@ func startApp() error {
 		"LOG_LEVEL=DEBUG",
 	)
 
-	var err error
 	baseUrL, err = url.Parse(fmt.Sprintf("http://localhost:%d", port))
 	if err != nil {
 		return err
