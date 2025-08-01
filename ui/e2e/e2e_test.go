@@ -25,8 +25,7 @@ import (
 
 const (
 	dbFile = "test-db.sqlite3"
-	dbPath = dbFile
-	dbURL  = "file:" + dbPath
+	dbURL  = "file:" + dbFile
 )
 
 func getRepoRoot() (string, error) {
@@ -271,7 +270,7 @@ func afterAll() {
 }
 
 func removeDBFile() error {
-	return os.Remove(dbPath)
+	return os.Remove(dbFile)
 }
 
 // beforeEach creates a new context and page for each test,
