@@ -8,6 +8,7 @@ require (
 	github.com/a-h/templ v0.3.920
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/google/uuid v1.6.0
+	github.com/mark3labs/mcp-go v0.36.0
 	github.com/playwright-community/playwright-go v0.5200.0
 	github.com/stretchr/testify v1.10.0
 	github.com/tursodatabase/libsql-client-go v0.0.0-20240902231107-85af5b9d094d
@@ -23,6 +24,8 @@ require (
 	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
+	github.com/bahlo/generic-list-go v0.2.0 // indirect
+	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cli/browser v1.3.0 // indirect
 	github.com/coder/websocket v1.8.13 // indirect
@@ -40,11 +43,13 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/invopop/jsonschema v0.13.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
 	github.com/jackc/pgx/v5 v5.7.5 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-sqlite3 v1.14.28 // indirect
@@ -58,6 +63,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/riza-io/grpc-go v0.2.0 // indirect
+	github.com/spf13/cast v1.7.1 // indirect
 	github.com/spf13/cobra v1.9.1 // indirect
 	github.com/spf13/pflag v1.0.7 // indirect
 	github.com/sqlc-dev/sqlc v1.29.0 // indirect
@@ -65,6 +71,8 @@ require (
 	github.com/tetratelabs/wazero v1.9.0 // indirect
 	github.com/wasilibs/go-pgquery v0.0.0-20250409022910-10ac41983c07 // indirect
 	github.com/wasilibs/wazero-helpers v0.0.0-20250123031827-cd30c44769bb // indirect
+	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
+	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
