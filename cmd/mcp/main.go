@@ -50,7 +50,11 @@ func main() {
 		":"+port,
 		l,
 		database,
-		server.AddTool("list_tables", "List the tables available to be queries", toolHandlers.ListTables),
+		server.AddTool(
+			"list_tables",
+			"List the tables available to be queries",
+			toolHandlers.ListTables,
+		),
 		server.AddTool(
 			"db_query",
 			"List the tables available to be queries",
@@ -63,7 +67,7 @@ func main() {
 			mcp.WithArray(
 				"params",
 				mcp.Required(),
-				mcp.Description("The parameters to pass to the query. 'user_id' value will be injected by the MCP Server."),
+				mcp.Description("The parameters to pass to the query. 'user_id' value will be injected by the MCP Server. Tables that do not have a 'user_id' column should be joined with another table that does have a 'user_id' column."),
 			),
 		),
 	)
