@@ -3,7 +3,9 @@ package server
 import (
 	"log/slog"
 
+	"github.com/Piszmog/pathwise/internal/db"
 	"github.com/Piszmog/pathwise/internal/version"
+	"github.com/Piszmog/pathwise/mcp/server/middleware"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 )
@@ -16,12 +18,15 @@ type Server struct {
 
 type Option func(*Server)
 
-func New(name string, addr string, logger *slog.Logger, option ...Option) *Server {
+func New(name string, addr string, logger *slog.Logger, database db.Database, option ...Option) *Server {
+	authMiddleware := middleware.AuthMiddleware{Logger: logger, Database: database}
+
 	s := &Server{
 		srv: server.NewMCPServer(
 			name,
 			version.Value,
 			server.WithToolCapabilities(true),
+			server.WithToolHandlerMiddleware(authMiddleware.Handle),
 		),
 		addr:   addr,
 		logger: logger,
