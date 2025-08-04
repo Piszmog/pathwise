@@ -7,6 +7,8 @@ import (
 	"github.com/Piszmog/pathwise/internal/logger"
 	"github.com/Piszmog/pathwise/internal/version"
 	"github.com/Piszmog/pathwise/mcp/server"
+	"github.com/Piszmog/pathwise/mcp/tool"
+	"github.com/mark3labs/mcp-go/mcp"
 )
 
 func main() {
@@ -41,10 +43,29 @@ func main() {
 		port = "8080"
 	}
 
+	toolHandlers := tool.Handler{Logger: l, Database: database}
+
 	srv := server.New(
 		"Pathwise MCP Server",
 		":"+port,
 		l,
+		database,
+		server.AddTool("list_tables", "List the tables available to be queries", toolHandlers.ListTables),
+		server.AddTool(
+			"db_query",
+			"List the tables available to be queries",
+			toolHandlers.QueryDB,
+			mcp.WithString(
+				"query",
+				mcp.Required(),
+				mcp.Description("The SQLite query string."),
+			),
+			mcp.WithArray(
+				"params",
+				mcp.Required(),
+				mcp.Description("The parameters to pass to the query. 'user_id' value will be injected by the MCP Server."),
+			),
+		),
 	)
 
 	if err = srv.Start(); err != nil {

@@ -4,7 +4,7 @@ VALUES (?, ?)
 RETURNING id, created_at;
 
 -- name: GetMcpAPIKeyByHash :one
-SELECT id, user_id, key_hash, created_at, updated_at 
+SELECT user_id
 FROM mcp_api_keys 
 WHERE key_hash = ?;
 

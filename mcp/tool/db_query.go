@@ -8,10 +8,15 @@ import (
 	"strings"
 	"time"
 
+	contextkey "github.com/Piszmog/pathwise/internal/context_key"
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
 func (h *Handler) QueryDB(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	userID, ok := ctx.Value(contextkey.KeyUserID).(int64)
+	if !ok {
+		return mcp.NewToolResultError("failed to authenticate"), nil
+	}
 	var args struct {
 		Query  string `json:"query"`
 		Params []any  `json:"params"`
@@ -22,7 +27,11 @@ func (h *Handler) QueryDB(ctx context.Context, req mcp.CallToolRequest) (*mcp.Ca
 	}
 
 	query := args.Query
-	params := args.Params
+	params := append([]any{userID}, args.Params...)
+
+	if !strings.Contains(strings.ToUpper(query), "WHERE USER_ID = ?") {
+		return mcp.NewToolResultError("queries must include 'WHERE user_id = ?' clause"), nil
+	}
 
 	if !isSelectQuery(query) {
 		return mcp.NewToolResultError("only SELECT queries are allowed"), nil
