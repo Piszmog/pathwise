@@ -12,6 +12,26 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
+func (h *Handler) NewQueryDBTool() Tool {
+	return Tool{
+		Tool: mcp.NewTool(
+			"db_query",
+			mcp.WithDescription("List the tables available to be queries"),
+			mcp.WithString(
+				"query",
+				mcp.Required(),
+				mcp.Description("The SQLite query string."),
+			),
+			mcp.WithArray(
+				"params",
+				mcp.Required(),
+				mcp.Description("The parameters to pass to the query. 'user_id' value will be injected by the MCP Server. Tables that do not have a 'user_id' column should be joined with another table that does have a 'user_id' column."),
+			),
+		),
+		HandlerFunc: h.QueryDB,
+	}
+}
+
 func (h *Handler) QueryDB(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	userID, ok := ctx.Value(contextkey.KeyUserID).(int64)
 	if !ok {

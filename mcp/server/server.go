@@ -6,7 +6,7 @@ import (
 	"github.com/Piszmog/pathwise/internal/db"
 	"github.com/Piszmog/pathwise/internal/version"
 	"github.com/Piszmog/pathwise/mcp/server/middleware"
-	"github.com/mark3labs/mcp-go/mcp"
+	"github.com/Piszmog/pathwise/mcp/tool"
 	"github.com/mark3labs/mcp-go/server"
 )
 
@@ -37,18 +37,9 @@ func New(name string, addr string, logger *slog.Logger, database db.Database, op
 	return s
 }
 
-func AddTool(name string, description string, handler server.ToolHandlerFunc, options ...mcp.ToolOption) Option {
-	opts := make([]mcp.ToolOption, 0, len(options)+1)
-	opts = append(opts, mcp.WithDescription(description))
-	opts = append(opts, options...)
+func AddTool(t tool.Tool) Option {
 	return func(s *Server) {
-		s.srv.AddTool(
-			mcp.NewTool(
-				name,
-				opts...,
-			),
-			handler,
-		)
+		s.srv.AddTool(t.Tool, t.HandlerFunc)
 	}
 }
 

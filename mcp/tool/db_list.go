@@ -9,6 +9,16 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
+func (h *Handler) NewListTablesTool() Tool {
+	return Tool{
+		Tool: mcp.NewTool(
+			"list_tables",
+			mcp.WithDescription("List the tables available to be queries"),
+		),
+		HandlerFunc: h.ListTables,
+	}
+}
+
 type tableInfo struct {
 	Name        string       `json:"name"`
 	Description string       `json:"description"`

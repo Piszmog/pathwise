@@ -8,7 +8,6 @@ import (
 	"github.com/Piszmog/pathwise/internal/version"
 	"github.com/Piszmog/pathwise/mcp/server"
 	"github.com/Piszmog/pathwise/mcp/tool"
-	"github.com/mark3labs/mcp-go/mcp"
 )
 
 func main() {
@@ -50,26 +49,8 @@ func main() {
 		":"+port,
 		l,
 		database,
-		server.AddTool(
-			"list_tables",
-			"List the tables available to be queries",
-			toolHandlers.ListTables,
-		),
-		server.AddTool(
-			"db_query",
-			"List the tables available to be queries",
-			toolHandlers.QueryDB,
-			mcp.WithString(
-				"query",
-				mcp.Required(),
-				mcp.Description("The SQLite query string."),
-			),
-			mcp.WithArray(
-				"params",
-				mcp.Required(),
-				mcp.Description("The parameters to pass to the query. 'user_id' value will be injected by the MCP Server. Tables that do not have a 'user_id' column should be joined with another table that does have a 'user_id' column."),
-			),
-		),
+		server.AddTool(toolHandlers.NewListTablesTool()),
+		server.AddTool(toolHandlers.NewQueryDBTool()),
 	)
 
 	if err = srv.Start(); err != nil {
