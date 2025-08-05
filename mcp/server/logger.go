@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 )
@@ -10,8 +11,8 @@ type logger struct {
 }
 
 func (l *logger) Infof(format string, v ...any) {
-	l.l.Info(fmt.Sprintf(format, v...))
+	l.l.InfoContext(context.Background(), fmt.Sprintf(format, v...))
 }
 func (l *logger) Errorf(format string, v ...any) {
-	l.l.Error(fmt.Sprintf(format, v...))
+	l.l.ErrorContext(context.Background(), fmt.Sprintf(format, v...))
 }

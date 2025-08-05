@@ -20,7 +20,7 @@ type AuthMiddleware struct {
 }
 
 func (m *AuthMiddleware) Handle(next server.ToolHandlerFunc) server.ToolHandlerFunc {
-	return func(ctx context.Context, request mcp.CallToolRequest) (result *mcp.CallToolResult, err error) {
+	return func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		apiKey := request.Header.Get("X-API-Key")
 		if apiKey == "" {
 			m.Logger.WarnContext(ctx, "missing API key")

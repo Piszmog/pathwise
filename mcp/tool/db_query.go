@@ -44,7 +44,9 @@ func (h *Handler) QueryDB(ctx context.Context, req mcp.CallToolRequest) (*mcp.Ca
 	if err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("query failed: %v", err)), nil
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	results, err := rowsToJSON(rows)
 	if err != nil {

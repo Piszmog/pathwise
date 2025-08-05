@@ -74,6 +74,6 @@ func main() {
 
 	if err = srv.Start(); err != nil {
 		l.Error("failed to run the MCP server", "error", err)
-		os.Exit(1)
+		return
 	}
 }

@@ -13,22 +13,19 @@ type tableInfo struct {
 	Name        string       `json:"name"`
 	Description string       `json:"description"`
 	Columns     []columnInfo `json:"columns"`
-	HasUserID   bool         `json:"has_user_id"`
+	HasUserID   bool         `json:"hasUserId"`
 }
 
 type columnInfo struct {
 	Name         string  `json:"name"`
 	Type         string  `json:"type"`
-	NotNull      bool    `json:"not_null"`
-	DefaultValue *string `json:"default_value,omitempty"`
-	PrimaryKey   bool    `json:"primary_key"`
+	NotNull      bool    `json:"notNull"`
+	DefaultValue *string `json:"defaultValue,omitempty"`
+	PrimaryKey   bool    `json:"primaryKey"`
 }
 
 func (h *Handler) ListTables(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	tables, err := h.getAvailableTables(ctx)
-	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("failed to get tables: %v", err)), nil
-	}
+	tables := h.getAvailableTables(ctx)
 
 	response := map[string]any{
 		"tables":      tables,
@@ -44,7 +41,7 @@ func (h *Handler) ListTables(ctx context.Context, req mcp.CallToolRequest) (*mcp
 	return mcp.NewToolResultText(string(jsonData)), nil
 }
 
-func (h *Handler) getAvailableTables(ctx context.Context) ([]tableInfo, error) {
+func (h *Handler) getAvailableTables(ctx context.Context) []tableInfo {
 	userTables := map[string]string{
 		"job_applications":                 "Job applications you've submitted",
 		"job_application_notes":            "Notes on your job applications",
@@ -52,7 +49,7 @@ func (h *Handler) getAvailableTables(ctx context.Context) ([]tableInfo, error) {
 		"job_application_status_histories": "Status change history for your applications",
 	}
 
-	var tables []tableInfo
+	tables := make([]tableInfo, 0, len(userTables))
 	for tableName, description := range userTables {
 		columns, err := h.getTableColumns(ctx, tableName)
 		if err != nil {
@@ -69,7 +66,7 @@ func (h *Handler) getAvailableTables(ctx context.Context) ([]tableInfo, error) {
 		})
 	}
 
-	return tables, nil
+	return tables
 }
 
 func (h *Handler) getTableColumns(ctx context.Context, tableName string) ([]columnInfo, error) {
@@ -79,7 +76,9 @@ func (h *Handler) getTableColumns(ctx context.Context, tableName string) ([]colu
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	var columns []columnInfo
 	for rows.Next() {
