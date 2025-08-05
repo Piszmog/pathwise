@@ -83,17 +83,6 @@ func (h *Handler) getAvailableTables(ctx context.Context) []tableInfo {
 }
 
 func (h *Handler) getTableColumns(ctx context.Context, tableName string) ([]columnInfo, error) {
-	// Whitelist validation for tableName
-	allowedTables := map[string]struct{}{
-		"job_applications":                 {},
-		"job_application_notes":            {},
-		"job_application_stat":             {},
-		"job_application_status_histories": {},
-	}
-	if _, ok := allowedTables[tableName]; !ok {
-		return nil, fmt.Errorf("%w: %s", ErrInvalidTableName, tableName)
-	}
-
 	query := fmt.Sprintf("PRAGMA table_info(%s)", tableName)
 
 	rows, err := h.Database.DB().QueryContext(ctx, query)
