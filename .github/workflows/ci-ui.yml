@@ -42,7 +42,6 @@ jobs:
       contents: read
       packages: write
     needs:
-      - test
       - e2e
     steps:
       - uses: actions/checkout@v4
