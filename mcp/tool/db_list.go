@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -33,6 +34,8 @@ type columnInfo struct {
 	DefaultValue *string `json:"defaultValue,omitempty"`
 	PrimaryKey   bool    `json:"primaryKey"`
 }
+
+var ErrInvalidTableName = errors.New("invalid table name")
 
 func (h *Handler) ListTables(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	tables := h.getAvailableTables(ctx)
@@ -88,7 +91,7 @@ func (h *Handler) getTableColumns(ctx context.Context, tableName string) ([]colu
 		"job_application_status_histories": {},
 	}
 	if _, ok := allowedTables[tableName]; !ok {
-		return nil, fmt.Errorf("invalid table name: %s", tableName)
+		return nil, fmt.Errorf("%w: %s", ErrInvalidTableName, tableName)
 	}
 
 	query := fmt.Sprintf("PRAGMA table_info(%s)", tableName)
