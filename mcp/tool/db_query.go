@@ -16,7 +16,7 @@ func (h *Handler) NewQueryDBTool() Tool {
 	return Tool{
 		Tool: mcp.NewTool(
 			"db_query",
-			mcp.WithDescription("List the tables available to be queries"),
+			mcp.WithDescription("List the tables available to be queried"),
 			mcp.WithString(
 				"query",
 				mcp.Required(),
