@@ -87,8 +87,8 @@ func (h *Handler) getTableColumns(ctx context.Context, tableName string) ([]colu
 		return nil, err
 	}
 	defer func() {
-		if err := rows.Close(); err != nil {
-			h.Logger.ErrorContext(ctx, "failed to close rows", "error", err, "table", tableName)
+		if closeErr := rows.Close(); closeErr != nil {
+			h.Logger.ErrorContext(ctx, "failed to close rows", "error", closeErr, "table", tableName)
 		}
 	}()
 

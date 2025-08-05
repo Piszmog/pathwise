@@ -49,9 +49,8 @@ func (h *Handler) QueryDB(ctx context.Context, req mcp.CallToolRequest) (*mcp.Ca
 	}
 
 	query := args.Query
-	params := append([]any{userID}, args.Params...)
 
-	// Enhanced security validation
+	// Enhanced security validation BEFORE parameter injection
 	if err := validateSecureQuery(query); err != nil {
 		h.Logger.WarnContext(ctx, "rejected insecure query",
 			"error", err,
@@ -59,6 +58,9 @@ func (h *Handler) QueryDB(ctx context.Context, req mcp.CallToolRequest) (*mcp.Ca
 			"user_id", userID)
 		return mcp.NewToolResultError(fmt.Sprintf("security validation failed: %v", err)), nil
 	}
+
+	// Inject user_id as first parameter after validation
+	params := append([]any{userID}, args.Params...)
 
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
@@ -68,8 +70,8 @@ func (h *Handler) QueryDB(ctx context.Context, req mcp.CallToolRequest) (*mcp.Ca
 		return mcp.NewToolResultError(fmt.Sprintf("query failed: %v", err)), nil
 	}
 	defer func() {
-		if err := rows.Close(); err != nil {
-			h.Logger.ErrorContext(ctx, "failed to close rows", "error", err, "query", query)
+		if closeErr := rows.Close(); closeErr != nil {
+			h.Logger.ErrorContext(ctx, "failed to close rows", "error", closeErr, "query", query)
 		}
 	}()
 
@@ -158,6 +160,7 @@ func validateSecureQuery(query string) error {
 	}
 
 	// 4. Ensure the query contains 'WHERE USER_ID = ?' as the first WHERE clause
+	// Note: user_id parameter is automatically injected as the first parameter
 	re := regexp.MustCompile(`(?i)^\s*SELECT\s+.*\s+FROM\s+.*\s+WHERE\s+USER_ID\s*=\s*\?\s*(?:AND|OR|ORDER BY|GROUP BY|LIMIT|$)`)
 	if !re.MatchString(query) {
 		return ErrInvalidWhereClause
