@@ -137,6 +137,9 @@ var (
 	ErrSubqueriesNotAllowed = errors.New("subqueries not allowed")
 	ErrInvalidWhereClause   = errors.New("queries must start with 'WHERE user_id = ?' as the first WHERE clause")
 	ErrForbiddenKeyword     = errors.New("forbidden keyword")
+
+	userIDWhereClauseRegex = regexp.MustCompile(`(?i)^\s*SELECT\s+.*\s+FROM\s+.*\s+WHERE\s+USER_ID\s*=\s*\?\s*(?:AND|ORDER BY|GROUP BY|LIMIT|$)`)
+	forbiddenKeywords      = []string{"UNION", "INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "EXEC", "PRAGMA", "ATTACH", "DETACH"}
 )
 
 func validateSecureQuery(query string) error {
@@ -146,9 +149,8 @@ func validateSecureQuery(query string) error {
 	}
 
 	// 2. Block dangerous keywords
-	forbidden := []string{"UNION", "INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "EXEC", "PRAGMA", "ATTACH", "DETACH"}
 	upperQuery := strings.ToUpper(query)
-	for _, keyword := range forbidden {
+	for _, keyword := range forbiddenKeywords {
 		if strings.Contains(upperQuery, keyword) {
 			return fmt.Errorf("%w: %s", ErrForbiddenKeyword, keyword)
 		}
@@ -161,8 +163,7 @@ func validateSecureQuery(query string) error {
 
 	// 4. Ensure the query contains 'WHERE USER_ID = ?' as the first WHERE clause
 	// Note: user_id parameter is automatically injected as the first parameter
-	re := regexp.MustCompile(`(?i)^\s*SELECT\s+.*\s+FROM\s+.*\s+WHERE\s+USER_ID\s*=\s*\?\s*(?:AND|ORDER BY|GROUP BY|LIMIT|$)`)
-	if !re.MatchString(query) {
+	if !userIDWhereClauseRegex.MatchString(query) {
 		return ErrInvalidWhereClause
 	}
 
