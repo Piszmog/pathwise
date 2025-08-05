@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -129,10 +130,17 @@ func rowsToJSON(rows *sql.Rows) ([]map[string]any, error) {
 	return results, nil
 }
 
+var (
+	ErrCommentsNotAllowed   = errors.New("comments not allowed in queries")
+	ErrSubqueriesNotAllowed = errors.New("subqueries not allowed")
+	ErrInvalidWhereClause   = errors.New("queries must start with 'WHERE user_id = ?' as the first WHERE clause")
+	ErrForbiddenKeyword     = errors.New("forbidden keyword")
+)
+
 func validateSecureQuery(query string) error {
 	// 1. Block comments
 	if strings.Contains(query, "/*") || strings.Contains(query, "--") {
-		return fmt.Errorf("comments not allowed in queries")
+		return ErrCommentsNotAllowed
 	}
 
 	// 2. Block dangerous keywords
@@ -140,25 +148,20 @@ func validateSecureQuery(query string) error {
 	upperQuery := strings.ToUpper(query)
 	for _, keyword := range forbidden {
 		if strings.Contains(upperQuery, keyword) {
-			return fmt.Errorf("forbidden keyword: %s", keyword)
+			return fmt.Errorf("%w: %s", ErrForbiddenKeyword, keyword)
 		}
 	}
 
 	// 3. Block subqueries
 	if strings.Contains(upperQuery, "(SELECT") {
-		return fmt.Errorf("subqueries not allowed")
+		return ErrSubqueriesNotAllowed
 	}
 
 	// 4. Ensure the query contains 'WHERE USER_ID = ?' as the first WHERE clause
 	re := regexp.MustCompile(`(?i)^\s*SELECT\s+.*\s+FROM\s+.*\s+WHERE\s+USER_ID\s*=\s*\?\s*(?:AND|OR|ORDER BY|GROUP BY|LIMIT|$)`)
 	if !re.MatchString(query) {
-		return fmt.Errorf("queries must start with 'WHERE user_id = ?' as the first WHERE clause")
+		return ErrInvalidWhereClause
 	}
 
 	return nil
-}
-
-func isSelectQuery(query string) bool {
-	trimmed := strings.TrimSpace(strings.ToUpper(query))
-	return strings.HasPrefix(trimmed, "SELECT")
 }

@@ -7,5 +7,6 @@ import (
 
 type Tool struct {
 	mcp.Tool
+
 	HandlerFunc server.ToolHandlerFunc
 }
