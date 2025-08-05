@@ -27,7 +27,7 @@ func (h *Handler) NewQueryDBTool() Tool {
 			mcp.WithArray(
 				"params",
 				mcp.Required(),
-				mcp.Description("The parameters to pass to the query. 'user_id' value will be injected by the MCP Server. Tables that do not have a 'user_id' column should be joined with another table that does have a 'user_id' column."),
+				mcp.Description("The parameters to pass to the query (excluding user_id). The user_id value will be automatically injected as the first parameter. Your query must start with 'WHERE user_id = ?' and your params should correspond to any additional ? placeholders."),
 			),
 		),
 		HandlerFunc: h.QueryDB,
@@ -139,6 +139,7 @@ var (
 	ErrForbiddenKeyword     = errors.New("forbidden keyword")
 
 	userIDWhereClauseRegex = regexp.MustCompile(`(?i)^\s*SELECT\s+.*\s+FROM\s+.*\s+WHERE\s+USER_ID\s*=\s*\?\s*(?:AND|ORDER BY|GROUP BY|LIMIT|$)`)
+	subqueryRegex          = regexp.MustCompile(`(?i)\(\s*SELECT\s+`)
 	forbiddenKeywords      = []string{"UNION", "INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "EXEC", "PRAGMA", "ATTACH", "DETACH"}
 )
 
@@ -156,13 +157,13 @@ func validateSecureQuery(query string) error {
 		}
 	}
 
-	// 3. Block subqueries
-	if strings.Contains(upperQuery, "(SELECT") {
+	// 3. Block subqueries - more precise detection
+	if subqueryRegex.MatchString(query) {
 		return ErrSubqueriesNotAllowed
 	}
 
 	// 4. Ensure the query contains 'WHERE USER_ID = ?' as the first WHERE clause
-	// Note: user_id parameter is automatically injected as the first parameter
+	// The user_id value will be automatically injected as the first parameter during execution
 	if !userIDWhereClauseRegex.MatchString(query) {
 		return ErrInvalidWhereClause
 	}
