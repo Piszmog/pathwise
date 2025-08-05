@@ -13,7 +13,7 @@ func (h *Handler) NewListTablesTool() Tool {
 	return Tool{
 		Tool: mcp.NewTool(
 			"list_tables",
-			mcp.WithDescription("List the tables available to be queries"),
+			mcp.WithDescription("List the tables available to be queried"),
 		),
 		HandlerFunc: h.ListTables,
 	}
