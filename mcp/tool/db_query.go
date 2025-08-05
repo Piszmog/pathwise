@@ -146,7 +146,7 @@ func validateSecureQuery(query string) error {
 	}
 
 	// 2. Block dangerous keywords
-	forbidden := []string{"UNION", "INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "EXEC"}
+	forbidden := []string{"UNION", "INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "EXEC", "PRAGMA", "ATTACH", "DETACH"}
 	upperQuery := strings.ToUpper(query)
 	for _, keyword := range forbidden {
 		if strings.Contains(upperQuery, keyword) {
