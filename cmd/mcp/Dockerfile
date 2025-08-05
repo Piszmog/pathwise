@@ -10,7 +10,7 @@ COPY . /app
 RUN apt-get update \
     && go mod download \
     && go tool sqlc generate \
-    && go build -ldflags="-s -w -X github.com/Piszmog/pathwise/internal/version.Value=${VERSION}" -o ui ./cmd/mcp
+    && go build -ldflags="-s -w -X github.com/Piszmog/pathwise/internal/version.Value=${VERSION}" -o mcp ./cmd/mcp
 
 ## Deploy
 FROM gcr.io/distroless/static-debian12
