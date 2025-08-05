@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -49,12 +50,13 @@ func (h *Handler) QueryDB(ctx context.Context, req mcp.CallToolRequest) (*mcp.Ca
 	query := args.Query
 	params := append([]any{userID}, args.Params...)
 
-	if !strings.Contains(strings.ToUpper(query), "WHERE USER_ID = ?") {
-		return mcp.NewToolResultError("queries must include 'WHERE user_id = ?' clause"), nil
-	}
-
-	if !isSelectQuery(query) {
-		return mcp.NewToolResultError("only SELECT queries are allowed"), nil
+	// Enhanced security validation
+	if err := validateSecureQuery(query); err != nil {
+		h.Logger.WarnContext(ctx, "rejected insecure query",
+			"error", err,
+			"query", query,
+			"user_id", userID)
+		return mcp.NewToolResultError(fmt.Sprintf("security validation failed: %v", err)), nil
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
@@ -125,6 +127,35 @@ func rowsToJSON(rows *sql.Rows) ([]map[string]any, error) {
 	}
 
 	return results, nil
+}
+
+func validateSecureQuery(query string) error {
+	// 1. Block comments
+	if strings.Contains(query, "/*") || strings.Contains(query, "--") {
+		return fmt.Errorf("comments not allowed in queries")
+	}
+
+	// 2. Block dangerous keywords
+	forbidden := []string{"UNION", "INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "EXEC"}
+	upperQuery := strings.ToUpper(query)
+	for _, keyword := range forbidden {
+		if strings.Contains(upperQuery, keyword) {
+			return fmt.Errorf("forbidden keyword: %s", keyword)
+		}
+	}
+
+	// 3. Block subqueries
+	if strings.Contains(upperQuery, "(SELECT") {
+		return fmt.Errorf("subqueries not allowed")
+	}
+
+	// 4. Ensure the query contains 'WHERE USER_ID = ?' as the first WHERE clause
+	re := regexp.MustCompile(`(?i)^\s*SELECT\s+.*\s+FROM\s+.*\s+WHERE\s+USER_ID\s*=\s*\?\s*(?:AND|OR|ORDER BY|GROUP BY|LIMIT|$)`)
+	if !re.MatchString(query) {
+		return fmt.Errorf("queries must start with 'WHERE user_id = ?' as the first WHERE clause")
+	}
+
+	return nil
 }
 
 func isSelectQuery(query string) bool {
