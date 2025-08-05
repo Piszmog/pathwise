@@ -161,7 +161,7 @@ func validateSecureQuery(query string) error {
 
 	// 4. Ensure the query contains 'WHERE USER_ID = ?' as the first WHERE clause
 	// Note: user_id parameter is automatically injected as the first parameter
-	re := regexp.MustCompile(`(?i)^\s*SELECT\s+.*\s+FROM\s+.*\s+WHERE\s+USER_ID\s*=\s*\?\s*(?:AND|OR|ORDER BY|GROUP BY|LIMIT|$)`)
+	re := regexp.MustCompile(`(?i)^\s*SELECT\s+.*\s+FROM\s+.*\s+WHERE\s+USER_ID\s*=\s*\?\s*(?:AND|ORDER BY|GROUP BY|LIMIT|$)`)
 	if !re.MatchString(query) {
 		return ErrInvalidWhereClause
 	}
