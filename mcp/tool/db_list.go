@@ -77,7 +77,9 @@ func (h *Handler) getTableColumns(ctx context.Context, tableName string) ([]colu
 		return nil, err
 	}
 	defer func() {
-		_ = rows.Close()
+		if err := rows.Close(); err != nil {
+			h.Logger.ErrorContext(ctx, "failed to close rows", "error", err, "table", tableName)
+		}
 	}()
 
 	var columns []columnInfo
