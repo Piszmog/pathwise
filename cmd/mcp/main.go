@@ -51,6 +51,7 @@ func main() {
 		database,
 		server.AddTool(toolHandlers.NewJobApplicationsTool()),
 		server.AddTool(toolHandlers.NewJobApplicationsStatusHistoryTool()),
+		server.AddTool(toolHandlers.NewJobApplicationsNotesTool()),
 	)
 
 	if err = srv.Start(); err != nil {
