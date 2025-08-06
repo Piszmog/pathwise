@@ -49,8 +49,7 @@ func main() {
 		":"+port,
 		l,
 		database,
-		server.AddTool(toolHandlers.NewListTablesTool()),
-		server.AddTool(toolHandlers.NewQueryDBTool()),
+		server.AddTool(toolHandlers.NewJobApplicationsTool()),
 	)
 
 	if err = srv.Start(); err != nil {
