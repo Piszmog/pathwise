@@ -27,3 +27,21 @@ VALUES (?, ?);
 
 -- name: CountJobApplicationStatusHistoriesByJobApplicationID :one
 SELECT COUNT(*) FROM job_application_status_histories WHERE job_application_id = ?;
+
+-- name: GetJobApplicationStatusHistoryByJobApplicationIDAndUserID :many
+SELECT
+	h.created_at, h.status, h.id, h.job_application_id
+FROM 
+	job_application_status_histories h
+JOIN job_applications ja ON h.job_application_id = ja.id
+WHERE
+	h.job_application_id = ? AND ja.user_id = ?;
+
+-- name: GetAllJobApplicationStatusHistoryByUserID :many
+SELECT
+	h.created_at, h.status, h.id, h.job_application_id
+FROM 
+	job_application_status_histories h
+JOIN job_applications ja ON h.job_application_id = ja.id
+WHERE
+	ja.user_id = ?;
