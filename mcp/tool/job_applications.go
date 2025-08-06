@@ -27,7 +27,9 @@ func (h *Handler) GetJobApplications(ctx context.Context, req mcp.CallToolReques
 	data, err := h.Database.Queries().GetAllJobApplicationsByUserID(ctx, userID)
 	if err != nil {
 		h.Logger.ErrorContext(ctx, "failed to retrieve job applications", "error", err, "user_id", userID)
-		return nil, errors.New("failed to retrieve job applications")
+		return nil, errJobApplications
 	}
 	return mcp.NewToolResultStructuredOnly(data), nil
 }
+
+var errJobApplications = errors.New("failed to retrieve job applications")
