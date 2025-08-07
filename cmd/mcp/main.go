@@ -1,15 +1,13 @@
 package main
 
 import (
-	"errors"
 	"os"
 
 	"github.com/Piszmog/pathwise/internal/db"
 	"github.com/Piszmog/pathwise/internal/logger"
 	"github.com/Piszmog/pathwise/internal/version"
-	"github.com/Piszmog/pathwise/ui/server"
-	"github.com/Piszmog/pathwise/ui/server/router"
-	"github.com/golang-migrate/migrate/v4"
+	"github.com/Piszmog/pathwise/mcp/server"
+	"github.com/Piszmog/pathwise/mcp/tool"
 )
 
 func main() {
@@ -34,27 +32,30 @@ func main() {
 		}
 	}()
 
-	if _, err = database.DB().Exec("PRAGMA foreign_keys = ON;"); err != nil {
-		l.Error("failed to enable foreign keys", "error", err)
-		return
-	}
-
-	if err = db.Migrate(database); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		l.Error("failed to migrate database", "error", err)
-		return
-	}
-
 	v := os.Getenv("VERSION")
 	if v != "" {
 		version.Value = v
 	}
-
-	r := router.New(l, database)
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	server.New(l, ":"+port, server.WithHandler(r)).StartAndWait()
+	toolHandlers := tool.Handler{Logger: l, Database: database}
+
+	srv := server.New(
+		"Pathwise MCP Server",
+		":"+port,
+		l,
+		database,
+		server.AddTool(toolHandlers.NewJobApplicationsTool()),
+		server.AddTool(toolHandlers.NewJobApplicationsStatusHistoryTool()),
+		server.AddTool(toolHandlers.NewJobApplicationsNotesTool()),
+	)
+
+	if err = srv.Start(); err != nil {
+		l.Error("failed to run the MCP server", "error", err)
+		return
+	}
 }

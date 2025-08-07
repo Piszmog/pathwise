@@ -1,12 +1,12 @@
-name: CI UI
+name: CI MCP
 on:
   workflow_dispatch:
   push:
     branches:
       - main
     paths:
-      - 'ui/**'
-      - 'cmd/ui/**'
+      - 'mcp/**'
+      - 'cmd/mcp/**'
       - 'internal/**'
       - 'sqlc.yml'
       - 'go.mod'
@@ -15,15 +15,15 @@ on:
     branches:
       - main
     paths:
-      - 'ui/**'
-      - 'cmd/ui/**'
+      - 'mcp/**'
+      - 'cmd/mcp/**'
       - 'internal/**'
       - 'sqlc.yml'
       - 'go.mod'
       - 'go.sum'
 jobs:
-  e2e:
-    name: End-to-End
+  integration:
+    name: Integration
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,9 +32,8 @@ jobs:
           go-version-file: 'go.mod'
           cache: false
       - run: go mod download
-      - run: go tool templ generate -path ./ui/components
       - run: go tool sqlc generate
-      - run: go test ./... -tags=e2e -v
+      - run: go test ./mcp/tool/... -tags=integration -v
   docker-publish:
     name: Docker
     runs-on: ubuntu-latest
@@ -42,7 +41,7 @@ jobs:
       contents: read
       packages: write
     needs:
-      - e2e
+      - integration
     steps:
       - uses: actions/checkout@v4
       - uses: docker/login-action@v3
@@ -57,7 +56,7 @@ jobs:
       - uses: docker/build-push-action@v5
         with:
           context: .
-          file: cmd/ui/Dockerfile
+          file: cmd/mcp/Dockerfile
           push: ${{ github.ref == 'refs/heads/main' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
