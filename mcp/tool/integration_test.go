@@ -1,10 +1,11 @@
+//go:build integration
+
 package tool_test
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io"
 	"log/slog"
 	"os"
 	"strings"
@@ -23,15 +24,16 @@ func setupTestDB(t *testing.T) db.Database {
 	database, err := db.New(setupTestLogger(), db.DatabaseOpts{URL: dbFile})
 	require.NoError(t, err)
 
-	_, err = database.DB().Exec("PRAGMA foreign_keys = ON")
+	ctx := context.Background()
+	_, err = database.DB().ExecContext(ctx, "PRAGMA foreign_keys = ON")
 	require.NoError(t, err)
 
 	err = db.Migrate(database)
 	require.NoError(t, err)
 
 	t.Cleanup(func() {
-		database.Close()
-		os.Remove(dbFile)
+		_ = database.Close()
+		_ = os.Remove(dbFile)
 	})
 
 	return database
@@ -40,7 +42,7 @@ func setupTestDB(t *testing.T) db.Database {
 func cleanupTestDB(t *testing.T, database db.Database) {
 	t.Helper()
 	if database != nil {
-		database.Close()
+		_ = database.Close()
 	}
 }
 
@@ -50,18 +52,21 @@ func createTestUser(t *testing.T, db *sql.DB, userID int64) {
 	ctx := context.Background()
 	tx, err := db.BeginTx(ctx, nil)
 	require.NoError(t, err)
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	email := fmt.Sprintf("test-user-%d@example.com", userID)
+	//nolint:gosec
 	hashedPassword := "$2a$14$YRpu0/fntbFMA8Zne3hyLufuYhNkeoM/.68SvNXduN0/eE/s0A3hm"
 
-	_, err = tx.Exec(
+	_, err = tx.ExecContext(ctx,
 		"INSERT INTO users (id, email, password, created_at, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
 		userID, email, hashedPassword,
 	)
 	require.NoError(t, err)
 
-	_, err = tx.Exec(
+	_, err = tx.ExecContext(ctx,
 		"INSERT INTO job_application_stats (user_id, total_applications, total_companies, total_applied) VALUES (?, 0, 0, 0)",
 		userID,
 	)
@@ -76,10 +81,12 @@ func insertJobApplication(t *testing.T, db *sql.DB, userID int64, company, title
 	ctx := context.Background()
 	tx, err := db.BeginTx(ctx, nil)
 	require.NoError(t, err)
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	var jobID int64
-	err = tx.QueryRow(`
+	err = tx.QueryRowContext(ctx, `
 		INSERT INTO job_applications (
 			user_id, company, title, url, status, applied_at, archived,
 			salary_min, salary_max, salary_currency, created_at, updated_at
@@ -88,7 +95,7 @@ func insertJobApplication(t *testing.T, db *sql.DB, userID int64, company, title
 	`, userID, company, title, fmt.Sprintf("https://%s.com/jobs", strings.ToLower(strings.ReplaceAll(company, " ", ""))), status).Scan(&jobID)
 	require.NoError(t, err)
 
-	_, err = tx.Exec(`
+	_, err = tx.ExecContext(ctx, `
 		INSERT INTO job_application_status_histories (
 			job_application_id, status, created_at
 		) VALUES (?, ?, CURRENT_TIMESTAMP)
@@ -105,10 +112,12 @@ func insertJobApplicationNote(t *testing.T, db *sql.DB, jobApplicationID int64, 
 	ctx := context.Background()
 	tx, err := db.BeginTx(ctx, nil)
 	require.NoError(t, err)
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	var noteID int64
-	err = tx.QueryRow(`
+	err = tx.QueryRowContext(ctx, `
 		INSERT INTO job_application_notes (job_application_id, note, created_at)
 		VALUES (?, ?, CURRENT_TIMESTAMP)
 		RETURNING id
@@ -125,10 +134,12 @@ func insertJobApplicationStatusHistory(t *testing.T, db *sql.DB, jobApplicationI
 	ctx := context.Background()
 	tx, err := db.BeginTx(ctx, nil)
 	require.NoError(t, err)
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	var historyID int64
-	err = tx.QueryRow(`
+	err = tx.QueryRowContext(ctx, `
 		INSERT INTO job_application_status_histories (job_application_id, status, created_at)
 		VALUES (?, ?, CURRENT_TIMESTAMP)
 		RETURNING id
@@ -140,5 +151,5 @@ func insertJobApplicationStatusHistory(t *testing.T, db *sql.DB, jobApplicationI
 }
 
 func setupTestLogger() *slog.Logger {
-	return slog.New(slog.NewTextHandler(io.Discard, nil))
+	return slog.New(slog.DiscardHandler)
 }
