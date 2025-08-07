@@ -99,6 +99,46 @@ func insertJobApplication(t *testing.T, db *sql.DB, userID int64, company, title
 	return jobID
 }
 
+func insertJobApplicationNote(t *testing.T, db *sql.DB, jobApplicationID int64, note string) int64 {
+	t.Helper()
+
+	ctx := context.Background()
+	tx, err := db.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	var noteID int64
+	err = tx.QueryRow(`
+		INSERT INTO job_application_notes (job_application_id, note, created_at)
+		VALUES (?, ?, CURRENT_TIMESTAMP)
+		RETURNING id
+	`, jobApplicationID, note).Scan(&noteID)
+	require.NoError(t, err)
+
+	require.NoError(t, tx.Commit())
+	return noteID
+}
+
+func insertJobApplicationStatusHistory(t *testing.T, db *sql.DB, jobApplicationID int64, status string) int64 {
+	t.Helper()
+
+	ctx := context.Background()
+	tx, err := db.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	defer tx.Rollback()
+
+	var historyID int64
+	err = tx.QueryRow(`
+		INSERT INTO job_application_status_histories (job_application_id, status, created_at)
+		VALUES (?, ?, CURRENT_TIMESTAMP)
+		RETURNING id
+	`, jobApplicationID, status).Scan(&historyID)
+	require.NoError(t, err)
+
+	require.NoError(t, tx.Commit())
+	return historyID
+}
+
 func setupTestLogger() *slog.Logger {
 	return slog.New(slog.NewTextHandler(io.Discard, nil))
 }
