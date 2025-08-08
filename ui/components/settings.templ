@@ -1,20 +1,20 @@
 package components
 
-templ Settings(email string) {
+templ Settings(email string, hasMcpApiKey bool, mcpKeyCreatedAt string) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@Head()
 		<body class="min-h-screen flex flex-col">
 			<main class="flex-1">
 				@header(CurrentPageSettings)
-				@settings(email)
+				@settings(email, hasMcpApiKey, mcpKeyCreatedAt)
 			</main>
 			@footer()
 		</body>
 	</html>
 }
 
-templ settings(email string) {
+templ settings(email string, hasMcpApiKey bool, mcpKeyCreatedAt string) {
 	<style type="text/css">
 		form.htmx-request {
 			opacity: 0.5;
@@ -131,6 +131,7 @@ templ settings(email string) {
 				</div>
 			</form>
 		</div>
+		@McpAuthSection(hasMcpApiKey, mcpKeyCreatedAt)
 		<div class="grid grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
 			<div>
 				<h2 class="text-base font-semibold leading-7">Delete account</h2>
