@@ -1,16 +1,27 @@
 # AGENTS.md - Development Guide for Pathwise
 
 ## Project Overview
-Pathwise is a job application tracking web application built with Go, templ, HTMX, and SQLite. It helps users track job applications with features like status updates, notes, salary tracking, and timeline views.
+Pathwise is a job application tracking system with two main components:
+1. **Web Application** (`cmd/ui/`): Built with Go, templ, HTMX, and SQLite for interactive job tracking
+2. **MCP Server** (`cmd/mcp/`): Model Context Protocol server providing programmatic access to job data
 
-**Note**: This follows standard Go project layout with the main application in `cmd/ui/` and private code in `internal/`. Commands should be run from the project root unless otherwise specified.
+**Note**: This follows standard Go project layout with applications in `cmd/` and private code in `internal/`. Commands should be run from the project root unless otherwise specified.
 
 ## Build & Test Commands
+
+### Web Application (UI)
 - **Build**: `go build -o ./tmp/main ./cmd/ui`
 - **Run dev**: `cd cmd/ui && air` (uses .air.toml config with hot reload on port 8080)
+- **E2E tests**: `go test -tags=e2e ./ui/e2e/...` (requires Playwright)
+
+### MCP Server
+- **Build**: `go build -o ./tmp/mcp ./cmd/mcp`
+- **Run**: `./tmp/mcp` (runs MCP server on port 8080 by default)
+- **Integration tests**: `go test ./mcp/tool/... -tags=integration`
+
+### General
 - **Test all**: `go test ./...`
 - **Test single**: `go test ./path/to/package -run TestName`
-- **E2E tests**: `go test -tags=e2e ./ui/e2e/...` (requires Playwright)
 - **Lint**: `golangci-lint run` (check for linting errors)
 - **Generate code**: `go tool templ generate -path ./ui/components && go tool go-tw -i ./ui/styles/input.css -o ./ui/dist/assets/css/output@dev.css && go tool sqlc generate`
 
@@ -41,7 +52,8 @@ Pathwise is a job application tracking web application built with Go, templ, HTM
 - **JobApplicationStatus**: Enum with values: applied, watching, interviewing, offered, accepted, rejected, declined, withdrawn, canceled, closed
 - **JobApplicationNote**: Timeline notes attached to applications
 - **JobApplicationStatusHistory**: Timeline of status changes
-- **User**: Authentication with email/password, sessions with tokens
+- **User**: Authentication with email/password, sessions with tokens, MCP API keys
+- **McpAPIKey**: API keys for MCP server authentication (key_hash, user_id)
 - **Timeline Interface**: Both notes and status history implement JobApplicationTimelineEntry
 
 ## Templ Guidelines (https://templ.guide)
@@ -73,15 +85,23 @@ Pathwise is a job application tracking web application built with Go, templ, HTM
 - **Integration**: Handlers return templ components via `h.html()`, use URL query parameters for filtering/pagination
 
 ## Project Structure
-- `cmd/ui/`: Application entry point and configuration
-  - `main.go`: Application entry point
-  - `.air.toml`: Hot reload configuration for development
-  - `Dockerfile`: Container configuration
+- `cmd/`: Application entry points
+  - `ui/`: Web application entry point and configuration
+    - `main.go`: Web application entry point
+    - `.air.toml`: Hot reload configuration for development
+    - `Dockerfile`: Container configuration
+  - `mcp/`: MCP server entry point and configuration
+    - `main.go`: MCP server entry point
+    - `Dockerfile`: Container configuration for MCP server
 - `internal/`: Private application code
   - `db/`: Database migrations (up/down SQL), sqlc queries, connection logic
   - `logger/`: Structured logging setup with slog
-  - `server/`: Core server setup and middleware
+  - `context_key/`: Context key definitions for request context
   - `version/`: Application version management
+- `mcp/`: MCP server implementation
+  - `server/`: MCP server setup and middleware
+    - `middleware/`: Authentication middleware for MCP API
+  - `tool/`: MCP tool implementations (job_applications, notes, status_history)
 - `ui/`: Frontend code and assets
   - `components/`: Templ templates (.templ files compiled to .go)
   - `server/`: HTTP handlers, middleware (auth, cache), routing
@@ -99,6 +119,7 @@ Pathwise is a job application tracking web application built with Go, templ, HTM
 - **job_application_notes**: id, job_application_id, note, created_at, updated_at
 - **job_application_status_history**: id, job_application_id, status, created_at, updated_at
 - **user_ips**: id, user_id, ip_address, created_at, updated_at
+- **mcp_api_keys**: id, user_id, key_hash, created_at, updated_at (for MCP server authentication)
 
 ## SQLC Guidelines (https://docs.sqlc.dev/en/latest/tutorials/getting-started-sqlite.html)
 - **Configuration**: sqlc.yml defines engine (sqlite), queries path (internal/db/queries/), schema (internal/db/migrations), and output (internal/db/queries)
@@ -122,9 +143,22 @@ Pathwise is a job application tracking web application built with Go, templ, HTM
   ```
 
 ## Handler Patterns
+
+### Web Application (UI)
 - **Base Handler**: `Handler` struct with `Logger *slog.Logger` and `Database db.Database`
 - **Rendering**: Use `h.html(ctx, w, status, component)` for templ components
 - **User ID**: Extract from `USER-ID` header via `getUserID(r *http.Request)`
 - **Client IP**: Extract via `getClientIP(r *http.Request)` with X-Forwarded-For support
 - **Error Handling**: Log errors with structured logging, return appropriate HTTP status codes
 - **Database Queries**: Use sqlc-generated queries via `h.Database.Queries()` for type-safe database operations
+
+### MCP Server
+- **Base Handler**: `Handler` struct with `Logger *slog.Logger` and `Database db.Database`
+- **Tool Structure**: Each tool implements `Tool` struct with `mcp.Tool` and `HandlerFunc`
+- **Authentication**: User ID extracted from context via `contextkey.KeyUserID` after middleware authentication
+- **Error Handling**: Return `mcp.NewToolResultError()` for user-facing errors, log internal errors
+- **Response Format**: Use `mcp.NewToolResultStructuredOnly(data)` to return structured data
+- **Available Tools**: 
+  - `job_applications`: Get all job applications for authenticated user
+  - `job_applications_status_history`: Get status history for job applications
+  - `job_applications_notes`: Get notes for job applications
