@@ -63,3 +63,4 @@ Temporary Items
 **/db/queries/*.go
 **/goreleaser-dist
 **/pathwise
+.env
