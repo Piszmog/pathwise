@@ -1,0 +1,145 @@
+package components
+
+templ McpAuthSection(hasKey bool, createdAt string) {
+	<div id="mcp-api-key-section" class="grid grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
+		if hasKey {
+			@mcpAuthManage(createdAt)
+		} else {
+			@mcpAuthGenerate()
+		}
+	</div>
+}
+
+templ mcpAuthGenerate() {
+	<div>
+		<h2 class="text-base font-semibold leading-7">MCP API Key</h2>
+		<p class="mt-1 text-sm leading-6 text-gray-400">
+			Generate an API key to authenticate with the MCP server for
+			programmatic access to your job data.
+		</p>
+	</div>
+	<div class="md:col-span-2">
+		<button
+			type="button"
+			class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+			hx-post="/settings/mcp/auth"
+			hx-target="body"
+			hx-swap="beforeend"
+		>
+			Generate API Key
+		</button>
+	</div>
+}
+
+templ mcpAuthManage(createdAt string) {
+	<div>
+		<h2 class="text-base font-semibold leading-7">MCP API Key</h2>
+		<p class="mt-1 text-sm leading-6 text-gray-400">
+			Your API key was created on { createdAt }. You can regenerate or
+			delete it below.
+		</p>
+	</div>
+	<div class="md:col-span-2">
+		<div class="flex gap-3">
+			<button
+				type="button"
+				class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+				hx-patch="/settings/mcp/auth"
+				hx-target="body"
+				hx-swap="beforeend"
+			>
+				Regenerate Key
+			</button>
+			<button
+				type="button"
+				class="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+				hx-delete="/settings/mcp/auth"
+				hx-target="#mcp-api-key-section"
+				hx-swap="outerHTML"
+			>
+				Delete Key
+			</button>
+		</div>
+	</div>
+}
+
+templ McpAuthModal(apiKey string) {
+	@modal("mcp-api-key") {
+		@mcpAuthModalContent(apiKey)
+	}
+}
+
+templ mcpAuthModalContent(apiKey string) {
+	<div class="sm:flex sm:items-start">
+		<div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+			<h3 class="text-base font-semibold text-gray-900" id="mcp-api-key-modal-title">Your MCP API Key</h3>
+			<div class="mt-2">
+				<p class="text-sm text-gray-500 mb-4">
+					Copy this API key and store it securely. You won't be able
+					to see it again.
+				</p>
+				<div class="mt-2">
+					<input
+						id="mcp-api-key-input"
+						type="text"
+						readonly
+						value={ apiKey }
+						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 bg-gray-50 sm:text-sm sm:leading-6"
+					/>
+				</div>
+				<div class="mt-3">
+					<button
+						type="button"
+						onclick="copyApiKey()"
+						class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+					>
+						Copy to Clipboard
+					</button>
+				</div>
+				<div class="mt-4 p-3 bg-yellow-50 rounded-md">
+					<p class="text-xs text-yellow-800">
+						⚠️ Keep this key secure and never share it publicly.
+						It provides full access to your job application data.
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+		<button
+			type="button"
+			class="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-blue-500 sm:ml-3 sm:w-auto"
+			onclick="toggleModal('mcp-api-key')"
+		>
+			Done
+		</button>
+	</div>
+	<script type="text/javascript">
+	function copyApiKey() {
+		const input = document.getElementById('mcp-api-key-input');
+		input.select();
+		input.setSelectionRange(0, 99999);
+		document.execCommand('copy');
+
+		const button = event.target;
+		const originalText = button.textContent;
+		button.textContent = 'Copied!';
+		button.classList.add('bg-green-600', 'hover:bg-green-500');
+		button.classList.remove('bg-blue-600', 'hover:bg-blue-500');
+
+		setTimeout(() => {
+			button.textContent = originalText;
+			button.classList.remove('bg-green-600', 'hover:bg-green-500');
+			button.classList.add('bg-blue-600', 'hover:bg-blue-500');
+		}, 2000);
+	}
+</script>
+}
+
+templ McpAuthModalWithSectionUpdate(apiKey string, createdAt string) {
+	@McpAuthModal(apiKey)
+	<div hx-swap-oob="outerHTML:#mcp-api-key-section">
+		@McpAuthSection(true, createdAt)
+	</div>
+	<script>toggleModal('mcp-api-key')</script>
+}

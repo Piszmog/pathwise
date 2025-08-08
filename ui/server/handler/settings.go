@@ -1,13 +1,18 @@
 package handler
 
 import (
+	"crypto/sha256"
+	"database/sql"
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/Piszmog/pathwise/ui/components"
 	"github.com/Piszmog/pathwise/internal/db/queries"
+	"github.com/Piszmog/pathwise/ui/components"
 	"github.com/Piszmog/pathwise/ui/types"
 	"github.com/Piszmog/pathwise/ui/utils"
+	"github.com/google/uuid"
 )
 
 func (h *Handler) Settings(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +30,19 @@ func (h *Handler) Settings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.html(r.Context(), w, http.StatusOK, components.Settings(user.Email))
+	mcpAPIKeyCreatedAt, err := h.Database.Queries().GetMcpAPIKeyByUserID(r.Context(), userID)
+	hasMcpAPIKey := false
+	mcpKeyCreatedAt := ""
+	if err == nil {
+		hasMcpAPIKey = true
+		mcpKeyCreatedAt = mcpAPIKeyCreatedAt.Format("January 2, 2006")
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		h.Logger.ErrorContext(r.Context(), "failed to check MCP API key", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	h.html(r.Context(), w, http.StatusOK, components.Settings(user.Email, hasMcpAPIKey, mcpKeyCreatedAt))
 }
 
 func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
@@ -161,4 +178,90 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.Header().Set("HX-Redirect", "/signin")
+}
+
+func (h *Handler) CreateMcpAuth(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserID(r)
+	if err != nil {
+		h.Logger.ErrorContext(r.Context(), "failed to parse user id", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	_, err = h.Database.Queries().GetMcpAPIKeyByUserID(r.Context(), userID)
+	if err == nil {
+		h.Logger.DebugContext(r.Context(), "user already has MCP API key")
+		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "API key already exists", "You already have an MCP API key. Delete it first to create a new one."))
+		return
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		h.Logger.ErrorContext(r.Context(), "failed to check existing MCP API key", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	plainAPIKey := uuid.New().String()
+	keyHash := fmt.Sprintf("%x", sha256.Sum256([]byte(plainAPIKey)))
+
+	result, err := h.Database.Queries().InsertMcpAPIKey(r.Context(), queries.InsertMcpAPIKeyParams{
+		UserID:  userID,
+		KeyHash: keyHash,
+	})
+	if err != nil {
+		h.Logger.ErrorContext(r.Context(), "failed to create MCP API key", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	createdAt := result.CreatedAt.Format("January 2, 2006")
+
+	h.html(r.Context(), w, http.StatusOK, components.McpAuthModalWithSectionUpdate(plainAPIKey, createdAt))
+}
+
+func (h *Handler) RegenerateMcpAuth(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserID(r)
+	if err != nil {
+		h.Logger.ErrorContext(r.Context(), "failed to parse user id", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	if err = h.Database.Queries().DeleteMcpAPIKeyByUserID(r.Context(), userID); err != nil {
+		h.Logger.ErrorContext(r.Context(), "failed to delete existing MCP API key", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	plainAPIKey := uuid.New().String()
+	keyHash := fmt.Sprintf("%x", sha256.Sum256([]byte(plainAPIKey)))
+
+	result, err := h.Database.Queries().InsertMcpAPIKey(r.Context(), queries.InsertMcpAPIKeyParams{
+		UserID:  userID,
+		KeyHash: keyHash,
+	})
+	if err != nil {
+		h.Logger.ErrorContext(r.Context(), "failed to create new MCP API key", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	createdAt := result.CreatedAt.Format("January 2, 2006")
+
+	h.html(r.Context(), w, http.StatusOK, components.McpAuthModalWithSectionUpdate(plainAPIKey, createdAt))
+}
+
+func (h *Handler) DeleteMcpAuth(w http.ResponseWriter, r *http.Request) {
+	userID, err := getUserID(r)
+	if err != nil {
+		h.Logger.ErrorContext(r.Context(), "failed to parse user id", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	if err = h.Database.Queries().DeleteMcpAPIKeyByUserID(r.Context(), userID); err != nil {
+		h.Logger.ErrorContext(r.Context(), "failed to delete MCP API key", "error", err)
+		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeError, "Something went wrong", "Try again later."))
+		return
+	}
+
+	h.html(r.Context(), w, http.StatusOK, components.McpAuthSection(false, ""))
 }

@@ -1,6 +1,11 @@
 # Pathwise
 
-A modern job application tracking web application built with Go, templ, HTMX, and SQLite. Pathwise helps you organize and track your job search with features like status updates, notes, salary tracking, timeline views, and export capabilities.
+A modern job application tracking system with both web interface and programmatic access. Built with Go, templ, HTMX, and SQLite, Pathwise helps you organize and track your job search with features like status updates, notes, salary tracking, timeline views, and export capabilities.
+
+## Components
+
+- **Web Application**: Interactive web interface for managing job applications
+- **MCP Server**: Model Context Protocol server providing programmatic access to your job data
 
 > **Note**: This follows standard Go project layout with the main application in `cmd/ui/` and private code in `internal/`. Commands should be run from the project root unless otherwise specified.
 
@@ -14,6 +19,7 @@ A modern job application tracking web application built with Go, templ, HTMX, an
 - **Export Functionality**: Export your data in various formats
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 - **User Authentication**: Secure login system with session management
+- **MCP Integration**: Programmatic access via Model Context Protocol for AI assistants and automation
 
 ## Tech Stack
 
@@ -52,12 +58,16 @@ A modern job application tracking web application built with Go, templ, HTMX, an
 
 4. **Run the application**
    ```bash
-   # Development with hot reload
+   # Web application with hot reload
    cd cmd/ui && air
 
    # Or build and run manually
    go build -o ./tmp/main ./cmd/ui
    ./tmp/main
+
+   # MCP server (optional, for programmatic access)
+   go build -o ./tmp/mcp ./cmd/mcp
+   ./tmp/mcp
    ```
 
 5. **Open your browser**
@@ -79,17 +89,17 @@ A modern job application tracking web application built with Go, templ, HTMX, an
 ### Commands
 
 ```bash
-# Development server with hot reload
+# Web application development server with hot reload
 cd cmd/ui && air
 
-# Build application
-go build -o ./tmp/main ./cmd/ui
+# Build applications
+go build -o ./tmp/main ./cmd/ui    # Web application
+go build -o ./tmp/mcp ./cmd/mcp    # MCP server
 
 # Run tests
-go test ./...
-
-# Run E2E tests (requires Playwright)
-go test -tags=e2e ./ui/e2e/...
+go test ./...                                    # All tests
+go test -tags=e2e ./ui/e2e/...                  # E2E tests (requires Playwright)
+go test ./mcp/tool/... -tags=integration        # MCP integration tests
 
 # Lint code
 golangci-lint run
@@ -104,18 +114,25 @@ go tool sqlc generate
 
 ```
 pathwise/
-├── cmd/
-│   └── ui/            # Application entry point and configuration
-│       ├── main.go    # Application entry point
-│       ├── .air.toml  # Hot reload configuration
+├── cmd/               # Application entry points
+│   ├── ui/            # Web application
+│   │   ├── main.go    # Web application entry point
+│   │   ├── .air.toml  # Hot reload configuration
+│   │   └── Dockerfile # Container configuration
+│   └── mcp/           # MCP server
+│       ├── main.go    # MCP server entry point
 │       └── Dockerfile # Container configuration
 ├── internal/          # Private application code
 │   ├── db/
 │   │   ├── migrations/# Database schema migrations
 │   │   └── queries/   # SQL queries for sqlc
 │   ├── logger/        # Structured logging setup
-│   ├── server/        # Core server setup and middleware
+│   ├── context_key/   # Context key definitions
 │   └── version/       # Application version management
+├── mcp/               # MCP server implementation
+│   ├── server/        # MCP server setup and middleware
+│   │   └── middleware/# Authentication middleware
+│   └── tool/          # MCP tool implementations
 ├── ui/                # Frontend code and assets
 │   ├── components/    # Templ templates (.templ files)
 │   ├── dist/          # Static assets (CSS, JS, images)
@@ -142,6 +159,7 @@ Pathwise uses SQLite with migrations managed by golang-migrate. The database sch
 - **Notes**: Timeline notes for applications
 - **Status History**: Audit trail of status changes
 - **Sessions**: User session management
+- **MCP API Keys**: Authentication keys for MCP server access
 
 ### Code Generation
 
@@ -160,6 +178,9 @@ go test ./...
 # E2E tests (requires Playwright setup)
 go test -tags=e2e ./ui/e2e/...
 
+# MCP integration tests
+go test ./mcp/tool/... -tags=integration
+
 # Test specific package
 go test ./ui/server/handler -run TestJobHandler
 ```
@@ -169,18 +190,30 @@ go test ./ui/server/handler -run TestJobHandler
 ### Docker
 
 ```bash
-# Build image
-docker build -t pathwise .
+# Build web application image
+docker build -f cmd/ui/Dockerfile -t pathwise-ui .
 
-# Run container
-docker run -p 8080:8080 pathwise
+# Build MCP server image  
+docker build -f cmd/mcp/Dockerfile -t pathwise-mcp .
+
+# Run containers
+docker run -p 8080:8080 pathwise-ui   # Web application
+docker run -p 8081:8080 pathwise-mcp  # MCP server
 ```
 
 ### Manual Deployment
 
-1. Build the application: `go build -o pathwise ./cmd/ui`
+1. Build the applications:
+   ```bash
+   go build -o pathwise-ui ./cmd/ui    # Web application
+   go build -o pathwise-mcp ./cmd/mcp  # MCP server
+   ```
 2. Set environment variables as needed
-3. Run the binary: `./pathwise`
+3. Run the binaries:
+   ```bash
+   ./pathwise-ui   # Web application on port 8080
+   ./pathwise-mcp  # MCP server on port 8080 (or different port)
+   ```
 
 ## Contributing
 
