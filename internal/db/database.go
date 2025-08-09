@@ -9,7 +9,7 @@ import (
 
 	"github.com/Piszmog/pathwise/internal/db/queries"
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
@@ -27,9 +27,11 @@ func New(logger *slog.Logger, opts DatabaseOpts) (Database, error) {
 	var db Database
 	var err error
 	if opts.Token == "" {
-		db, err = newLocalDB(logger, opts.URL)
+		db, err = newLocalDB(logger, opts)
+	} else if opts.PrimaryURL == "" {
+		db, err = newRemoteDB(logger, opts)
 	} else {
-		db, err = newRemoteDB(logger, opts.URL, opts.Token)
+		db, err = newEmbeddedReplicaDB(logger, opts)
 	}
 	if err != nil {
 		return nil, err
@@ -41,12 +43,14 @@ func New(logger *slog.Logger, opts DatabaseOpts) (Database, error) {
 }
 
 type DatabaseOpts struct {
-	URL   string
-	Token string
+	URL           string
+	PrimaryURL    string
+	Token         string
+	EncryptionKey string
 }
 
 func Migrate(db Database) error {
-	driver, err := sqlite3.WithInstance(db.DB(), &sqlite3.Config{})
+	driver, err := sqlite.WithInstance(db.DB(), &sqlite.Config{})
 	if err != nil {
 		return fmt.Errorf("failed to create database driver: %w", err)
 	}
@@ -59,7 +63,7 @@ func Migrate(db Database) error {
 		_ = iofsDriver.Close()
 	}()
 
-	m, err := migrate.NewWithInstance("iofs", iofsDriver, "sqlite3", driver)
+	m, err := migrate.NewWithInstance("iofs", iofsDriver, "sqlite", driver)
 	if err != nil {
 		return fmt.Errorf("failed to create migration: %w", err)
 	}
