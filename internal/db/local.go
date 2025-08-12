@@ -5,8 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/Piszmog/pathwise/internal/db/queries"
-	_ "github.com/tursodatabase/libsql-client-go/libsql"
-	_ "modernc.org/sqlite"
+	_ "github.com/tursodatabase/go-libsql"
 )
 
 type LocalDB struct {
@@ -33,8 +32,8 @@ func (d *LocalDB) Close() error {
 	return d.db.Close()
 }
 
-func newLocalDB(logger *slog.Logger, path string) (*LocalDB, error) {
-	db, err := sql.Open("libsql", "file:"+path)
+func newLocalDB(logger *slog.Logger, opts DatabaseOpts) (*LocalDB, error) {
+	db, err := sql.Open("libsql", "file:"+opts.URL)
 	if err != nil {
 		return nil, err
 	}

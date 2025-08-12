@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"os"
 
 	"github.com/Piszmog/pathwise/internal/db"
@@ -9,7 +8,6 @@ import (
 	"github.com/Piszmog/pathwise/internal/version"
 	"github.com/Piszmog/pathwise/ui/server"
 	"github.com/Piszmog/pathwise/ui/server/router"
-	"github.com/golang-migrate/migrate/v4"
 )
 
 func main() {
@@ -20,9 +18,23 @@ func main() {
 		dbURL = "./db.sqlite3"
 	}
 
+	l.Info("opts", "db",
+		db.DatabaseOpts{
+			URL:           dbURL,
+			PrimaryURL:    os.Getenv("DB_URL_PRIMARY"),
+			Token:         os.Getenv("DB_TOKEN"),
+			EncryptionKey: os.Getenv("ENC_KEY"),
+		},
+	)
+
 	database, err := db.New(
 		l,
-		db.DatabaseOpts{URL: dbURL, Token: os.Getenv("DB_TOKEN")},
+		db.DatabaseOpts{
+			URL:           dbURL,
+			PrimaryURL:    os.Getenv("DB_URL_PRIMARY"),
+			Token:         os.Getenv("DB_TOKEN"),
+			EncryptionKey: os.Getenv("ENC_KEY"),
+		},
 	)
 	if err != nil {
 		l.Error("failed to create database", "error", err)
@@ -39,10 +51,10 @@ func main() {
 		return
 	}
 
-	if err = db.Migrate(database); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		l.Error("failed to migrate database", "error", err)
-		return
-	}
+	// if err = db.Migrate(database); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+	// 	l.Error("failed to migrate database", "error", err)
+	// 	return
+	// }
 
 	v := os.Getenv("VERSION")
 	if v != "" {

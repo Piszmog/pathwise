@@ -5,7 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/Piszmog/pathwise/internal/db/queries"
-	_ "github.com/tursodatabase/libsql-client-go/libsql"
+	_ "github.com/tursodatabase/go-libsql"
 )
 
 type RemoteDB struct {
@@ -32,8 +32,8 @@ func (d *RemoteDB) Close() error {
 	return d.db.Close()
 }
 
-func newRemoteDB(logger *slog.Logger, name string, token string) (*RemoteDB, error) {
-	db, err := sql.Open("libsql", "libsql://"+name+".turso.io?authToken="+token)
+func newRemoteDB(logger *slog.Logger, opts DatabaseOpts) (*RemoteDB, error) {
+	db, err := sql.Open("libsql", "libsql://"+opts.URL+".turso.io?authToken="+opts.Token)
 	if err != nil {
 		return nil, err
 	}

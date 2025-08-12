@@ -20,8 +20,7 @@ import (
 	"time"
 
 	"github.com/playwright-community/playwright-go"
-	_ "github.com/tursodatabase/libsql-client-go/libsql"
-	_ "modernc.org/sqlite"
+	_ "github.com/tursodatabase/go-libsql"
 )
 
 const (
