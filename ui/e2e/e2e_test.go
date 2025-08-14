@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Piszmog/pathwise/internal/testutil"
 	"github.com/playwright-community/playwright-go"
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 	_ "modernc.org/sqlite"
@@ -224,26 +225,6 @@ func cleanDB(t *testing.T) error {
 	return tx.Commit()
 }
 
-func runMigrations(t *testing.T) error {
-	t.Helper()
-
-	repoRoot, err := getRepoRoot()
-	if err != nil {
-		return fmt.Errorf("could not find repo root: %v", err)
-	}
-
-	migrateScript := filepath.Join(repoRoot, "migrate.sh")
-	cmd := exec.Command(migrateScript, "-p", "sqlite3", "-u", dbFile, "-d", "up")
-	cmd.Dir = repoRoot
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("migration failed: %v, output: %s", err, output)
-	}
-
-	return nil
-}
-
 func seedDB(t *testing.T) error {
 	db, err := sql.Open("libsql", getDBURL(t))
 	if err != nil {
@@ -321,7 +302,11 @@ func beforeEach(t *testing.T, contextOptions ...playwright.BrowserNewContextOpti
 	}
 
 	// Run migrations to set up schema
-	if err := runMigrations(t); err != nil {
+	dbPath, err := getDBPath()
+	if err != nil {
+		t.Fatalf("could not get database path: %v", err)
+	}
+	if err := testutil.RunMigrations(t, dbPath); err != nil {
 		t.Fatalf("could not run migrations: %v", err)
 	}
 

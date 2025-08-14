@@ -9,13 +9,13 @@ import (
 	"log/slog"
 	"math/rand"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/Piszmog/pathwise/internal/db"
+	"github.com/Piszmog/pathwise/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -43,47 +43,6 @@ func cleanupLeftoverTestFiles() {
 	for _, file := range matches {
 		_ = os.Remove(file)
 	}
-}
-
-func runMigrations(t *testing.T, dbFile string) error {
-	t.Helper()
-
-	repoRoot, err := getRepoRoot()
-	if err != nil {
-		return fmt.Errorf("could not find repo root: %v", err)
-	}
-
-	migrateScript := filepath.Join(repoRoot, "migrate.sh")
-	cmd := exec.Command(migrateScript, "-p", "sqlite3", "-u", dbFile)
-	cmd.Dir = repoRoot
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("migration failed: %v, output: %s", err, output)
-	}
-
-	return nil
-}
-
-func getRepoRoot() (string, error) {
-	wd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	for {
-		if _, err := os.Stat(filepath.Join(wd, "go.mod")); err == nil {
-			return wd, nil
-		}
-
-		parent := filepath.Dir(wd)
-		if parent == wd {
-			break
-		}
-		wd = parent
-	}
-
-	return "", fmt.Errorf("could not find go.mod")
 }
 
 func setupTestDB(t *testing.T) db.Database {
@@ -126,7 +85,7 @@ func setupTestDB(t *testing.T) db.Database {
 	_, err = database.DB().ExecContext(ctx, "PRAGMA foreign_keys = ON")
 	require.NoError(t, err)
 
-	err = runMigrations(t, dbFile)
+	err = testutil.RunMigrations(t, dbFile)
 	require.NoError(t, err)
 
 	return database
