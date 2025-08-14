@@ -32,8 +32,9 @@ func (d *RemoteDB) Close() error {
 	return d.db.Close()
 }
 
-func newRemoteDB(logger *slog.Logger, name string, token string) (*RemoteDB, error) {
-	db, err := sql.Open("libsql", "libsql://"+name+".turso.io?authToken="+token)
+func newRemoteDB(logger *slog.Logger, url string, token string) (*RemoteDB, error) {
+	fullURL := "libsql://" + url + "?authToken=" + token
+	db, err := sql.Open("libsql", fullURL)
 	if err != nil {
 		return nil, err
 	}

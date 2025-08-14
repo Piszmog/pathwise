@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"os"
 
 	"github.com/Piszmog/pathwise/internal/db"
@@ -9,7 +8,6 @@ import (
 	"github.com/Piszmog/pathwise/internal/version"
 	"github.com/Piszmog/pathwise/ui/server"
 	"github.com/Piszmog/pathwise/ui/server/router"
-	"github.com/golang-migrate/migrate/v4"
 )
 
 func main() {
@@ -36,11 +34,6 @@ func main() {
 
 	if _, err = database.DB().Exec("PRAGMA foreign_keys = ON;"); err != nil {
 		l.Error("failed to enable foreign keys", "error", err)
-		return
-	}
-
-	if err = db.Migrate(database); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		l.Error("failed to migrate database", "error", err)
 		return
 	}
 

@@ -7,34 +7,86 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/Piszmog/pathwise/internal/db"
+	"github.com/Piszmog/pathwise/internal/testutil"
 	"github.com/stretchr/testify/require"
 )
+
+func TestMain(m *testing.M) {
+	// Run tests
+	code := m.Run()
+
+	// Cleanup any remaining test database files
+	cleanupLeftoverTestFiles()
+
+	os.Exit(code)
+}
+
+func cleanupLeftoverTestFiles() {
+	wd, err := os.Getwd()
+	if err != nil {
+		return
+	}
+
+	matches, err := filepath.Glob(filepath.Join(wd, "integration-test-*.sqlite3"))
+	if err != nil {
+		return
+	}
+
+	for _, file := range matches {
+		_ = os.Remove(file)
+	}
+}
 
 func setupTestDB(t *testing.T) db.Database {
 	t.Helper()
 
-	dbFile := fmt.Sprintf("integration-test-%d.sqlite3", time.Now().UnixNano())
+	// Create truly unique filename with test name and timestamp
+	dbFileName := fmt.Sprintf("integration-test-%s-%d-%d.sqlite3",
+		strings.ReplaceAll(t.Name(), "/", "_"),
+		time.Now().UnixNano(),
+		rand.Int())
 
-	database, err := db.New(setupTestLogger(), db.DatabaseOpts{URL: dbFile})
+	// Get absolute path for database file
+	wd, err := os.Getwd()
+	require.NoError(t, err)
+	dbFile := filepath.Join(wd, dbFileName)
+
+	// Ensure cleanup happens even if setup fails
+	var database db.Database
+	cleanup := func() {
+		if database != nil {
+			if err = database.Close(); err != nil {
+				t.Logf("Failed to close database: %v", err)
+			}
+		}
+
+		// Wait a moment for file handles to be released
+		time.Sleep(10 * time.Millisecond)
+
+		// Force remove file (ignore errors if already deleted)
+		if err = os.Remove(dbFile); err != nil && !os.IsNotExist(err) {
+			t.Logf("Failed to remove database file %s: %v", dbFile, err)
+		}
+	}
+	t.Cleanup(cleanup)
+
+	database, err = db.New(setupTestLogger(), db.DatabaseOpts{URL: dbFile})
 	require.NoError(t, err)
 
 	ctx := context.Background()
 	_, err = database.DB().ExecContext(ctx, "PRAGMA foreign_keys = ON")
 	require.NoError(t, err)
 
-	err = db.Migrate(database)
+	err = testutil.RunMigrations(dbFile)
 	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		_ = database.Close()
-		_ = os.Remove(dbFile)
-	})
 
 	return database
 }

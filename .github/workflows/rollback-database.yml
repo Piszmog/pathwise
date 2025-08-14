@@ -1,0 +1,50 @@
+name: Rollback Database Migration
+on:
+  workflow_dispatch:
+    inputs:
+      steps:
+        description: 'Number of migration steps to rollback'
+        required: true
+        type: number
+        default: 1
+      confirmation:
+        description: 'Type "ROLLBACK" to confirm this destructive action'
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  rollback-database:
+    name: Rollback Database Migration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+      - name: Validate confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirmation }}" != "ROLLBACK" ]; then
+            echo "Confirmation failed. You must type 'ROLLBACK' to proceed."
+            exit 1
+          fi
+          echo "Confirmation validated"
+      - name: Validate steps parameter
+        run: |
+          STEPS="${{ github.event.inputs.steps }}"
+          if ! [[ "$STEPS" =~ ^[0-9]+$ ]] || [ "$STEPS" -lt 1 ] || [ "$STEPS" -gt 10 ]; then
+            echo "Steps must be a number between 1 and 10"
+            exit 1
+          fi
+          echo "Will rollback $STEPS migration steps"
+      - name: Run database rollback
+        run: |
+          chmod +x ./migrate.sh
+          ./migrate.sh -p ${{ secrets.DB_PROTOCOL }} -u ${{ secrets.DB_URL }} -t ${{ secrets.DB_TOKEN }} -d down -s ${{ github.event.inputs.steps }}
+      - name: Rollback complete
+        run: |
+          echo "Database rollback completed successfully"
+          echo "Rolled back ${{ github.event.inputs.steps }} migration step(s)"
+          echo "Remember to deploy the corresponding application version if needed"
