@@ -2,20 +2,21 @@
 set -e
 
 show_usage() {
-    echo "Usage: $0 -p <protocol> -u <database_url> [-d <direction>] [-t <auth_token>]"
+    echo "Usage: $0 -p <protocol> -u <database_url> [-d <direction>] [-t <auth_token>] [-s <steps>]"
     echo ""
     echo "Flags:"
     echo "  -p, --protocol     Database protocol (required: sqlite3, libsql, postgres, etc.)"
     echo "  -u, --url          Database URL without protocol (required)"
     echo "  -d, --direction    Migration direction: up (default) or down"
     echo "  -t, --token        Authentication token for remote databases"
+    echo "  -s, --steps        Number of steps for down migration (default: 1)"
     echo "  -h, --help         Show this help message"
     echo ""
     echo "Examples:"
     echo "  $0 -p sqlite3 -u ./db.sqlite3"
     echo "  $0 -p sqlite3 -u ./db.sqlite3 -d up"
     echo "  $0 -p libsql -u pathwise-local-piszmog.aws-us-west-2.turso.io -d up -t your_token"
-    echo "  $0 --protocol postgres --url localhost:5432/mydb --direction down"
+    echo "  $0 --protocol postgres --url localhost:5432/mydb --direction down --steps 3"
 }
 
 # Initialize variables
@@ -23,6 +24,7 @@ PROTOCOL=""
 DB_URL=""
 DIRECTION="up"
 AUTH_TOKEN=""
+STEPS="1"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -41,6 +43,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -t|--token)
             AUTH_TOKEN="$2"
+            shift 2
+            ;;
+        -s|--steps)
+            STEPS="$2"
             shift 2
             ;;
         -h|--help)
@@ -92,7 +98,7 @@ run_migration() {
                 -token "$AUTH_TOKEN" \
                 -migrations ./internal/db/migrations \
                 -direction down \
-                -steps 1
+                -steps "$STEPS"
         else
             go run github.com/Piszmog/migrate-libsql@latest \
                 -url "$PROTOCOL://$DB_URL" \
@@ -105,7 +111,7 @@ run_migration() {
             go run -tags sqlite3 github.com/golang-migrate/migrate/v4/cmd/migrate \
                 -source file://./internal/db/migrations \
                 -database "$FULL_DB_URL" \
-                down 1
+                down "$STEPS"
         else
             go run -tags sqlite3 github.com/golang-migrate/migrate/v4/cmd/migrate \
                 -source file://./internal/db/migrations \
