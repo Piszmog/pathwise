@@ -224,6 +224,26 @@ func cleanDB(t *testing.T) error {
 	return tx.Commit()
 }
 
+func runMigrations(t *testing.T) error {
+	t.Helper()
+
+	repoRoot, err := getRepoRoot()
+	if err != nil {
+		return fmt.Errorf("could not find repo root: %v", err)
+	}
+
+	migrateScript := filepath.Join(repoRoot, "migrate.sh")
+	cmd := exec.Command(migrateScript, "-p", "sqlite3", "-u", dbFile, "-d", "up")
+	cmd.Dir = repoRoot
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("migration failed: %v, output: %s", err, output)
+	}
+
+	return nil
+}
+
 func seedDB(t *testing.T) error {
 	db, err := sql.Open("libsql", getDBURL(t))
 	if err != nil {
@@ -299,6 +319,12 @@ func beforeEach(t *testing.T, contextOptions ...playwright.BrowserNewContextOpti
 	if err := cleanDB(t); err != nil {
 		t.Fatalf("could not clean db: %v", err)
 	}
+
+	// Run migrations to set up schema
+	if err := runMigrations(t); err != nil {
+		t.Fatalf("could not run migrations: %v", err)
+	}
+
 	if err := seedDB(t); err != nil {
 		t.Fatalf("could not seed db: %v", err)
 	}
