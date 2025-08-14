@@ -63,7 +63,7 @@ func setupTestDB(t *testing.T) db.Database {
 	var database db.Database
 	cleanup := func() {
 		if database != nil {
-			if err := database.Close(); err != nil {
+			if err = database.Close(); err != nil {
 				t.Logf("Failed to close database: %v", err)
 			}
 		}
@@ -72,7 +72,7 @@ func setupTestDB(t *testing.T) db.Database {
 		time.Sleep(10 * time.Millisecond)
 
 		// Force remove file (ignore errors if already deleted)
-		if err := os.Remove(dbFile); err != nil && !os.IsNotExist(err) {
+		if err = os.Remove(dbFile); err != nil && !os.IsNotExist(err) {
 			t.Logf("Failed to remove database file %s: %v", dbFile, err)
 		}
 	}
@@ -85,7 +85,7 @@ func setupTestDB(t *testing.T) db.Database {
 	_, err = database.DB().ExecContext(ctx, "PRAGMA foreign_keys = ON")
 	require.NoError(t, err)
 
-	err = testutil.RunMigrations(t, dbFile)
+	err = testutil.RunMigrations(dbFile)
 	require.NoError(t, err)
 
 	return database
