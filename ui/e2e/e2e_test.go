@@ -107,6 +107,15 @@ func beforeAll() {
 	if err = waitForServer(); err != nil {
 		log.Fatalf("could not wait for server: %v", err)
 	}
+
+	// Run migrations to set up schema
+	dbPath, err := getDBPath()
+	if err != nil {
+		log.Fatalf("could not get database path: %v", err)
+	}
+	if err := testutil.RunMigrations(dbPath); err != nil {
+		log.Fatalf("could not run migrations: %v", err)
+	}
 }
 
 func startApp() error {
@@ -248,6 +257,7 @@ func seedDB(t *testing.T) error {
 	}
 	return nil
 }
+
 func getPort() int {
 	randomGenerator := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return randomGenerator.Intn(9001-3000) + 3000
@@ -291,23 +301,9 @@ func beforeEach(t *testing.T, contextOptions ...playwright.BrowserNewContextOpti
 	}
 	ctx, page = newBrowserContextAndPage(t, opt)
 
-	// Wait for server to be ready
-	if err := waitForServer(); err != nil {
-		t.Fatalf("could not wait for server: %v", err)
-	}
-
 	// Clean database before each test to ensure isolation
 	if err := cleanDB(t); err != nil {
 		t.Fatalf("could not clean db: %v", err)
-	}
-
-	// Run migrations to set up schema
-	dbPath, err := getDBPath()
-	if err != nil {
-		t.Fatalf("could not get database path: %v", err)
-	}
-	if err := testutil.RunMigrations(t, dbPath); err != nil {
-		t.Fatalf("could not run migrations: %v", err)
 	}
 
 	if err := seedDB(t); err != nil {

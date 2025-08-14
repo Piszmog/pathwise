@@ -7,16 +7,13 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"testing"
 
 	_ "modernc.org/sqlite"
 )
 
 // RunMigrations executes all migration files in order against the given database file.
 // This is a test-only utility that reads .up.sql files directly without using external tools.
-func RunMigrations(t *testing.T, dbFile string) error {
-	t.Helper()
-
+func RunMigrations(dbFile string) error {
 	migrationFiles, err := getMigrationFiles()
 	if err != nil {
 		return fmt.Errorf("failed to get migration files: %v", err)
