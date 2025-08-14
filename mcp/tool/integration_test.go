@@ -54,35 +54,12 @@ func runMigrations(t *testing.T, dbFile string) error {
 	}
 
 	migrateScript := filepath.Join(repoRoot, "migrate.sh")
-	cmd := exec.Command(migrateScript, "-p", "sqlite3", "-u", dbFile, "-d", "up")
+	cmd := exec.Command(migrateScript, "-p", "sqlite3", "-u", dbFile)
 	cmd.Dir = repoRoot
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		// If migration fails due to dirty state, try to force it
-		if strings.Contains(string(output), "Dirty database version") {
-			t.Logf("Database in dirty state, attempting to force migration")
-
-			// Try to force the version and re-run
-			forceCmd := exec.Command("go", "run", "-tags", "sqlite3",
-				"github.com/golang-migrate/migrate/v4/cmd/migrate",
-				"-source", "file://./internal/db/migrations",
-				"-database", fmt.Sprintf("sqlite3://%s", dbFile),
-				"force", "20250804014440") // Latest migration version
-			forceCmd.Dir = repoRoot
-
-			if forceOutput, forceErr := forceCmd.CombinedOutput(); forceErr != nil {
-				return fmt.Errorf("force migration failed: %v, output: %s", forceErr, forceOutput)
-			}
-
-			// Try migration again
-			retryOutput, retryErr := cmd.CombinedOutput()
-			if retryErr != nil {
-				return fmt.Errorf("retry migration failed: %v, output: %s", retryErr, retryOutput)
-			}
-		} else {
-			return fmt.Errorf("migration failed: %v, output: %s", err, output)
-		}
+		return fmt.Errorf("migration failed: %v, output: %s", err, output)
 	}
 
 	return nil
