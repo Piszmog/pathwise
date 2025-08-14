@@ -83,18 +83,35 @@ else
 fi
 
 run_migration() {
-    echo "Running migration $DIRECTION with $FULL_DB_URL"
+    echo "Running migration $DIRECTION with $PROTOCOL://$DB_URL"
 
-    if [ "$DIRECTION" == "down" ]; then
-        go run -tags sqlite3 github.com/golang-migrate/migrate/v4/cmd/migrate \
-            -source file://./internal/db/migrations \
-            -database "$FULL_DB_URL" \
-            down 1
+    if [ "$PROTOCOL" == "libsql" ]; then
+        if [ "$DIRECTION" == "down" ]; then
+            go run github.com/Piszmog/migrate-libsql@latest \
+                -url "$PROTOCOL://$DB_URL" \
+                -token "$AUTH_TOKEN" \
+                -migrations ./internal/db/migrations \
+                -direction down \
+                -steps 1
+        else
+            go run github.com/Piszmog/migrate-libsql@latest \
+                -url "$PROTOCOL://$DB_URL" \
+                -token "$AUTH_TOKEN" \
+                -migrations ./internal/db/migrations \
+                -direction up
+        fi
     else
-        go run -tags sqlite3 github.com/golang-migrate/migrate/v4/cmd/migrate \
-            -source file://./internal/db/migrations \
-            -database "$FULL_DB_URL" \
-            up
+        if [ "$DIRECTION" == "down" ]; then
+            go run -tags sqlite3 github.com/golang-migrate/migrate/v4/cmd/migrate \
+                -source file://./internal/db/migrations \
+                -database "$FULL_DB_URL" \
+                down 1
+        else
+            go run -tags sqlite3 github.com/golang-migrate/migrate/v4/cmd/migrate \
+                -source file://./internal/db/migrations \
+                -database "$FULL_DB_URL" \
+                up
+        fi
     fi
 
     echo "Migration completed successfully"
