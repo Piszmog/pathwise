@@ -49,11 +49,15 @@ jobs:
           go-version-file: 'go.mod'
           cache: false
       - name: Run UI GoReleaser
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          distribution: goreleaser
-          version: '~> v2'
-          args: release --clean --snapshot --skip=publish --config cmd/ui/.goreleaser.yaml
+        run: |
+          docker run \
+            --rm \
+            -v $PWD:/go/src/github.com/user/repo \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -w /go/src/github.com/user/repo \
+            -e GITHUB_TOKEN \
+            ghcr.io/goreleaser/goreleaser-cross:latest \
+            release --clean --snapshot --skip=publish --config cmd/ui/.goreleaser.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   docker-publish:
