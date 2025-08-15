@@ -29,7 +29,7 @@ tmp_dir = "./tmp"
     "cd ../.. && go tool templ generate -path ./ui/components",
     "cd ../.. && go tool go-tw -i ./ui/styles/input.css -o ./ui/dist/assets/css/output@dev.css",
     "cd ../.. && go tool sqlc generate",
-    "cd ../.. && ./migrate.sh -p sqlite3 -u \"$(go tool godotenv printenv DB_URL)\""
+    "cd ../.. && ./migrate.sh -p \"$(go tool godotenv printenv DB_PROTOCOL)\" -u \"$(go tool godotenv printenv DB_URL)\" -t \"$(go tool godotenv printenv DB_TOKEN)\""
   ]
   rerun = true
   rerun_delay = 500
