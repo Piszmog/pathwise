@@ -16,6 +16,10 @@ import (
 	"github.com/Piszmog/pathwise/ui/utils"
 )
 
+var (
+	ErrInvalidHeardBackAtType = errors.New("invalid type for HeardBackAt field")
+)
+
 func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
@@ -845,7 +849,7 @@ func (h *Handler) recalculateStats(ctx context.Context, qtx *queries.Queries, us
 					return err
 				}
 			default:
-				return fmt.Errorf("unexpected type for HeardBackAt: %T", v)
+				return fmt.Errorf("unexpected type for HeardBackAt %T: %w", v, ErrInvalidHeardBackAtType)
 			}
 			diff := heardBackAt.Sub(j.AppliedAt)
 			daysSince := int64(diff.Hours() / 24)
