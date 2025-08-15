@@ -12,15 +12,17 @@ before:
 
 builds:
   - env:
-      - CGO_ENABLED=0
+      - CGO_ENABLED=1
     main: ./cmd/ui
     binary: pathwise-ui
     ldflags:
       - -s -w -X github.com/Piszmog/pathwise/internal/version.Value={{ .Version }}
     goos:
       - linux
-      - windows
       - darwin
+    goarch:
+      - amd64
+      - arm64
 
 archives:
   - formats: ['tar.gz']

@@ -5,8 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/Piszmog/pathwise/internal/db/queries"
-	_ "github.com/tursodatabase/libsql-client-go/libsql"
-	_ "modernc.org/sqlite"
+	_ "github.com/tursodatabase/go-libsql"
 )
 
 type LocalDB struct {

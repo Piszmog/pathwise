@@ -21,8 +21,7 @@ import (
 
 	"github.com/Piszmog/pathwise/internal/testutil"
 	"github.com/playwright-community/playwright-go"
-	_ "github.com/tursodatabase/libsql-client-go/libsql"
-	_ "modernc.org/sqlite"
+	_ "github.com/tursodatabase/go-libsql"
 )
 
 const (
