@@ -42,7 +42,7 @@ builds:
       - CGO_ENABLED=1
       - CC=o64-clang
       - CXX=o64-clang++
-      - MACOSX_DEPLOYMENT_TARGET=14.0
+      - MACOSX_DEPLOYMENT_TARGET=12.0
     main: ./cmd/mcp
     binary: pathwise-mcp
     ldflags:
@@ -56,7 +56,7 @@ builds:
       - CGO_ENABLED=1
       - CC=oa64-clang
       - CXX=oa64-clang++
-      - MACOSX_DEPLOYMENT_TARGET=14.0
+      - MACOSX_DEPLOYMENT_TARGET=12.0
     main: ./cmd/mcp
     binary: pathwise-mcp
     ldflags:
