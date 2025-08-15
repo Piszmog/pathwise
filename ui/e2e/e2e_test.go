@@ -240,21 +240,44 @@ func seedDB(t *testing.T) error {
 	}
 	defer db.Close()
 
-	repoRoot, err := getRepoRoot()
+	// Execute in a transaction to ensure last_insert_rowid() works properly
+	tx, err := db.Begin()
 	if err != nil {
-		return fmt.Errorf("could not find repo root: %v", err)
+		return err
+	}
+	defer tx.Rollback()
+
+	// Create user
+	_, err = tx.Exec(`INSERT INTO users (email, password) VALUES (?, ?)`,
+		"existing-user@test.com",
+		"$2a$14$YRpu0/fntbFMA8Zne3hyLufuYhNkeoM/.68SvNXduN0/eE/s0A3hm")
+	if err != nil {
+		return err
 	}
 
-	seedPath := filepath.Join(repoRoot, "ui", "e2e", "testdata", "seed.sql")
-	b, err := os.ReadFile(seedPath)
+	// Create job application using the user ID from the subquery
+	_, err = tx.Exec(`INSERT INTO job_applications (company, title, url, applied_at, user_id, archived) 
+		SELECT 'Company A', 'Title A', 'http://companyA/titleA', datetime('now', '-2 days'), id, 0
+		FROM users WHERE email = 'existing-user@test.com'`)
 	if err != nil {
 		return err
 	}
-	_, err = db.Exec(string(b))
+
+	// Create status history using last_insert_rowid() from the job application
+	_, err = tx.Exec(`INSERT INTO job_application_status_histories (job_application_id, status, created_at) 
+		VALUES (last_insert_rowid(), 'applied', datetime('now'))`)
 	if err != nil {
 		return err
 	}
-	return nil
+
+	// Create stats (use INSERT OR REPLACE to handle existing stats from migration)
+	_, err = tx.Exec(`INSERT OR REPLACE INTO job_application_stats (total_applications, total_companies, total_applied, user_id)
+		SELECT 1, 1, 1, id FROM users WHERE email = 'existing-user@test.com'`)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func getPort() int {

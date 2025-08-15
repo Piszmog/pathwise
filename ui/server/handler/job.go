@@ -4,13 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
 	"time"
 
-	"github.com/Piszmog/pathwise/ui/components"
 	"github.com/Piszmog/pathwise/internal/db/queries"
+	"github.com/Piszmog/pathwise/ui/components"
 	"github.com/Piszmog/pathwise/ui/types"
 	"github.com/Piszmog/pathwise/ui/utils"
 )
@@ -832,9 +833,19 @@ func (h *Handler) recalculateStats(ctx context.Context, qtx *queries.Queries, us
 	for _, j := range jobs {
 		statArgs.TotalApplications += 1
 		if j.HeardBackAt != nil {
-			heardBackAt, err := time.Parse("2006-01-02 15:04:05", j.HeardBackAt.(string))
-			if err != nil {
-				return err
+			var heardBackAt time.Time
+			var err error
+
+			switch v := j.HeardBackAt.(type) {
+			case time.Time:
+				heardBackAt = v
+			case string:
+				heardBackAt, err = time.Parse("2006-01-02 15:04:05", v)
+				if err != nil {
+					return err
+				}
+			default:
+				return fmt.Errorf("unexpected type for HeardBackAt: %T", v)
 			}
 			diff := heardBackAt.Sub(j.AppliedAt)
 			daysSince := int64(diff.Hours() / 24)
