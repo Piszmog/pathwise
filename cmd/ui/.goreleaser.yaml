@@ -39,34 +39,7 @@ builds:
       - linux
     goarch:
       - arm64
-  - id: "darwin-amd64"
-    env:
-      - CGO_ENABLED=1
-      - CC=o64-clang
-      - CXX=o64-clang++
-      - MACOSX_DEPLOYMENT_TARGET=12.0
-    main: ./cmd/ui
-    binary: pathwise-ui
-    ldflags:
-      - -s -w -X github.com/Piszmog/pathwise/internal/version.Value={{ .Version }}
-    goos:
-      - darwin
-    goarch:
-      - amd64
-  - id: "darwin-arm64"
-    env:
-      - CGO_ENABLED=1
-      - CC=oa64-clang
-      - CXX=oa64-clang++
-      - MACOSX_DEPLOYMENT_TARGET=12.0
-    main: ./cmd/ui
-    binary: pathwise-ui
-    ldflags:
-      - -s -w -X github.com/Piszmog/pathwise/internal/version.Value={{ .Version }}
-    goos:
-      - darwin
-    goarch:
-      - arm64
+
 
 archives:
   - formats: ['tar.gz']
