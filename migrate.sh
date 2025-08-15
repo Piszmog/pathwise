@@ -19,12 +19,19 @@ show_usage() {
     echo "  $0 --protocol postgres --url localhost:5432/mydb --direction down --steps 3"
 }
 
+ensure_migrate_tools() {
+    echo "Installing migration tools..."
+    go install -tags 'sqlite3' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+    go install github.com/Piszmog/migrate-libsql@latest
+}
+
 # Initialize variables
 PROTOCOL=""
 DB_URL=""
 DIRECTION="up"
 AUTH_TOKEN=""
 STEPS="1"
+
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -93,14 +100,14 @@ run_migration() {
 
     if [ "$PROTOCOL" == "libsql" ]; then
         if [ "$DIRECTION" == "down" ]; then
-            go run github.com/Piszmog/migrate-libsql@latest \
+            migrate-libsql \
                 -url "$PROTOCOL://$DB_URL" \
                 -token "$AUTH_TOKEN" \
                 -migrations ./internal/db/migrations \
                 -direction down \
                 -steps "$STEPS"
         else
-            go run github.com/Piszmog/migrate-libsql@latest \
+            migrate-libsql \
                 -url "$PROTOCOL://$DB_URL" \
                 -token "$AUTH_TOKEN" \
                 -migrations ./internal/db/migrations \
@@ -108,12 +115,12 @@ run_migration() {
         fi
     else
         if [ "$DIRECTION" == "down" ]; then
-            go run -tags sqlite3 github.com/golang-migrate/migrate/v4/cmd/migrate \
+            migrate \
                 -source file://./internal/db/migrations \
                 -database "$FULL_DB_URL" \
                 down "$STEPS"
         else
-            go run -tags sqlite3 github.com/golang-migrate/migrate/v4/cmd/migrate \
+            migrate \
                 -source file://./internal/db/migrations \
                 -database "$FULL_DB_URL" \
                 up
@@ -124,4 +131,5 @@ run_migration() {
 }
 
 echo "Starting database migration..."
+ensure_migrate_tools
 run_migration
