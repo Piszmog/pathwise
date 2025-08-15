@@ -9,17 +9,59 @@ before:
     - go tool sqlc generate
 
 builds:
-  - env:
+  - id: "linux-amd64"
+    env:
       - CGO_ENABLED=1
+      - CC=x86_64-linux-gnu-gcc
+      - CXX=x86_64-linux-gnu-g++
     main: ./cmd/mcp
     binary: pathwise-mcp
     ldflags:
       - -s -w -X github.com/Piszmog/pathwise/internal/version.Value={{ .Version }}
     goos:
       - linux
+    goarch:
+      - amd64
+  - id: "linux-arm64"
+    env:
+      - CGO_ENABLED=1
+      - CC=aarch64-linux-gnu-gcc
+      - CXX=aarch64-linux-gnu-g++
+    main: ./cmd/mcp
+    binary: pathwise-mcp
+    ldflags:
+      - -s -w -X github.com/Piszmog/pathwise/internal/version.Value={{ .Version }}
+    goos:
+      - linux
+    goarch:
+      - arm64
+  - id: "darwin-amd64"
+    env:
+      - CGO_ENABLED=1
+      - CC=o64-clang
+      - CXX=o64-clang++
+      - MACOSX_DEPLOYMENT_TARGET=14.0
+    main: ./cmd/mcp
+    binary: pathwise-mcp
+    ldflags:
+      - -s -w -X github.com/Piszmog/pathwise/internal/version.Value={{ .Version }}
+    goos:
       - darwin
     goarch:
       - amd64
+  - id: "darwin-arm64"
+    env:
+      - CGO_ENABLED=1
+      - CC=oa64-clang
+      - CXX=oa64-clang++
+      - MACOSX_DEPLOYMENT_TARGET=14.0
+    main: ./cmd/mcp
+    binary: pathwise-mcp
+    ldflags:
+      - -s -w -X github.com/Piszmog/pathwise/internal/version.Value={{ .Version }}
+    goos:
+      - darwin
+    goarch:
       - arm64
 
 archives:
