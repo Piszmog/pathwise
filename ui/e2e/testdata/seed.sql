@@ -29,4 +29,4 @@ INSERT INTO job_application_status_histories (
 );
 
 INSERT INTO job_application_stats (total_applications, total_companies, total_applied, user_id)
-SELECT 1, 1, 1, id FROM users where email = 'existing-user@test.com'
+SELECT 1, 1, 1, id FROM users where email = 'existing-user@test.com';
