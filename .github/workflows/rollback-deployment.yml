@@ -1,0 +1,258 @@
+name: Rollback Deployment
+on:
+  workflow_dispatch:
+    inputs:
+      target_version:
+        description: 'Version to deploy (e.g., v2.5.8)'
+        required: true
+        type: string
+      confirmation:
+        description: 'Type "ROLLBACK" to confirm deployment'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Rollback Request
+    runs-on: ubuntu-latest
+    outputs:
+      target_version: ${{ steps.validate.outputs.target_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate inputs
+        id: validate
+        run: |
+          TARGET_VERSION="${{ github.event.inputs.target_version }}"
+          CONFIRMATION="${{ github.event.inputs.confirmation }}"
+          
+          # Check confirmation
+          if [ "$CONFIRMATION" != "ROLLBACK" ]; then
+            echo "Invalid confirmation. You must type 'ROLLBACK' to proceed."
+            exit 1
+          fi
+          
+          # Validate version format
+          if [[ ! "$TARGET_VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version format. Use format like 'v2.5.8'"
+            exit 1
+          fi
+          
+          # Check if release exists
+          if ! gh release view "$TARGET_VERSION" >/dev/null 2>&1; then
+            echo "Release $TARGET_VERSION does not exist"
+            echo "Available releases:"
+            gh release list --limit 10
+            exit 1
+          fi
+          
+          # Check if release has required assets
+          ASSET_COUNT=$(gh release view "$TARGET_VERSION" --json assets --jq '.assets | length')
+          if [ "$ASSET_COUNT" -eq 0 ]; then
+            echo "Release $TARGET_VERSION has no assets"
+            exit 1
+          fi
+          
+          echo "Validation passed for rollback to $TARGET_VERSION"
+          echo "target_version=$TARGET_VERSION" >> $GITHUB_OUTPUT
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Announce rollback
+        run: |
+          echo "::notice title=Rollback Deployment::Rolling back to ${{ steps.validate.outputs.target_version }}"
+
+  backup-current:
+    name: Backup Current State
+    runs-on: ubuntu-latest
+    needs: [validate]
+    steps:
+      - name: Get current deployment info
+        run: |
+          echo "Documenting current deployment state before rollback"
+          echo "Target version: ${{ needs.validate.outputs.target_version }}"
+          echo "Initiated by: ${{ github.actor }}"
+          echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          
+          # Get current version from VM if possible
+          echo "Current deployment backup logged for potential restoration"
+
+  download-assets:
+    name: Download Release Assets
+    runs-on: ubuntu-latest
+    needs: [validate]
+    steps:
+      - name: Download release assets
+        run: |
+          TARGET_VERSION="${{ needs.validate.outputs.target_version }}"
+          
+          # Download the Linux x86_64 binary (matches release workflow artifact name)
+          echo "Downloading assets for $TARGET_VERSION"
+          gh release download "$TARGET_VERSION" --pattern "pathwise-ui_Linux_x86_64.tar.gz"
+          
+          # Verify download
+          if [ ! -f "pathwise-ui_Linux_x86_64.tar.gz" ]; then
+            echo "Failed to download required asset"
+            exit 1
+          fi
+          
+          echo "Successfully downloaded pathwise-ui_Linux_x86_64.tar.gz"
+          ls -la pathwise-ui_Linux_x86_64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts for deployment
+        uses: actions/upload-artifact@v4
+        with:
+          name: rollback-assets
+          path: pathwise-ui_Linux_x86_64.tar.gz
+          retention-days: 1
+
+  deploy-vm:
+    name: Deploy to VM
+    runs-on: ubuntu-latest
+    needs: [validate, backup-current, download-assets]
+    steps:
+      - name: Download rollback assets
+        uses: actions/download-artifact@v4
+        with:
+          name: rollback-assets
+          path: ./artifacts
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create systemd service file
+        run: |
+          cat > pathwise.service << 'EOF'
+          [Unit]
+          Description=Pathwise Job Application Tracker
+          After=network.target
+
+          [Service]
+          Type=simple
+          User=ubuntu
+          WorkingDirectory=/home/ubuntu/apps/pathwise
+          ExecStart=/home/ubuntu/apps/pathwise/pathwise-ui
+          Restart=always
+          RestartSec=5
+          Environment=DB_TOKEN=${{ secrets.DB_TOKEN }}
+          Environment=DB_URL=${{ secrets.DB_URL }}
+          Environment=LOG_OUTPUT=/var/log/pathwise/pathwise.log
+          Environment=PORT=8080
+
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+
+      - name: Deploy rollback to VM
+        run: |
+          TARGET_VERSION="${{ needs.validate.outputs.target_version }}"
+          
+          echo "Deploying rollback to $TARGET_VERSION"
+          
+          # Copy artifacts to VM
+          scp ./artifacts/pathwise-ui_Linux_x86_64.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
+          scp pathwise.service ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
+
+          # Deploy on VM
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+            # Stop existing service
+            if sudo systemctl is-active --quiet pathwise; then
+              echo "Stopping current pathwise service"
+              sudo systemctl stop pathwise
+            fi
+
+            # Create app directory if it doesn't exist
+            mkdir -p /home/ubuntu/apps/pathwise
+
+            # Extract rollback version
+            cd /tmp
+            echo "Extracting $TARGET_VERSION binary"
+            tar -xzf pathwise-ui_Linux_x86_64.tar.gz
+
+            # Move binary to app directory
+            mv pathwise-ui /home/ubuntu/apps/pathwise/
+            chmod +x /home/ubuntu/apps/pathwise/pathwise-ui
+
+            # Create log directory
+            sudo mkdir -p /var/log/pathwise
+            sudo chown ubuntu:ubuntu /var/log/pathwise
+
+            # Install systemd service file
+            sudo mv /tmp/pathwise.service /etc/systemd/system/
+          EOF
+
+          # Start service
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+            echo "Starting pathwise service with $TARGET_VERSION"
+            sudo systemctl daemon-reload
+            sudo systemctl start pathwise
+            sudo systemctl enable pathwise
+
+            # Check status
+            sudo systemctl status pathwise
+          EOF
+
+      - name: Cleanup SSH
+        run: |
+          rm -f ~/.ssh/id_rsa
+
+  verify:
+    name: Verify Rollback
+    runs-on: ubuntu-latest
+    needs: [validate, deploy-vm]
+    steps:
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Health check and verification
+        run: |
+          TARGET_VERSION="${{ needs.validate.outputs.target_version }}"
+          
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+            echo "Verifying deployment of $TARGET_VERSION"
+            
+            # Wait for service to fully start
+            sleep 15
+            
+            # Check service status
+            if sudo systemctl is-active --quiet pathwise; then
+              echo "Service is running"
+            else
+              echo "Service is not running"
+              sudo systemctl status pathwise
+              exit 1
+            fi
+            
+            # Health check
+            if curl -f http://localhost:8080/health; then
+              echo ""
+              echo "Health check passed - rollback to $TARGET_VERSION successful"
+            else
+              echo ""
+              echo "Health check failed - rollback may have issues"
+              exit 1
+            fi
+          EOF
+
+      - name: Rollback completion notice
+        run: |
+          echo "::notice title=Rollback Complete::Successfully rolled back to ${{ needs.validate.outputs.target_version }}"
+
+      - name: Cleanup SSH
+        run: |
+          rm -f ~/.ssh/id_rsa

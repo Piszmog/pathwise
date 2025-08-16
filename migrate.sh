@@ -100,6 +100,7 @@ run_migration() {
 
     if [ "$PROTOCOL" == "libsql" ]; then
         if [ "$DIRECTION" == "down" ]; then
+            echo "Running libsql down"
             migrate-libsql \
                 -url "$PROTOCOL://$DB_URL" \
                 -token "$AUTH_TOKEN" \
@@ -107,6 +108,7 @@ run_migration() {
                 -direction down \
                 -steps "$STEPS"
         else
+            echo "Running libsql up"
             migrate-libsql \
                 -url "$PROTOCOL://$DB_URL" \
                 -token "$AUTH_TOKEN" \
@@ -115,11 +117,13 @@ run_migration() {
         fi
     else
         if [ "$DIRECTION" == "down" ]; then
+            echo "Running sqlite3 up"
             migrate \
                 -source file://./internal/db/migrations \
                 -database "$FULL_DB_URL" \
                 down "$STEPS"
         else
+            echo "Running sqlite3 up"
             migrate \
                 -source file://./internal/db/migrations \
                 -database "$FULL_DB_URL" \
