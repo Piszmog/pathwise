@@ -10,7 +10,7 @@ require (
 	github.com/mark3labs/mcp-go v0.36.0
 	github.com/playwright-community/playwright-go v0.5200.0
 	github.com/stretchr/testify v1.10.0
-	github.com/tursodatabase/libsql-client-go v0.0.0-20240902231107-85af5b9d094d
+	github.com/tursodatabase/go-libsql v0.0.0-20250723062947-60e59c7150f4
 	golang.org/x/crypto v0.40.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	modernc.org/sqlite v1.38.2
@@ -27,7 +27,6 @@ require (
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cli/browser v1.3.0 // indirect
-	github.com/coder/websocket v1.8.13 // indirect
 	github.com/cubicdaiya/gonp v1.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set/v2 v2.8.0 // indirect
@@ -47,6 +46,7 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/joho/godotenv v1.5.1 // indirect
+	github.com/libsql/sqlite-antlr4-parser v0.0.0-20240327125255-dbf53b6cbf06 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

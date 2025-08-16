@@ -5,7 +5,7 @@ import (
 	"log/slog"
 
 	"github.com/Piszmog/pathwise/internal/db/queries"
-	_ "github.com/tursodatabase/libsql-client-go/libsql"
+	_ "github.com/tursodatabase/go-libsql"
 )
 
 type RemoteDB struct {

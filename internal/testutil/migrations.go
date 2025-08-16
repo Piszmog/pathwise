@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/tursodatabase/go-libsql"
 )
 
 // RunMigrations executes all migration files in order against the given database file.
@@ -21,7 +21,7 @@ func RunMigrations(dbFile string) error {
 		return fmt.Errorf("failed to get migration files: %w", err)
 	}
 
-	db, err := sql.Open("sqlite", dbFile)
+	db, err := sql.Open("libsql", "file:"+dbFile)
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
@@ -78,9 +78,16 @@ func executeMigrationFile(db *sql.DB, path string) error {
 		return fmt.Errorf("failed to read migration file: %w", err)
 	}
 
-	// Execute the SQL content
-	if _, err := db.ExecContext(context.Background(), string(content)); err != nil {
-		return fmt.Errorf("failed to execute migration SQL: %w", err)
+	// Split SQL statements and execute them individually for go-libsql compatibility
+	statements := strings.Split(string(content), ";")
+	for _, stmt := range statements {
+		stmt = strings.TrimSpace(stmt)
+		if stmt == "" || strings.HasPrefix(stmt, "--") {
+			continue
+		}
+		if _, err := db.ExecContext(context.Background(), stmt); err != nil {
+			return fmt.Errorf("failed to execute migration SQL: %w", err)
+		}
 	}
 
 	return nil

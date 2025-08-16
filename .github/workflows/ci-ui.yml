@@ -35,6 +35,31 @@ jobs:
       - run: go tool templ generate -path ./ui/components
       - run: go tool sqlc generate
       - run: go test ./... -tags=e2e -v
+  release-dryrun:
+    name: Release Dry Run
+    runs-on: ubuntu-latest
+    needs: [e2e]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+      - name: Run UI GoReleaser
+        run: |
+          docker run \
+            --rm \
+            -v $PWD:/go/src/github.com/user/repo \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -w /go/src/github.com/user/repo \
+            -e GITHUB_TOKEN \
+            ghcr.io/goreleaser/goreleaser-cross:latest \
+            release --clean --snapshot --skip=publish --config cmd/ui/.goreleaser.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   docker-publish:
     name: Docker
     runs-on: ubuntu-latest
