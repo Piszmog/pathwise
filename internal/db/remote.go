@@ -32,8 +32,8 @@ func (d *RemoteDB) Close() error {
 	return d.db.Close()
 }
 
-func newRemoteDB(logger *slog.Logger, url string, token string) (*RemoteDB, error) {
-	fullURL := "libsql://" + url + "?authToken=" + token
+func newRemoteDB(logger *slog.Logger, opts DatabaseOpts) (*RemoteDB, error) {
+	fullURL := "libsql://" + opts.URL + "?authToken=" + opts.Token
 	db, err := sql.Open("libsql", fullURL)
 	if err != nil {
 		return nil, err
