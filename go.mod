@@ -13,7 +13,6 @@ require (
 	github.com/tursodatabase/go-libsql v0.0.0-20250723062947-60e59c7150f4
 	golang.org/x/crypto v0.40.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
-	modernc.org/sqlite v1.38.2
 )
 
 require (
@@ -89,6 +88,7 @@ require (
 	modernc.org/libc v1.66.6 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
+	modernc.org/sqlite v1.38.2 // indirect
 )
 
 tool (
