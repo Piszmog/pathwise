@@ -23,21 +23,6 @@ builds:
       - linux
     goarch:
       - amd64
-  - id: "linux-arm64"
-    env:
-      - CGO_ENABLED=1
-      - CC=aarch64-linux-gnu-gcc
-      - CXX=aarch64-linux-gnu-g++
-      - CGO_LDFLAGS=-ldl -lm -lpthread
-    main: ./cmd/mcp
-    binary: pathwise-mcp
-    ldflags:
-      - -s -w -X github.com/Piszmog/pathwise/internal/version.Value={{ .Version }}
-    goos:
-      - linux
-    goarch:
-      - arm64
-
 
 archives:
   - formats: ['tar.gz']
