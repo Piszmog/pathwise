@@ -23,12 +23,14 @@ func (h *Handler) NewJobApplicationsNotesTool() Tool {
 func (h *Handler) GetJobApplicationsNotes(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	userID, ok := ctx.Value(contextkey.KeyUserID).(int64)
 	if !ok {
+		h.Logger.ErrorContext(ctx, "authentication failed - user ID not found in context", "tool", "job_applications_notes")
 		return mcp.NewToolResultError("failed to authenticate"), nil
 	}
 
 	if jobAppID, exists := req.GetArguments()["job_application_id"]; exists {
 		jobAppIDInt, ok := jobAppID.(int64)
 		if !ok {
+			h.Logger.ErrorContext(ctx, "invalid job_application_id parameter", "tool", "job_applications_notes", "provided_value", jobAppID, "expected_type", "int64", "user_id", userID)
 			return mcp.NewToolResultError("invalid job_application_id"), nil
 		}
 

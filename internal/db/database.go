@@ -19,11 +19,12 @@ type Database interface {
 func New(logger *slog.Logger, opts DatabaseOpts) (Database, error) {
 	var db Database
 	var err error
-	if opts.SyncURL != "" && opts.Token != "" {
+	switch {
+	case opts.SyncURL != "" && opts.Token != "":
 		db, err = newEmbeddedDB(logger, opts)
-	} else if opts.Token != "" {
+	case opts.Token != "":
 		db, err = newRemoteDB(logger, opts)
-	} else {
+	default:
 		db, err = newLocalDB(logger, opts)
 	}
 	if err != nil {

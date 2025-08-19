@@ -20,7 +20,11 @@ func main() {
 		l.Error("failed to create temp dir", "error", err)
 		os.Exit(1)
 	}
-	defer os.RemoveAll(dir)
+	defer func() {
+		if removeErr := os.RemoveAll(dir); removeErr != nil {
+			l.Error("failed to remove temp dir", "error", removeErr)
+		}
+	}()
 
 	dbPath := filepath.Join(dir, "db-mcp.sqlite3")
 

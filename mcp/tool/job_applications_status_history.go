@@ -23,6 +23,7 @@ func (h *Handler) NewJobApplicationsStatusHistoryTool() Tool {
 func (h *Handler) GetJobApplicationsStatusHistory(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	userID, ok := ctx.Value(contextkey.KeyUserID).(int64)
 	if !ok {
+		h.Logger.ErrorContext(ctx, "authentication failed - user ID not found in context", "tool", "job_applications_status_history")
 		return mcp.NewToolResultError("failed to authenticate"), nil
 	}
 
@@ -31,6 +32,7 @@ func (h *Handler) GetJobApplicationsStatusHistory(ctx context.Context, req mcp.C
 	if jobAppID, exists := req.GetArguments()["job_application_id"]; exists {
 		jobAppIDInt, ok := jobAppID.(float64)
 		if !ok {
+			h.Logger.ErrorContext(ctx, "invalid job_application_id parameter", "tool", "job_applications_status_history", "provided_value", jobAppID, "expected_type", "float64", "user_id", userID)
 			return mcp.NewToolResultError("invalid job_application_id"), nil
 		}
 
