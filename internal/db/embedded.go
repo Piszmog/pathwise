@@ -51,7 +51,7 @@ func newEmbeddedDB(logger *slog.Logger, opts DatabaseOpts) (*EmbeddedDB, error) 
 
 	connector, err := libsql.NewEmbeddedReplicaConnector(
 		opts.URL,
-		opts.SyncURL,
+		"libsql://"+opts.SyncURL,
 		connectorOpts...,
 	)
 	if err != nil {

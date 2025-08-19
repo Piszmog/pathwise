@@ -146,7 +146,7 @@ WHERE
 
 -- name: GetAllJobApplicationsByUserID :many
 SELECT
-	j.applied_at, j.updated_at, j.company, j.title, j.status, j.url,
+	j.applied_at, j.updated_at, j.company, j.title, j.status, j.url, j.archived,
 	j.salary_min, j.salary_max, j.salary_currency
 FROM 
 	job_applications j
