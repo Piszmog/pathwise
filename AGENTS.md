@@ -49,7 +49,7 @@ Pathwise is a job application tracking system with two main components:
 
 ## Domain Model
 - **JobApplication**: Core entity with Company, Title, URL, Status, AppliedAt, Salary fields
-- **JobApplicationStatus**: Enum with values: applied, watching, interviewing, offered, accepted, rejected, declined, withdrawn, canceled, closed
+- **JobApplicationStatus**: Enum with values: accepted, applied, canceled, closed, declined, interviewing, offered, rejected, watching, withdrawn
 - **JobApplicationNote**: Timeline notes attached to applications
 - **JobApplicationStatusHistory**: Timeline of status changes
 - **User**: Authentication with email/password, sessions with tokens, MCP API keys

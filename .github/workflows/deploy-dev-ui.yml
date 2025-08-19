@@ -11,6 +11,9 @@ on:
       - 'go.mod'
       - 'go.sum'
   workflow_dispatch:
+concurrency:
+  group: deploy-dev-ui
+  cancel-in-progress: false
 jobs:
   migrate-dev-database:
     name: Run Dev Database Migration

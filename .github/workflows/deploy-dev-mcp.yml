@@ -11,6 +11,9 @@ on:
       - 'go.mod'
       - 'go.sum'
   workflow_dispatch:
+concurrency:
+  group: deploy-dev-mcp
+  cancel-in-progress: false
 jobs:
   build:
     name: Build MCP
