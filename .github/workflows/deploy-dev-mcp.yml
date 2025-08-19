@@ -1,0 +1,127 @@
+name: Deploy Dev MCP
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'mcp/**'
+      - 'cmd/mcp/**'
+      - 'internal/**'
+      - 'sqlc.yml'
+      - 'go.mod'
+      - 'go.sum'
+  workflow_dispatch:
+jobs:
+  build:
+    name: Build MCP
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+      - name: Run MCP GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: '~> v2'
+          args: release --clean --snapshot --skip=publish --config cmd/mcp/.goreleaser.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload MCP Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pathwise-mcp-dev_Linux_x86_64.tar.gz
+          path: goreleaser-dist/pathwise-mcp_Linux_x86_64.tar.gz
+          retention-days: 1
+  deploy-dev-mcp:
+    name: Deploy Dev MCP to VM
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: pathwise-mcp-dev_Linux_x86_64.tar.gz
+          path: ./artifacts
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create systemd service file
+        run: |
+          cat > pathwise-mcp-dev.service << 'EOF'
+          [Unit]
+          Description=Pathwise MCP Server - Dev
+          After=network.target
+
+          [Service]
+          Type=simple
+          User=ubuntu
+          WorkingDirectory=/home/ubuntu/apps/pathwise-mcp-dev
+          ExecStart=/home/ubuntu/apps/pathwise-mcp-dev/pathwise-mcp
+          Restart=always
+          RestartSec=5
+          Environment=DB_TOKEN_READONLY=${{ secrets.DEV_DB_TOKEN_READONLY }}
+          Environment=DB_PRIMARY_URL=${{ secrets.DEV_DB_URL }}
+          Environment=ENC_KEY=${{ secrets.ENC_KEY }}
+          Environment=LOG_OUTPUT=/var/log/pathwise/pathwise-mcp-dev.log
+          Environment=PORT=8083
+
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+
+      - name: Deploy to VM
+        run: |
+          # Copy artifact and service file to VM
+          scp ./artifacts/pathwise-mcp_Linux_x86_64.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/pathwise-mcp-dev_Linux_x86_64.tar.gz
+          scp pathwise-mcp-dev.service ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/tmp/
+
+          # Extract and deploy on VM
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            # Stop existing dev service if it exists
+            if sudo systemctl is-active --quiet pathwise-mcp-dev; then
+              sudo systemctl stop pathwise-mcp-dev
+            fi
+
+            # Create dev app directory if it doesn't exist
+            mkdir -p /home/ubuntu/apps/pathwise-mcp-dev
+
+            # Extract new version
+            cd /tmp
+            tar -xzf pathwise-mcp-dev_Linux_x86_64.tar.gz
+
+            # Move binary to dev app directory
+            mv pathwise-mcp /home/ubuntu/apps/pathwise-mcp-dev/
+            chmod +x /home/ubuntu/apps/pathwise-mcp-dev/pathwise-mcp
+
+            # Create log directory if it doesn't exist
+            sudo mkdir -p /var/log/pathwise
+            sudo chown ubuntu:ubuntu /var/log/pathwise
+
+            # Install systemd service file
+            sudo mv /tmp/pathwise-mcp-dev.service /etc/systemd/system/
+          EOF
+
+          # Start service and check status
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            # Reload systemd and start dev service
+            sudo systemctl daemon-reload
+            sudo systemctl start pathwise-mcp-dev
+            sudo systemctl enable pathwise-mcp-dev
+
+            # Check status
+            sudo systemctl status pathwise-mcp-dev
+          EOF
+      - name: Cleanup
+        run: |
+          rm -f ~/.ssh/id_rsa
