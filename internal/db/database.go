@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log/slog"
+	"time"
 
 	"github.com/Piszmog/pathwise/internal/db/queries"
 )
@@ -18,10 +19,13 @@ type Database interface {
 func New(logger *slog.Logger, opts DatabaseOpts) (Database, error) {
 	var db Database
 	var err error
-	if opts.Token == "" {
-		db, err = newLocalDB(logger, opts.URL)
-	} else {
-		db, err = newRemoteDB(logger, opts.URL, opts.Token)
+	switch {
+	case opts.SyncURL != "" && opts.Token != "":
+		db, err = newEmbeddedDB(logger, opts)
+	case opts.Token != "":
+		db, err = newRemoteDB(logger, opts)
+	default:
+		db, err = newLocalDB(logger, opts)
 	}
 	if err != nil {
 		return nil, err
@@ -33,6 +37,9 @@ func New(logger *slog.Logger, opts DatabaseOpts) (Database, error) {
 }
 
 type DatabaseOpts struct {
-	URL   string
-	Token string
+	URL           string
+	Token         string
+	SyncURL       string
+	EncryptionKey string
+	SyncInterval  time.Duration
 }

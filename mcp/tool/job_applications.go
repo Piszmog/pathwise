@@ -21,6 +21,7 @@ func (h *Handler) NewJobApplicationsTool() Tool {
 func (h *Handler) GetJobApplications(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	userID, ok := ctx.Value(contextkey.KeyUserID).(int64)
 	if !ok {
+		h.Logger.ErrorContext(ctx, "authentication failed - user ID not found in context", "tool", "job_applications")
 		return mcp.NewToolResultError("failed to authenticate"), nil
 	}
 
