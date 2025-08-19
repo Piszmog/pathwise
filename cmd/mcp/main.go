@@ -35,7 +35,7 @@ func main() {
 			SyncURL:       os.Getenv("DB_PRIMARY_URL"),
 			Token:         os.Getenv("DB_TOKEN_READONLY"),
 			EncryptionKey: os.Getenv("ENC_KEY"),
-			SyncInterval:  time.Hour,
+			SyncInterval:  6 * time.Hour,
 		},
 	)
 	if err != nil {
