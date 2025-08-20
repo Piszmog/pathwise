@@ -7,7 +7,7 @@ A modern job application tracking system with both web interface and programmati
 - **Web Application**: Interactive web interface for managing job applications
 - **MCP Server**: Model Context Protocol server providing programmatic access to your job data
 
-> **Note**: This follows standard Go project layout with the main application in `cmd/ui/` and private code in `internal/`. Commands should be run from the project root unless otherwise specified.
+> **Note**: This follows standard Go project layout with applications in `cmd/` and private code in `internal/`. Commands should be run from the project root unless otherwise specified.
 
 ## Features
 
@@ -20,6 +20,13 @@ A modern job application tracking system with both web interface and programmati
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 - **User Authentication**: Secure login system with session management
 - **MCP Integration**: Programmatic access via Model Context Protocol for AI assistants and automation
+
+## MCP Server
+
+The MCP (Model Context Protocol) server provides programmatic access to your job application data for AI assistants and automation tools.
+
+### Authentication
+Generate an API key through the web application settings, then configure your MCP client with the key and server URL.
 
 ## Tech Stack
 
@@ -149,17 +156,6 @@ pathwise/
 ├── README.md
 └── LICENSE
 ```
-
-### Database
-
-Pathwise uses SQLite with migrations managed by golang-migrate. The database schema includes:
-
-- **Users**: Authentication and user management
-- **Job Applications**: Core application data with status tracking
-- **Notes**: Timeline notes for applications
-- **Status History**: Audit trail of status changes
-- **Sessions**: User session management
-- **MCP API Keys**: Authentication keys for MCP server access
 
 ### Code Generation
 
