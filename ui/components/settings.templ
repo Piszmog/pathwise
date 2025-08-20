@@ -20,7 +20,50 @@ templ settings(email string, hasMcpApiKey bool, mcpKeyCreatedAt string) {
 			opacity: 0.5;
 			transition: opacity 300ms linear;
 		}
+
+		details summary::-webkit-details-marker {
+			display: none;
+		}
+
+		details[open] .details-chevron {
+			transform: rotate(90deg);
+		}
+
+		details > summary {
+			list-style: none;
+		}
+
+		details[open] > summary ~ * {
+			animation: slideDown 0.2s ease-out;
+		}
+
+		@keyframes slideDown {
+			from { 
+				opacity: 0; 
+				transform: translateY(-10px); 
+			}
+			to { 
+				opacity: 1; 
+				transform: translateY(0); 
+			}
+		}
 	</style>
+	<script type="text/javascript">
+		function copyToClipboard(button, text) {
+			navigator.clipboard.writeText(text).then(() => {
+				const originalText = button.textContent;
+				button.textContent = 'Copied!';
+				button.classList.add('bg-green-600', 'hover:bg-green-500');
+				button.classList.remove('bg-gray-600', 'hover:bg-gray-500');
+				
+				setTimeout(() => {
+					button.textContent = originalText;
+					button.classList.remove('bg-green-600', 'hover:bg-green-500');
+					button.classList.add('bg-gray-600', 'hover:bg-gray-500');
+				}, 2000);
+			});
+		}
+	</script>
 	<div class="divide-y divide">
 		<div class="grid grid-cols-1 gap-x-8 gap-y-10 px-4 py-16 sm:px-6 md:grid-cols-3 lg:px-8">
 			<div>

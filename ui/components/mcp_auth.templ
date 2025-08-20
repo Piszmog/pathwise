@@ -21,13 +21,32 @@ templ mcpAuthGenerate() {
 	<div class="md:col-span-2">
 		<button
 			type="button"
-			class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+			class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 mb-6"
 			hx-post="/settings/mcp/auth"
 			hx-target="body"
 			hx-swap="beforeend"
 		>
 			Generate API Key
 		</button>
+		<details class="mt-4">
+			<summary
+				class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center select-none"
+			>
+				<svg
+					class="w-4 h-4 mr-2 transform transition-transform duration-200 details-chevron"
+					fill="currentColor"
+					viewBox="0 0 20 20"
+				>
+					<path
+						fill-rule="evenodd"
+						d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+						clip-rule="evenodd"
+					></path>
+				</svg>
+				Show Connection Details
+			</summary>
+			@mcpConfigurationGuide()
+		</details>
 	</div>
 }
 
@@ -40,7 +59,7 @@ templ mcpAuthManage(createdAt string) {
 		</p>
 	</div>
 	<div class="md:col-span-2">
-		<div class="flex gap-3">
+		<div class="flex gap-3 mb-6">
 			<button
 				type="button"
 				class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
@@ -60,6 +79,25 @@ templ mcpAuthManage(createdAt string) {
 				Delete Key
 			</button>
 		</div>
+		<details class="mt-4">
+			<summary
+				class="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center select-none"
+			>
+				<svg
+					class="w-4 h-4 mr-2 transform transition-transform duration-200 details-chevron"
+					fill="currentColor"
+					viewBox="0 0 20 20"
+				>
+					<path
+						fill-rule="evenodd"
+						d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+						clip-rule="evenodd"
+					></path>
+				</svg>
+				Show Connection Details
+			</summary>
+			@mcpConfigurationGuide()
+		</details>
 	</div>
 }
 
@@ -133,6 +171,8 @@ templ mcpAuthModalContent(apiKey string) {
 			button.classList.add('bg-blue-600', 'hover:bg-blue-500');
 		}, 2000);
 	}
+
+
 </script>
 }
 
@@ -142,4 +182,49 @@ templ McpAuthModalWithSectionUpdate(apiKey string, createdAt string) {
 		@McpAuthSection(true, createdAt)
 	</div>
 	<script>toggleModal('mcp-api-key')</script>
+}
+
+templ mcpConfigurationGuide() {
+	<div class="mt-4 pl-6 space-y-4">
+		<div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-md">
+			<p class="text-sm text-blue-800">
+				Configure your agent to connect to the Pathwise MCP server using these details:
+			</p>
+			<p class="text-xs text-blue-700 mt-2">
+				Note: The MCP server syncs your job data every 12 hours.
+			</p>
+		</div>
+		<div>
+			<label class="text-sm font-medium text-gray-900">Server URL:</label>
+			<div class="flex items-center mt-1">
+				<code
+					class="bg-gray-100 px-3 py-2 rounded text-sm flex-1 font-mono"
+				>https://mcp.pathwise.work/mcp</code>
+				<button
+					onclick="copyToClipboard(this, 'https://mcp.pathwise.work/mcp')"
+					class="ml-2 px-3 py-2 text-sm bg-gray-600 text-white rounded hover:bg-gray-500"
+				>
+					Copy
+				</button>
+			</div>
+		</div>
+		<div>
+			<label class="text-sm font-medium text-gray-900">Authorization Header:</label>
+			<div class="flex items-center mt-1">
+				<code class="bg-gray-100 px-3 py-2 rounded text-sm flex-1 font-mono">
+					Authorization: Bearer
+					&lt;your-api-key&gt;
+				</code>
+				<button
+					onclick="copyToClipboard(this, 'Authorization: Bearer <your-api-key>')"
+					class="ml-2 px-3 py-2 text-sm bg-gray-600 text-white rounded hover:bg-gray-500"
+				>
+					Copy
+				</button>
+			</div>
+			<p class="text-xs text-gray-500 mt-1">
+				Replace &lt;your-api-key&gt; with the API key you generated above.
+			</p>
+		</div>
+	</div>
 }
