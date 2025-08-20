@@ -4,12 +4,12 @@ import "github.com/Piszmog/pathwise/ui/types"
 
 templ inputSelect(opts types.SelectOpts) {
 	<div class="w-full">
-		<label for={ opts.Name + "-select" } class="block text-sm font-medium leading-6 text-gray-900">{ opts.Label }</label>
+		<label for={ opts.Name + "-select" } class="label">{ opts.Label }</label>
 		<div class="relative mt-2 rounded-md shadow-sm">
 			<select
 				id={ opts.Name + "-select" }
 				name={ opts.Name }
-				class="bg-white block w-full rounded-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-200 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6"
+				class="input-field-select"
 				required?={ opts.Required }
 				aria-invalid="false"
 				aria-describedby={ opts.Name + "-select" + "-error" }
