@@ -298,7 +298,7 @@ jobs:
               echo "❌ Health check failed - app is not responding"
               exit 1
             fi
-           EOF
+          EOF
       - name: Cleanup
         run: |
           rm -f ~/.ssh/id_rsa
