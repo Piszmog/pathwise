@@ -32,7 +32,7 @@ templ jobRow(j types.JobApplication) {
 		@job(j)
 		<div class="flex flex-none items-center gap-x-4">
 			<button
-				class="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:block"
+				class="btn-secondary"
 				onclick="toggleSlideOver('job-details')"
 				hx-get={ "/jobs/" + strconv.FormatInt(j.ID, 10) }
 				hx-target="#job-details"
@@ -102,39 +102,39 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 		</div>
 		<div class="grid grid-cols-2 gap-x-6 gap-y-8">
 			<div>
-				<label for="company" class="block text-sm font-medium leading-6 text-gray-900">Company</label>
+				<label for="company" class="label">Company</label>
 				<div class="mt-2">
 					<input
 						type="text"
 						name="company"
 						id="company"
-						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-gray-300 placeholder:text-gray-400 read-only:bg-gray-50 read-only:text-gray-500 read-only:ring-gray-200 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+						class="input-field-readonly"
 						value={ j.Company }
 						disabled?={ j.Archived }
 					/>
 				</div>
 			</div>
 			<div>
-				<label for="title" class="block text-sm font-medium leading-6 text-gray-900">Title</label>
+				<label for="title" class="label">Title</label>
 				<div class="mt-2">
 					<input
 						type="text"
 						name="title"
 						id="title"
-						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-gray-300 placeholder:text-gray-400 read-only:bg-gray-50 read-only:text-gray-500 read-only:ring-gray-200 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+						class="input-field-readonly"
 						value={ j.Title }
 						disabled?={ j.Archived }
 					/>
 				</div>
 			</div>
 			<div>
-				<label for="url" class="block text-sm font-medium leading-6 text-gray-900">URL</label>
+				<label for="url" class="label">URL</label>
 				<div class="mt-2">
 					<input
 						type="url"
 						name="url"
 						id="url"
-						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-gray-300 placeholder:text-gray-400 read-only:bg-gray-50 read-only:text-gray-500 read-only:ring-gray-200 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+						class="input-field-readonly"
 						value={ j.URL }
 						disabled?={ j.Archived }
 					/>
@@ -154,12 +154,12 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 			<div class="col-span-2">
 				<div class="grid grid-cols-5 gap-x-4">
 					<div class="col-span-1">
-						<label for="salary_currency" class="block text-sm font-medium leading-6 text-gray-900">Currency</label>
+						<label for="salary_currency" class="label">Currency</label>
 						<div class="mt-2">
 							<select
 								id="salary_currency"
 								name="salary_currency"
-								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 disabled:bg-gray-50 disabled:text-gray-500 disabled:ring-gray-200 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+								class="input-field-select"
 								disabled?={ j.Archived }
 							>
 								<option value="">Select (optional)</option>
@@ -174,28 +174,28 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 						</div>
 					</div>
 					<div class="col-span-2">
-						<label for="salary_min" class="block text-sm font-medium leading-6 text-gray-900">Min Salary</label>
+						<label for="salary_min" class="label">Min Salary</label>
 						<div class="mt-2">
 							<input
 								type="number"
 								name="salary_min"
 								id="salary_min"
 								placeholder="Minimum"
-								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-gray-300 placeholder:text-gray-400 read-only:bg-gray-50 read-only:text-gray-500 read-only:ring-gray-200 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+								class="input-field-readonly"
 								value={ func() string { if j.SalaryMin.Valid { return strconv.FormatInt(j.SalaryMin.Int64, 10) }; return "" }() }
 								disabled?={ j.Archived }
 							/>
 						</div>
 					</div>
 					<div class="col-span-2">
-						<label for="salary_max" class="block text-sm font-medium leading-6 text-gray-900">Max Salary</label>
+						<label for="salary_max" class="label">Max Salary</label>
 						<div class="mt-2">
 							<input
 								type="number"
 								name="salary_max"
 								id="salary_max"
 								placeholder="Maximum"
-								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-gray-300 placeholder:text-gray-400 read-only:bg-gray-50 read-only:text-gray-500 read-only:ring-gray-200 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+								class="input-field-readonly"
 								value={ func() string { if j.SalaryMax.Valid { return strconv.FormatInt(j.SalaryMax.Int64, 10) }; return "" }() }
 								disabled?={ j.Archived }
 							/>
@@ -215,7 +215,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 			if j.Archived {
 				<button
 					type="button"
-					class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
+					class="btn-secondary"
 					hx-patch={ "/jobs/" + strconv.FormatInt(j.ID, 10) + "/unarchive" }
 					hx-target="#jobs"
 					hx-swap="outerHTML"
@@ -226,7 +226,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 			} else {
 				<button
 					type="button"
-					class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600"
+					class="btn-secondary"
 					hx-patch={ "/jobs/" + strconv.FormatInt(j.ID, 10) + "/archive" }
 					hx-target="#jobs"
 					hx-swap="outerHTML"
@@ -236,7 +236,7 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 				</button>
 				<button
 					type="submit"
-					class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+					class="btn-primary"
 				>
 					Update
 				</button>
@@ -273,37 +273,37 @@ templ jobApplicationForm() {
 		<div id="new-job-form-error"></div>
 		<div class="grid grid-cols-1 gap-x-6 gap-y-8">
 			<div>
-				<label for="company" class="block text-sm font-medium leading-6 text-gray-900">Company</label>
+				<label for="company" class="label">Company</label>
 				<div class="mt-2">
 					<input
 						type="text"
 						name="company"
 						id="company"
-						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+						class="input-field"
 						required
 					/>
 				</div>
 			</div>
 			<div>
-				<label for="title" class="block text-sm font-medium leading-6 text-gray-900">Title</label>
+				<label for="title" class="label">Title</label>
 				<div class="mt-2">
 					<input
 						type="text"
 						name="title"
 						id="title"
-						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+						class="input-field"
 						required
 					/>
 				</div>
 			</div>
 			<div>
-				<label for="url" class="block text-sm font-medium leading-6 text-gray-900">URL</label>
+				<label for="url" class="label">URL</label>
 				<div class="mt-2">
 					<input
 						type="url"
 						name="url"
 						id="url"
-						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+						class="input-field"
 						required
 					/>
 				</div>
@@ -311,12 +311,12 @@ templ jobApplicationForm() {
 			<div>
 				<div class="grid grid-cols-5 gap-x-4">
 					<div class="col-span-1">
-						<label for="new-salary_currency" class="block text-sm font-medium leading-6 text-gray-900">Currency</label>
+						<label for="new-salary_currency" class="label">Currency</label>
 						<div class="mt-2">
 							<select
 								id="new-salary_currency"
 								name="salary_currency"
-								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+								class="input-field"
 							>
 								<option value="">Select (optional)</option>
 								for _, currency := range types.AvailableCurrencies {
@@ -326,26 +326,26 @@ templ jobApplicationForm() {
 						</div>
 					</div>
 					<div class="col-span-2">
-						<label for="new-salary_min" class="block text-sm font-medium leading-6 text-gray-900">Min Salary</label>
+						<label for="new-salary_min" class="label">Min Salary</label>
 						<div class="mt-2">
 							<input
 								type="number"
 								name="salary_min"
 								id="new-salary_min"
 								placeholder="Minimum"
-								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+								class="input-field"
 							/>
 						</div>
 					</div>
 					<div class="col-span-2">
-						<label for="new-salary_max" class="block text-sm font-medium leading-6 text-gray-900">Max Salary</label>
+						<label for="new-salary_max" class="label">Max Salary</label>
 						<div class="mt-2">
 							<input
 								type="number"
 								name="salary_max"
 								id="new-salary_max"
 								placeholder="Maximum"
-								class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
+								class="input-field"
 							/>
 						</div>
 					</div>
@@ -362,7 +362,7 @@ templ jobApplicationForm() {
 			</button>
 			<button
 				type="submit"
-				class="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+				class="btn-primary"
 			>
 				Add
 			</button>
