@@ -41,8 +41,8 @@ templ statsBreakdown(s types.StatsOpts, isLoading bool) {
 			id="stats-total-applications"
 			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
 		>
-			<dt class="stat-label">Total Applications</dt>
-			<dd class="stat-number">
+			<dt class="text-sm font-medium leading-6 text-gray-500">Total Applications</dt>
+			<dd class="w-full flex-none text-2xl font-medium leading-10 tracking-tight text-gray-900">
 				{ strconv.FormatInt(s.TotalApplications, 10) }
 			</dd>
 		</div>
@@ -50,8 +50,8 @@ templ statsBreakdown(s types.StatsOpts, isLoading bool) {
 			id="stats-total-companies"
 			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
 		>
-			<dt class="stat-label">Total Companies</dt>
-			<dd class="stat-number">
+			<dt class="text-sm font-medium leading-6 text-gray-500">Total Companies</dt>
+			<dd class="w-full flex-none text-2xl font-medium leading-10 tracking-tight text-gray-900">
 				{ strconv.FormatInt(s.TotalCompanies,10) }
 			</dd>
 		</div>
@@ -59,8 +59,8 @@ templ statsBreakdown(s types.StatsOpts, isLoading bool) {
 			id="stats-average-time-to-hear-back"
 			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
 		>
-			<dt class="stat-label">Average time to hear back</dt>
-			<dd class="stat-number">
+			<dt class="text-sm font-medium leading-6 text-gray-500">Average time to hear back</dt>
+			<dd class="w-full flex-none text-2xl font-medium leading-10 tracking-tight text-gray-900">
 				{ strconv.FormatInt(s.AverageTimeToHearBackInDays,10) } days
 			</dd>
 		</div>
@@ -68,8 +68,8 @@ templ statsBreakdown(s types.StatsOpts, isLoading bool) {
 			id="stats-interview-percentage"
 			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
 		>
-			<dt class="stat-label">Interview Rate</dt>
-			<dd class="stat-number">
+			<dt class="text-sm font-medium leading-6 text-gray-500">Interview Rate</dt>
+			<dd class="w-full flex-none text-2xl font-medium leading-10 tracking-tight text-gray-900">
 				{ s.TotalInterviewingPercentage }%
 			</dd>
 		</div>
@@ -77,8 +77,8 @@ templ statsBreakdown(s types.StatsOpts, isLoading bool) {
 			id="stats-rejection-percentage"
 			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
 		>
-			<dt class="stat-label">Rejection Rate</dt>
-			<dd class="stat-number">
+			<dt class="text-sm font-medium leading-6 text-gray-500">Rejection Rate</dt>
+			<dd class="w-full flex-none text-2xl font-medium leading-10 tracking-tight text-gray-900">
 				{ s.TotalRejectionsPercentage }%
 			</dd>
 		</div>

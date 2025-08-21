@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Piszmog/pathwise/internal/db/queries"
 	"github.com/Piszmog/pathwise/ui/components"
+	"github.com/Piszmog/pathwise/internal/db/queries"
 	"github.com/Piszmog/pathwise/ui/server/middleware"
 	"github.com/Piszmog/pathwise/ui/types"
 	"github.com/Piszmog/pathwise/ui/utils"

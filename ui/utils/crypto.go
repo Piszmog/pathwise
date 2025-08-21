@@ -7,7 +7,7 @@ func HashPassword(password []byte, cost int) ([]byte, error) {
 	return bcrypt.GenerateFromPassword(password, cost)
 }
 
-// CheckPasswordHash securely compares a bcrypt hashed password with its possible
+// CheckPassword securely compares a bcrypt hashed password with its possible
 // plaintext equivalent.  Returns nil on success, or an error on failure.
 func CheckPasswordHash(hash, password []byte) error {
 	return bcrypt.CompareHashAndPassword(hash, password)
