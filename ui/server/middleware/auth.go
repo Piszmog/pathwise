@@ -28,7 +28,6 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 		cookie, err := r.Cookie("session")
 		if err != nil {
 			if errors.Is(err, http.ErrNoCookie) {
-				m.Logger.WarnContext(r.Context(), "no session cookie", "err", err)
 				w.Header().Set("HX-Redirect", "/signin")
 				if !isHxRequest {
 					http.Redirect(w, r, "/signin", http.StatusSeeOther)
