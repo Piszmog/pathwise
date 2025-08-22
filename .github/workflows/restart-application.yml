@@ -1,0 +1,189 @@
+name: Restart Application
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Application to restart'
+        required: true
+        type: choice
+        options:
+          - ui
+          - mcp
+      environment:
+        description: 'Environment to restart'
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Restart Request
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.validate.outputs.app }}
+      environment: ${{ steps.validate.outputs.environment }}
+      service_name: ${{ steps.validate.outputs.service_name }}
+    steps:
+      - name: Validate inputs
+        id: validate
+        run: |
+          APP="${{ github.event.inputs.app }}"
+          ENV="${{ github.event.inputs.environment }}"
+          
+          # Determine service name based on app and environment
+          if [ "$APP" = "ui" ] && [ "$ENV" = "dev" ]; then
+            SERVICE_NAME="pathwise-dev"
+          elif [ "$APP" = "ui" ] && [ "$ENV" = "prod" ]; then
+            SERVICE_NAME="pathwise"
+          elif [ "$APP" = "mcp" ] && [ "$ENV" = "dev" ]; then
+            SERVICE_NAME="pathwise-mcp-dev"
+          elif [ "$APP" = "mcp" ] && [ "$ENV" = "prod" ]; then
+            SERVICE_NAME="pathwise-mcp"
+          else
+            echo "Invalid app/environment combination: $APP/$ENV"
+            exit 1
+          fi
+          
+          echo "Validation passed for restarting $APP in $ENV environment (service: $SERVICE_NAME)"
+          echo "app=$APP" >> $GITHUB_OUTPUT
+          echo "environment=$ENV" >> $GITHUB_OUTPUT
+          echo "service_name=$SERVICE_NAME" >> $GITHUB_OUTPUT
+
+      - name: Announce restart
+        run: |
+          echo "::notice title=Application Restart::Restarting ${{ steps.validate.outputs.app }} in ${{ steps.validate.outputs.environment }} environment"
+
+  restart:
+    name: Restart Service
+    runs-on: ubuntu-latest
+    needs: [validate]
+    steps:
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Restart application service
+        run: |
+          SERVICE_NAME="${{ needs.validate.outputs.service_name }}"
+          APP="${{ needs.validate.outputs.app }}"
+          ENV="${{ needs.validate.outputs.environment }}"
+          
+          echo "Restarting service: $SERVICE_NAME"
+          
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+            # Check if service exists and is running
+            if sudo systemctl list-units --type=service | grep -q "$SERVICE_NAME"; then
+              echo "Service $SERVICE_NAME found"
+              
+              # Get current status
+              echo "Current status:"
+              sudo systemctl status $SERVICE_NAME --no-pager || true
+              
+              # Restart the service
+              echo "Restarting $SERVICE_NAME..."
+              sudo systemctl restart $SERVICE_NAME
+              
+              # Wait for restart to complete
+              sleep 5
+              
+              # Check new status
+              echo "New status after restart:"
+              sudo systemctl status $SERVICE_NAME --no-pager
+              
+              # Verify service is active
+              if sudo systemctl is-active --quiet $SERVICE_NAME; then
+                echo "✅ Service $SERVICE_NAME is now running"
+              else
+                echo "❌ Service $SERVICE_NAME failed to start properly"
+                exit 1
+              fi
+            else
+              echo "❌ Service $SERVICE_NAME not found or not installed"
+              echo "Available pathwise services:"
+              sudo systemctl list-units --type=service | grep pathwise || echo "No pathwise services found"
+              exit 1
+            fi
+          EOF
+
+      - name: Cleanup SSH
+        run: |
+          rm -f ~/.ssh/id_rsa
+
+  verify:
+    name: Verify Restart
+    runs-on: ubuntu-latest
+    needs: [validate, restart]
+    steps:
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Health check
+        run: |
+          SERVICE_NAME="${{ needs.validate.outputs.service_name }}"
+          APP="${{ needs.validate.outputs.app }}"
+          ENV="${{ needs.validate.outputs.environment }}"
+          
+          # Determine health check port based on service
+          if [ "$SERVICE_NAME" = "pathwise-dev" ]; then
+            PORT=8082
+          elif [ "$SERVICE_NAME" = "pathwise" ]; then
+            PORT=8080
+          elif [ "$SERVICE_NAME" = "pathwise-mcp-dev" ]; then
+            PORT=8083
+          elif [ "$SERVICE_NAME" = "pathwise-mcp" ]; then
+            # Assuming prod MCP runs on a different port, adjust as needed
+            PORT=8081
+          else
+            echo "Unknown service for health check: $SERVICE_NAME"
+            exit 1
+          fi
+          
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+            echo "Performing health check for $SERVICE_NAME on port $PORT"
+            
+            # Wait for service to fully start
+            sleep 10
+            
+            # Check service status
+            if sudo systemctl is-active --quiet $SERVICE_NAME; then
+              echo "✅ Service is running"
+            else
+              echo "❌ Service is not running"
+              sudo systemctl status $SERVICE_NAME --no-pager
+              exit 1
+            fi
+            
+            # Health check for UI apps only (MCP doesn't have health endpoint)
+            if [ "$APP" = "ui" ]; then
+              if curl -f http://localhost:$PORT/health; then
+                echo ""
+                echo "✅ Health check passed - $APP in $ENV environment is responding"
+              else
+                echo ""
+                echo "❌ Health check failed - $APP in $ENV environment is not responding on port $PORT"
+                exit 1
+              fi
+            else
+              echo "✅ MCP service restart completed (no health endpoint to check)"
+            fi
+          EOF
+
+      - name: Restart completion notice
+        run: |
+          echo "::notice title=Restart Complete::Successfully restarted ${{ needs.validate.outputs.app }} in ${{ needs.validate.outputs.environment }} environment"
+
+      - name: Cleanup SSH
+        run: |
+          rm -f ~/.ssh/id_rsa
