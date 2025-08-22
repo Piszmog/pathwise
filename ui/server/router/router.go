@@ -55,6 +55,7 @@ func New(logger *slog.Logger, database db.Database) http.Handler {
 
 	router.Handle("/", authMiddleware.Middleware(protected))
 
+	rateLimitMiddleware := middleware.NewRateLimitMiddleware()
 	loggingMiddleware := middleware.LoggingMiddleware{Logger: logger}
-	return loggingMiddleware.Middleware(router)
+	return loggingMiddleware.Middleware(rateLimitMiddleware.Middleware(router))
 }

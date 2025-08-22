@@ -10,6 +10,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/tursodatabase/go-libsql v0.0.0-20250723062947-60e59c7150f4
 	golang.org/x/crypto v0.41.0
+	golang.org/x/time v0.12.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
