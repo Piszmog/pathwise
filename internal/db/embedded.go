@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"log/slog"
+	"time"
 
 	"github.com/Piszmog/pathwise/internal/db/queries"
 	"github.com/tursodatabase/go-libsql"
@@ -59,6 +60,10 @@ func newEmbeddedDB(logger *slog.Logger, opts DatabaseOpts) (*EmbeddedDB, error) 
 	}
 
 	db := sql.OpenDB(connector)
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(3)
+	db.SetConnMaxLifetime(5 * time.Minute)
+	db.SetConnMaxIdleTime(1 * time.Minute)
 	return &EmbeddedDB{
 		logger:    logger,
 		connector: connector,

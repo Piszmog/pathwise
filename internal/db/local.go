@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"log/slog"
+	"time"
 
 	"github.com/Piszmog/pathwise/internal/db/queries"
 	_ "github.com/tursodatabase/go-libsql"
@@ -37,5 +38,9 @@ func newLocalDB(logger *slog.Logger, opts DatabaseOpts) (*LocalDB, error) {
 	if err != nil {
 		return nil, err
 	}
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(3)
+	db.SetConnMaxLifetime(5 * time.Minute)
+	db.SetConnMaxIdleTime(1 * time.Minute)
 	return &LocalDB{logger: logger, db: db, queries: queries.New(db)}, nil
 }
