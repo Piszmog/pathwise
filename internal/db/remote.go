@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"log/slog"
+	"time"
 
 	"github.com/Piszmog/pathwise/internal/db/queries"
 	_ "github.com/tursodatabase/go-libsql"
@@ -38,5 +39,10 @@ func newRemoteDB(logger *slog.Logger, opts DatabaseOpts) (*RemoteDB, error) {
 	if err != nil {
 		return nil, err
 	}
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(5 * time.Minute)
+	db.SetConnMaxIdleTime(1 * time.Minute)
+
 	return &RemoteDB{logger: logger, db: db, queries: queries.New(db)}, nil
 }
