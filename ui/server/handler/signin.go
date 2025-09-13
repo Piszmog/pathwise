@@ -9,12 +9,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Piszmog/pathwise/ui/components"
 	"github.com/Piszmog/pathwise/internal/db/queries"
+	"github.com/Piszmog/pathwise/ui/components"
 	"github.com/Piszmog/pathwise/ui/server/middleware"
 	"github.com/Piszmog/pathwise/ui/types"
 	"github.com/Piszmog/pathwise/ui/utils"
 	"github.com/google/uuid"
+)
+
+const (
+	MaxFailedAttempts = 3
+	AttemptWindow     = 3 * time.Minute
+	LockoutDuration   = 5 * time.Minute
 )
 
 var (
@@ -43,10 +49,26 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Missing email or password", "Please enter your email and password."))
 		return
 	}
+
+	clientIP := getClientIP(r)
+	if rateLimited, _ := h.checkRateLimit(r.Context(), email); rateLimited {
+		h.Logger.DebugContext(r.Context(), "rate limited login attempt", "email", email, "ip", clientIP)
+		h.html(r.Context(), w, http.StatusTooManyRequests, components.Alert(types.AlertTypeError, "Too many failed attempts", "Please try again later."))
+		return
+	}
 	user, err := h.Database.Queries().GetUserByEmail(r.Context(), email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			h.Logger.DebugContext(r.Context(), "user not found", "email", email)
+
+			if attemptErr := h.Database.Queries().InsertFailedLoginAttempt(r.Context(), queries.InsertFailedLoginAttemptParams{
+				ID:        uuid.New().String(),
+				Email:     email,
+				IpAddress: clientIP,
+			}); attemptErr != nil {
+				h.Logger.ErrorContext(r.Context(), "failed to record login attempt", "error", attemptErr)
+			}
+
 			h.html(r.Context(), w, http.StatusUnauthorized, components.Alert(types.AlertTypeError, "Incorrect email or password", "Double check your email and password and try again."))
 		} else {
 			h.Logger.ErrorContext(r.Context(), "failed to get user", "error", err)
@@ -56,6 +78,15 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 	}
 	if err = utils.CheckPasswordHash([]byte(user.Password), []byte(password)); err != nil {
 		h.Logger.DebugContext(r.Context(), "failed to compare password and hash", "error", err)
+
+		if attemptErr := h.Database.Queries().InsertFailedLoginAttempt(r.Context(), queries.InsertFailedLoginAttemptParams{
+			ID:        uuid.New().String(),
+			Email:     email,
+			IpAddress: clientIP,
+		}); attemptErr != nil {
+			h.Logger.ErrorContext(r.Context(), "failed to record login attempt", "error", attemptErr)
+		}
+
 		h.html(r.Context(), w, http.StatusForbidden, components.Alert(types.AlertTypeError, "Incorrect email or password", "Double check your email and password and try again."))
 		return
 	}
@@ -111,4 +142,33 @@ func (h *Handler) newSession(ctx context.Context, userID int64, userAgent string
 		return "", time.Time{}, err
 	}
 	return session.Token, session.ExpiresAt, nil
+}
+
+func (h *Handler) checkRateLimit(ctx context.Context, email string) (bool, time.Time) {
+	cutoffTime := time.Now().Add(-AttemptWindow)
+
+	failedCount, err := h.Database.Queries().GetRecentFailedAttempts(ctx, queries.GetRecentFailedAttemptsParams{
+		Email:     email,
+		CreatedAt: cutoffTime,
+	})
+	if err != nil {
+		h.Logger.ErrorContext(ctx, "failed to get recent failed attempts", "error", err)
+		return false, time.Time{}
+	}
+
+	if failedCount < MaxFailedAttempts {
+		return false, time.Time{}
+	}
+
+	lastFailedAttempt, err := h.Database.Queries().GetLastFailedAttempt(ctx, email)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, time.Time{}
+		}
+		h.Logger.ErrorContext(ctx, "failed to get last failed attempt", "error", err)
+		return false, time.Time{}
+	}
+
+	lockoutEnd := lastFailedAttempt.Add(LockoutDuration)
+	return time.Now().Before(lockoutEnd), lockoutEnd
 }
