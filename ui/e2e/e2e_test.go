@@ -97,6 +97,10 @@ func beforeAll() {
 	isFirefox = browserName == "firefox"
 	isWebKit = browserName == "webkit"
 
+	if err = removeDBFile(); err != nil {
+		log.Fatalf("could not remove test-db.sqlite3: %v", err)
+	}
+
 	// start app
 	if err = startApp(); err != nil {
 		log.Fatalf("could not start app: %v", err)
