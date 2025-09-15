@@ -26,13 +26,6 @@ type StatusCount struct {
 	Count  int64
 }
 
-type AnalyticsStats struct {
-	TotalApplications int64
-	TotalInterviewing int64
-	TotalAccepted     int64
-}
-
 type AnalyticsData struct {
 	SankeyData SankeyData
-	Stats      AnalyticsStats
 }

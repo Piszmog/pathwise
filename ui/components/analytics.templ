@@ -12,6 +12,7 @@ templ analyticsBody() {
 	<body class="min-h-screen flex flex-col">
 		<main class="flex-1">
 			@header(CurrentPageAnalytics)
+			@loadingStats()
 			@analyticsContent()
 		</main>
 		@footer()
@@ -20,8 +21,6 @@ templ analyticsBody() {
 
 templ analyticsContent() {
 	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-		<h2 class="text-xl font-semibold text-gray-900 mb-4">Application Status Flow</h2>
-		<p class="text-sm text-gray-500 mb-6">This diagram shows how your job applications flow between different statuses over time.</p>
 		<div
 			id="sankey-container"
 			hx-get="/analytics/graph"

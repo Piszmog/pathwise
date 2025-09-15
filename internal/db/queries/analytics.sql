@@ -26,10 +26,3 @@ WHERE user_id = ? AND archived = false
 GROUP BY status
 ORDER BY count DESC;
 
--- name: GetAnalyticsStats :one
-SELECT 
-    COUNT(*) as total_applications,
-    COUNT(CASE WHEN status = 'interviewing' THEN 1 END) as total_interviewing,
-    COUNT(CASE WHEN status = 'accepted' THEN 1 END) as total_accepted
-FROM job_applications
-WHERE user_id = ? AND archived = false;
