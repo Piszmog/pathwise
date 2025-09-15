@@ -67,24 +67,28 @@ templ SankeyGraph(data types.AnalyticsData) {
 					const colorScale = d3
 						.scaleOrdinal()
 						.domain([
-							"Applied",
-							"Watching",
-							"Interviewing",
-							"Offered",
-							"Accepted",
-							"Rejected",
-							"Withdrawn",
-							"Declined",
+							"accepted",
+							"applied",
+							"canceled",
+							"closed",
+							"declined",
+							"interviewing",
+							"offered",
+							"rejected",
+							"watching",
+							"withdrawn"
 						])
 						.range([
-							"#3b82f6",
-							"#6b7280",
-							"#f59e0b",
-							"#10b981",
-							"#059669",
-							"#ef4444",
-							"#6b7280",
-							"#ef4444",
+							"#22c55e", // accepted - green
+							"#3b82f6", // applied - blue
+							"#dc2626", // canceled - red
+							"#f97316", // closed - orange
+							"#a855f7", // declined - purple
+							"#eab308", // interviewing - yellow
+							"#16a34a", // offered - green (darker)
+							"#ef4444", // rejected - red
+							"#6b7280", // watching - gray
+							"#9ca3af"  // withdrawn - gray (lighter)
 						]);
 
 					g.append("g")
