@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"net/http"
 	"sort"
 
@@ -44,16 +45,16 @@ func (h *Handler) getAnalyticsData(ctx context.Context, userID int64) (types.Ana
 
 func (h *Handler) getSankeyData(ctx context.Context, userID int64) (types.SankeyData, error) {
 	dbTransitions, err := h.Database.Queries().GetStatusTransitionsForUser(ctx, userID)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return types.SankeyData{}, err
 	}
 
 	dbStatusCounts, err := h.Database.Queries().GetCurrentStatusCounts(ctx, userID)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return types.SankeyData{}, err
 	}
 
-	var transitions []types.StatusTransition
+	transitions := make([]types.StatusTransition, 0, len(dbTransitions))
 	for _, t := range dbTransitions {
 		transitions = append(transitions, types.StatusTransition{
 			FromStatus:      t.FromStatus,
@@ -62,7 +63,7 @@ func (h *Handler) getSankeyData(ctx context.Context, userID int64) (types.Sankey
 		})
 	}
 
-	var statusCounts []types.StatusCount
+	statusCounts := make([]types.StatusCount, 0, len(dbStatusCounts))
 	for _, s := range dbStatusCounts {
 		statusCounts = append(statusCounts, types.StatusCount{
 			Status: s.Status,
@@ -83,20 +84,20 @@ func buildSankeyFromTransitions(transitions []types.StatusTransition, statusCoun
 		statusSet[s.Status] = true
 	}
 
-	var statuses []string
+	statuses := make([]string, 0, len(statusSet))
 	for status := range statusSet {
 		statuses = append(statuses, status)
 	}
 	sort.Strings(statuses)
 
-	var nodes []types.SankeyNode
+	nodes := make([]types.SankeyNode, 0, len(statuses))
 	statusToIndex := make(map[string]int)
 	for i, status := range statuses {
 		nodes = append(nodes, types.SankeyNode{Name: status})
 		statusToIndex[status] = i
 	}
 
-	var links []types.SankeyLink
+	links := make([]types.SankeyLink, 0, len(transitions))
 	for _, t := range transitions {
 		fromIndex := statusToIndex[t.FromStatus]
 		toIndex := statusToIndex[t.ToStatus]
@@ -110,7 +111,6 @@ func buildSankeyFromTransitions(transitions []types.StatusTransition, statusCoun
 	if len(links) == 0 && len(statusCounts) > 0 {
 		for _, s := range statusCounts {
 			if index, exists := statusToIndex[s.Status]; exists {
-				// Create self-referencing links to show status counts
 				links = append(links, types.SankeyLink{
 					Source: index,
 					Target: index,
