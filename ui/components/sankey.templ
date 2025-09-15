@@ -14,7 +14,7 @@ func calculatePercentage(part, total int64) string {
 
 templ SankeyGraph(data types.AnalyticsData) {
 	<div class="w-full">
-		<div id="sankey-viz" class="w-full h-96 border border-gray-100 rounded bg-gray-50"></div>
+		<div id="sankey-viz" class="w-full h-64 sm:h-80 md:h-96 lg:h-[500px] border border-gray-100 rounded bg-gray-50"></div>
 		<script>
 			(function () {
 				const analyticsData = {{ data }};
@@ -24,10 +24,17 @@ templ SankeyGraph(data types.AnalyticsData) {
 					const container = document.getElementById("sankey-viz");
 					container.innerHTML = "";
 
-					const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+					const isMobile = window.innerWidth < 768;
+					const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+
+					const margin = isMobile
+						? { top: 10, right: 10, bottom: 10, left: 10 }
+						: { top: 20, right: 20, bottom: 20, left: 20 };
+
 					const containerWidth = container.offsetWidth;
+					const containerHeight = container.offsetHeight;
 					const width = containerWidth - margin.left - margin.right;
-					const height = 380 - margin.top - margin.bottom;
+					const height = containerHeight - margin.top - margin.bottom;
 
 					const svg = d3
 						.select("#sankey-viz")
@@ -39,10 +46,13 @@ templ SankeyGraph(data types.AnalyticsData) {
 						.append("g")
 						.attr("transform", `translate(${margin.left},${margin.top})`);
 
+					const nodeWidth = isMobile ? 8 : isTablet ? 12 : 15;
+					const nodePadding = isMobile ? 12 : isTablet ? 16 : 20;
+
 					const sankey = d3
 						.sankey()
-						.nodeWidth(15)
-						.nodePadding(20)
+						.nodeWidth(nodeWidth)
+						.nodePadding(nodePadding)
 						.extent([
 							[1, 1],
 							[width - 1, height - 6],
@@ -114,17 +124,22 @@ templ SankeyGraph(data types.AnalyticsData) {
 						.append("title")
 						.text((d) => `${d.name}: ${d.value || 0} applications`);
 
+					const fontSize = isMobile ? "10px" : isTablet ? "11px" : "12px";
+					const textOffset = isMobile ? 4 : 6;
+
 					g.append("g")
 						.selectAll("text")
 						.data(nodes)
 						.enter()
 						.append("text")
-						.attr("x", (d) => (d.x0 < width / 2 ? d.x1 + 6 : d.x0 - 6))
+						.attr("x", (d) =>
+							d.x0 < width / 2 ? d.x1 + textOffset : d.x0 - textOffset,
+						)
 						.attr("y", (d) => (d.y1 + d.y0) / 2)
 						.attr("dy", "0.35em")
 						.attr("text-anchor", (d) => (d.x0 < width / 2 ? "start" : "end"))
 						.text((d) => d.name)
-						.style("font-size", "12px")
+						.style("font-size", fontSize)
 						.style("font-weight", "500")
 						.style("fill", "#374151");
 				}
