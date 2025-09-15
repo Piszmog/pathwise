@@ -1,28 +1,38 @@
 package components
 
-import "github.com/Piszmog/pathwise/ui/types"
+import (
+	"strconv"
+	"github.com/Piszmog/pathwise/ui/types"
+)
 
-templ SankeyGraph(data types.SankeyData) {
+func calculatePercentage(part, total int64) string {
+	if total == 0 {
+		return "0"
+	}
+	return strconv.FormatInt((part*100)/total, 10)
+}
+
+templ SankeyGraph(data types.AnalyticsData) {
 	<div class="w-full">
 		<div id="sankey-viz" class="w-full h-96 border border-gray-100 rounded bg-gray-50"></div>
 		<div class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
 			<div class="bg-blue-50 rounded-lg p-4">
 				<div class="font-medium text-blue-900">Total Applications</div>
-				<div class="text-2xl font-bold text-blue-600">108</div>
+				<div class="text-2xl font-bold text-blue-600">{ strconv.FormatInt(data.Stats.TotalApplications, 10) }</div>
 			</div>
 			<div class="bg-yellow-50 rounded-lg p-4">
 				<div class="font-medium text-yellow-900">Interview Rate</div>
-				<div class="text-2xl font-bold text-yellow-600">23%</div>
+				<div class="text-2xl font-bold text-yellow-600">{ calculatePercentage(data.Stats.TotalInterviewing, data.Stats.TotalApplications) }%</div>
 			</div>
 			<div class="bg-green-50 rounded-lg p-4">
 				<div class="font-medium text-green-900">Success Rate</div>
-				<div class="text-2xl font-bold text-green-600">5%</div>
+				<div class="text-2xl font-bold text-green-600">{ calculatePercentage(data.Stats.TotalAccepted, data.Stats.TotalApplications) }%</div>
 			</div>
 		</div>
 		<script>
 			(function () {
-				const sankeyData = {{ data }};
-				renderSankey(sankeyData);
+				const analyticsData = {{ data }};
+				renderSankey(analyticsData.SankeyData);
 
 				function renderSankey(data) {
 					const container = document.getElementById("sankey-viz");

@@ -14,3 +14,25 @@ type SankeyLink struct {
 	Target int `json:"target"`
 	Value  int `json:"value"`
 }
+
+type StatusTransition struct {
+	FromStatus      string
+	ToStatus        string
+	TransitionCount int64
+}
+
+type StatusCount struct {
+	Status string
+	Count  int64
+}
+
+type AnalyticsStats struct {
+	TotalApplications int64
+	TotalInterviewing int64
+	TotalAccepted     int64
+}
+
+type AnalyticsData struct {
+	SankeyData SankeyData
+	Stats      AnalyticsStats
+}
