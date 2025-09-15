@@ -3,9 +3,10 @@ package components
 type CurrentPage string
 
 const (
-	CurrentPageHome     CurrentPage = "home"
-	CurrentPageArchived CurrentPage = "archived"
-	CurrentPageSettings CurrentPage = "settings"
+	CurrentPageHome      CurrentPage = "home"
+	CurrentPageAnalytics CurrentPage = "analytics"
+	CurrentPageArchived  CurrentPage = "archived"
+	CurrentPageSettings  CurrentPage = "settings"
 )
 
 var toggleDropdownHandle = templ.NewOnceHandle()
@@ -13,21 +14,26 @@ var toggleDropdownHandle = templ.NewOnceHandle()
 templ header(currentPage CurrentPage) {
 	{{ atHome := currentPage == CurrentPageHome }}
 	{{ atArchived := currentPage == CurrentPageArchived }}
+	{{ atAnalytics := currentPage == CurrentPageAnalytics }}
 	@toggleDropdownHandle.Once() {
 		<script type="text/javascript">
-		function toggleDropdown(name) {
-			const dropdown = document.getElementById(name);
-			dropdown.classList.toggle('hidden');
-		}
-		
-		// Close dropdown when clicking outside
-		document.addEventListener('click', function(event) {
-			const dropdown = document.getElementById('user-menu');
-			const button = document.getElementById('user-menu-button');
-			if (dropdown && !dropdown.contains(event.target) && !button.contains(event.target)) {
-				dropdown.classList.add('hidden');
+			function toggleDropdown(name) {
+				const dropdown = document.getElementById(name);
+				dropdown.classList.toggle("hidden");
 			}
-		});
+
+			// Close dropdown when clicking outside
+			document.addEventListener("click", function (event) {
+				const dropdown = document.getElementById("user-menu");
+				const button = document.getElementById("user-menu-button");
+				if (
+					dropdown &&
+					!dropdown.contains(event.target) &&
+					!button.contains(event.target)
+				) {
+					dropdown.classList.add("hidden");
+				}
+			});
 		</script>
 	}
 	<style type="text/css">
@@ -63,6 +69,9 @@ templ header(currentPage CurrentPage) {
 					</div>
 					<div class="hidden md:ml-6 md:flex md:space-x-8">
 						<a href="/" class={ "inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium text-gray-900", templ.KV("border-blue-500 border-b-2", atHome) }>Job Applications</a>
+					</div>
+					<div class="hidden md:ml-6 md:flex md:space-x-8">
+						<a href="/analytics" class={ "inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium text-gray-900", templ.KV("border-blue-500 border-b-2", atAnalytics) }>Analytics</a>
 					</div>
 					<div class="hidden md:ml-6 md:flex md:space-x-8">
 						<a href="/archives" class={ "inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium text-gray-900", templ.KV("border-blue-500 border-b-2", atArchived) }>Archives</a>
@@ -120,6 +129,7 @@ templ header(currentPage CurrentPage) {
 			<div class="pb-3 pt-4">
 				<div class="mt-3 space-y-1">
 					<a href="/" class="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800 sm:px-6">Job Applications</a>
+					<a href="/analytics" class="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800 sm:px-6">Analytics</a>
 					<a href="/archives" class="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800 sm:px-6">Archives</a>
 					<a href="/settings" class="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800 sm:px-6">Settings</a>
 					<a href="/export/csv" class="block px-4 py-2 text-base font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-800 sm:px-6">Export Data</a>
