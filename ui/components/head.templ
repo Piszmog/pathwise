@@ -2,7 +2,7 @@ package components
 
 import "github.com/Piszmog/pathwise/internal/version"
 
-templ Head() {
+templ Head(viz bool) {
 	<head>
 		<meta charset="UTF-8"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -10,6 +10,10 @@ templ Head() {
 		<title>Pathwise</title>
 		<script src="/assets/js/htmx@v2.0.7.min.js"></script>
 		<script src="/assets/js/ext-response-targets@2.0.3.min.js"></script>
+		if viz {
+			<script src="/assets/js/d3.v7.min.js"></script>
+			<script src="/assets/js/d3-sankey.min.js"></script>
+		}
 		<link href={ "/assets/css/output@" + version.Value + ".css" } rel="stylesheet"/>
 	</head>
 }
