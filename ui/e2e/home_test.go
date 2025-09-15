@@ -14,7 +14,6 @@ func TestHome_NewUser(t *testing.T) {
 	beforeEach(t)
 	createUserAndSignIn(t)
 
-	assertStats(t, "0", "0", "0 days", "NaN%", "NaN%")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
 	require.NoError(t, expect.Locator(page.GetByText("Showing 0 to 0 of 0 results ")).ToHaveCount(1))
 }
@@ -29,19 +28,17 @@ func TestHome_AddApplication(t *testing.T) {
 	addJobApplication(t, "Super Company", "Rock Star", "https://supercompany.com")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
 	require.NoError(t, expect.Locator(page.GetByText("Showing 1 to 1 of 1 results")).ToHaveCount(1))
-
-	assertStats(t, "1", "1", "0 days", "0%", "0%")
 }
 
-func TestHome_UpdatedStats(t *testing.T) {
+func TestHome_UpdateStatus(t *testing.T) {
 	beforeEach(t)
 	signin(t, "existing-user@test.com", "password")
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
-	assertStats(t, "1", "1", "0 days", "0%", "0%")
 
 	updateJobApplication(t, "", "", "", "rejected")
-	assertStats(t, "1", "1", "2 days", "0%", "100%")
+
+	require.NoError(t, expect.Locator(page.Locator("#job-form #status-select")).ToHaveValue("rejected"))
 }
 
 func TestHome_UpdateAllFields(t *testing.T) {
@@ -104,14 +101,12 @@ func TestHome_BulkArchiveByDate(t *testing.T) {
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(3))
 	require.NoError(t, expect.Locator(page.GetByText("3 results")).ToHaveCount(1))
-	assertStats(t, "3", "3", "0 days", "0%", "0%")
 
 	tomorrow := time.Now().AddDate(0, 0, 1).Format("2006-01-02")
 	archiveJobsByDate(t, tomorrow)
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
 	require.NoError(t, expect.Locator(page.GetByText("0 results")).ToHaveCount(1))
-	assertStats(t, "0", "0", "0 days", "NaN%", "NaN%")
 
 	_, err := page.Goto(getFullPath("archives"))
 	require.NoError(t, err)
@@ -174,7 +169,6 @@ func TestHome_ArchiveSingleJob(t *testing.T) {
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(2))
 	require.NoError(t, expect.Locator(page.GetByText("2 results")).ToHaveCount(1))
-	assertStats(t, "2", "2", "0 days", "0%", "0%")
 
 	archiveSingleJob(t, "Archive Test Company")
 
@@ -182,7 +176,6 @@ func TestHome_ArchiveSingleJob(t *testing.T) {
 	require.NoError(t, expect.Locator(page.GetByText("1 result")).ToHaveCount(1))
 	require.NoError(t, expect.Locator(page.GetByText("Keep This Company")).ToHaveCount(1))
 	require.NoError(t, expect.Locator(page.GetByText("Archive Test Company")).ToHaveCount(0))
-	assertStats(t, "1", "1", "0 days", "0%", "0%")
 
 	_, err := page.Goto(getFullPath("archives"))
 	require.NoError(t, err)
@@ -216,14 +209,6 @@ func addJobApplication(t *testing.T, company, title, url string) {
 	require.NoError(t, expect.Locator(page.GetByText(company)).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
 		Timeout: playwright.Float(10000),
 	}))
-}
-
-func assertStats(t *testing.T, totalApps, totalCompanies, hearBack, interviewRate, rejectionRate string) {
-	require.NoError(t, expect.Locator(page.Locator("#stats div").Locator("#stats-total-applications")).ToHaveText("Total Applications"+totalApps))
-	require.NoError(t, expect.Locator(page.Locator("#stats div").Locator("#stats-total-companies")).ToHaveText("Total Companies"+totalCompanies))
-	require.NoError(t, expect.Locator(page.Locator("#stats div").Locator("#stats-average-time-to-hear-back")).ToHaveText("Average time to hear back"+hearBack))
-	require.NoError(t, expect.Locator(page.Locator("#stats div").Locator("#stats-interview-percentage")).ToHaveText("Interview Rate"+interviewRate))
-	require.NoError(t, expect.Locator(page.Locator("#stats div").Locator("#stats-rejection-percentage")).ToHaveText("Rejection Rate"+rejectionRate))
 }
 
 func updateJobApplication(t *testing.T, company, title, url, status string) {
@@ -321,17 +306,4 @@ func waitForHTMXRequest(t *testing.T) {
 	page.WaitForFunction("() => !document.body.classList.contains('htmx-request')", playwright.PageWaitForFunctionOptions{
 		Timeout: playwright.Float(10000),
 	})
-}
-
-func TestStats_TimeToHearBackCalculation(t *testing.T) {
-	beforeEach(t)
-	signin(t, "existing-user@test.com", "password")
-
-	assertStats(t, "1", "1", "0 days", "0%", "0%")
-
-	updateJobApplication(t, "", "", "", "interviewing")
-	assertStats(t, "1", "1", "2 days", "100%", "0%")
-
-	updateJobApplication(t, "", "", "", "rejected")
-	assertStats(t, "1", "1", "2 days", "0%", "100%")
 }
