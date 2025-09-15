@@ -52,6 +52,8 @@ func New(logger *slog.Logger, database db.Database) http.Handler {
 	protected.HandleFunc(http.MethodPatch+" /settings/mcp/auth", h.RegenerateMcpAuth)
 	protected.HandleFunc(http.MethodDelete+" /settings/mcp/auth", h.DeleteMcpAuth)
 	protected.HandleFunc(http.MethodGet+" /export/csv", h.ExportCSV)
+	protected.HandleFunc(http.MethodGet+" /analytics", h.Analytics)
+	protected.HandleFunc(http.MethodGet+" /analytics/graph", h.AnalyticsGraph)
 
 	router.Handle("/", authMiddleware.Middleware(protected))
 
