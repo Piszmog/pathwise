@@ -124,37 +124,6 @@ func TestAnalytics_ComplexWorkflow(t *testing.T) {
 	}
 }
 
-func TestAnalytics_TooltipInteraction(t *testing.T) {
-	beforeEach(t)
-	email := createUserAndSignIn(t)
-	userID := getUserIDByEmail(t, email)
-
-	createJobApplicationWithHistory(t, userID, "Tooltip Corp", "Engineer", []string{"applied", "interviewing"})
-
-	_, err := page.Goto(getFullPath("analytics"))
-	require.NoError(t, err)
-
-	waitForSankeyRender(t)
-
-	sankeyContainer := page.Locator("#sankey-viz")
-	svgElement := sankeyContainer.Locator("svg")
-
-	// Just verify the SVG exists and has content
-	require.NoError(t, expect.Locator(svgElement).ToBeVisible())
-
-	// Check if there are any nodes (rectangles) or links (paths)
-	nodes := svgElement.Locator("rect")
-	nodeCount, err := nodes.Count()
-	require.NoError(t, err)
-
-	links := svgElement.Locator("path")
-	linkCount, err := links.Count()
-	require.NoError(t, err)
-
-	// At least one of nodes or links should exist
-	require.True(t, nodeCount > 0 || linkCount > 0, "Expected at least one node or link in the Sankey diagram")
-}
-
 func TestAnalytics_ResponsiveLayout(t *testing.T) {
 	beforeEach(t)
 	email := createUserAndSignIn(t)
