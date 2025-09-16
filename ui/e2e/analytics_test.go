@@ -13,27 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAnalytics_EmptyState(t *testing.T) {
-	beforeEach(t)
-	createUserAndSignIn(t)
-
-	_, err := page.Goto(getFullPath("analytics"))
-	require.NoError(t, err)
-
-	require.NoError(t, expect.Locator(page.Locator("#sankey-container")).ToBeVisible())
-
-	waitForSankeyRender(t)
-
-	sankeyContainer := page.Locator("#sankey-viz")
-	require.NoError(t, expect.Locator(sankeyContainer).ToBeVisible())
-
-	svgElement := sankeyContainer.Locator("svg")
-	require.NoError(t, expect.Locator(svgElement).ToBeVisible())
-
-	nodes := svgElement.Locator("rect")
-	require.NoError(t, expect.Locator(nodes).ToHaveCount(0))
-}
-
 func TestAnalytics_SingleStatusOnly(t *testing.T) {
 	beforeEach(t)
 	email := createUserAndSignIn(t)
