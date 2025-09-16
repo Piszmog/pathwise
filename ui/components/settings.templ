@@ -3,7 +3,7 @@ package components
 templ Settings(email string, hasMcpApiKey bool, mcpKeyCreatedAt string) {
 	<!DOCTYPE html>
 	<html lang="en">
-		@Head()
+		@Head(false)
 		<body class="min-h-screen flex flex-col">
 			<main class="flex-1">
 				@header(CurrentPageSettings)
@@ -38,13 +38,13 @@ templ settings(email string, hasMcpApiKey bool, mcpKeyCreatedAt string) {
 		}
 
 		@keyframes slideDown {
-			from { 
-				opacity: 0; 
-				transform: translateY(-10px); 
+			from {
+				opacity: 0;
+				transform: translateY(-10px);
 			}
-			to { 
-				opacity: 1; 
-				transform: translateY(0); 
+			to {
+				opacity: 1;
+				transform: translateY(0);
 			}
 		}
 	</style>
@@ -52,14 +52,14 @@ templ settings(email string, hasMcpApiKey bool, mcpKeyCreatedAt string) {
 		function copyToClipboard(button, text) {
 			navigator.clipboard.writeText(text).then(() => {
 				const originalText = button.textContent;
-				button.textContent = 'Copied!';
-				button.classList.add('bg-green-600', 'hover:bg-green-500');
-				button.classList.remove('bg-gray-600', 'hover:bg-gray-500');
-				
+				button.textContent = "Copied!";
+				button.classList.add("bg-green-600", "hover:bg-green-500");
+				button.classList.remove("bg-gray-600", "hover:bg-gray-500");
+
 				setTimeout(() => {
 					button.textContent = originalText;
-					button.classList.remove('bg-green-600', 'hover:bg-green-500');
-					button.classList.add('bg-gray-600', 'hover:bg-gray-500');
+					button.classList.remove("bg-green-600", "hover:bg-green-500");
+					button.classList.add("bg-gray-600", "hover:bg-gray-500");
 				}, 2000);
 			});
 		}

@@ -1,0 +1,43 @@
+package components
+
+templ Analytics() {
+	<!DOCTYPE html>
+	<html lang="en">
+		@Head(true)
+		@analyticsBody()
+	</html>
+}
+
+templ analyticsBody() {
+	<body class="min-h-screen flex flex-col">
+		<main class="flex-1">
+			@header(CurrentPageAnalytics)
+			@loadingStats()
+			@analyticsContent()
+		</main>
+		@footer()
+	</body>
+}
+
+templ analyticsContent() {
+	<div class="mx-auto max-w-7xl px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+		<div
+			id="sankey-container"
+			hx-get="/analytics/graph"
+			hx-trigger="load"
+			hx-target="this"
+			hx-swap="innerHTML"
+		>
+			@loadingSpinner()
+		</div>
+	</div>
+}
+
+templ loadingSpinner() {
+	<div class="flex items-center justify-center h-96">
+		<div class="flex flex-col items-center">
+			<div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+			<p class="text-gray-500 text-sm">Loading analytics...</p>
+		</div>
+	</div>
+}

@@ -3,7 +3,7 @@ package components
 templ Signin() {
 	<!DOCTYPE html>
 	<html lang="en">
-		@Head()
+		@Head(false)
 		<body class="min-h-screen flex flex-col">
 			<main class="flex-1">
 				@signin()
@@ -12,7 +12,6 @@ templ Signin() {
 		</body>
 	</html>
 }
-
 
 templ signin() {
 	<style type="text/css">

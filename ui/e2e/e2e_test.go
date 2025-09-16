@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -96,6 +97,10 @@ func beforeAll() {
 	isChromium = browserName == "chromium" || browserName == ""
 	isFirefox = browserName == "firefox"
 	isWebKit = browserName == "webkit"
+
+	if err = removeDBFile(); err != nil {
+		log.Fatalf("could not remove test-db.sqlite3: %v", err)
+	}
 
 	// start app
 	if err = startApp(); err != nil {
@@ -305,7 +310,11 @@ func removeDBFile() error {
 	if err != nil {
 		return err
 	}
-	return os.Remove(p)
+	err = os.Remove(p)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	return nil
 }
 
 // beforeEach creates a new context and page for each test,
