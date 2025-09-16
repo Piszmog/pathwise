@@ -60,6 +60,19 @@ templ SankeyGraph(data types.AnalyticsData) {
 						.append("g")
 						.attr("transform", `translate(${margin.left},${margin.top})`);
 
+					if (!data.nodes || data.nodes.length === 0) {
+						g.append("text")
+							.attr("x", width / 2)
+							.attr("y", height / 2)
+							.attr("text-anchor", "middle")
+							.attr("dy", "0.35em")
+							.text("No job application data available")
+							.style("font-size", "14px")
+							.style("fill", "#6b7280")
+							.style("font-family", "system-ui, -apple-system, sans-serif");
+						return;
+					}
+
 					const nodeWidth = isMobile ? 8 : isTablet ? 12 : 15;
 					const nodePadding = isMobile ? 12 : isTablet ? 16 : 20;
 
