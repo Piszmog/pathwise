@@ -14,6 +14,19 @@ func calculatePercentage(part, total int64) string {
 
 templ SankeyGraph(data types.AnalyticsData) {
 	<div class="w-full">
+		<div class="flex justify-between items-center mb-4">
+			<h2 class="text-lg font-semibold text-gray-900">Job Application Flow</h2>
+			<button 
+				id="download-png-btn"
+				onclick="downloadSankeyAsPNG()" 
+				class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
+			>
+				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+				</svg>
+				<span id="download-text">Download PNG</span>
+			</button>
+		</div>
 		<div id="sankey-viz" class="w-full h-64 sm:h-80 md:h-96 lg:h-[500px] border border-gray-100 rounded bg-gray-50"></div>
 		<script>
 			(function () {
@@ -40,7 +53,8 @@ templ SankeyGraph(data types.AnalyticsData) {
 						.select("#sankey-viz")
 						.append("svg")
 						.attr("width", width + margin.left + margin.right)
-						.attr("height", height + margin.top + margin.bottom);
+						.attr("height", height + margin.top + margin.bottom)
+						.attr("xmlns", "http://www.w3.org/2000/svg");
 
 					const g = svg
 						.append("g")
@@ -141,8 +155,86 @@ templ SankeyGraph(data types.AnalyticsData) {
 						.text((d) => d.name)
 						.style("font-size", fontSize)
 						.style("font-weight", "500")
-						.style("fill", "#374151");
+						.style("fill", "#374151")
+						.style("font-family", "system-ui, -apple-system, sans-serif");
 				}
+
+				function downloadSankeyAsPNG() {
+					try {
+						const button = document.getElementById("download-png-btn");
+						const downloadText = document.getElementById("download-text");
+						
+						button.disabled = true;
+						downloadText.textContent = "Generating...";
+
+						const svg = document.querySelector('#sankey-viz svg');
+						if (!svg) {
+							throw new Error('Sankey diagram not found');
+						}
+
+						const canvas = document.createElement('canvas');
+						const ctx = canvas.getContext('2d');
+						const scaleFactor = 2;
+						
+						const svgRect = svg.getBoundingClientRect();
+						canvas.width = svgRect.width * scaleFactor;
+						canvas.height = svgRect.height * scaleFactor;
+						
+						ctx.scale(scaleFactor, scaleFactor);
+						
+						ctx.fillStyle = '#ffffff';
+						ctx.fillRect(0, 0, svgRect.width, svgRect.height);
+
+						const svgClone = svg.cloneNode(true);
+						
+						const svgData = new XMLSerializer().serializeToString(svgClone);
+						const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+						const svgUrl = URL.createObjectURL(svgBlob);
+
+						const img = new Image();
+						img.onload = function() {
+							ctx.drawImage(img, 0, 0, svgRect.width, svgRect.height);
+							
+							canvas.toBlob(function(blob) {
+								const now = new Date();
+								const timestamp = now.toISOString().slice(0, 19).replace(/[:-]/g, '');
+								const filename = `job-analytics-${timestamp}.png`;
+								
+								const url = URL.createObjectURL(blob);
+								const a = document.createElement('a');
+								a.href = url;
+								a.download = filename;
+								a.style.display = 'none';
+								document.body.appendChild(a);
+								a.click();
+								document.body.removeChild(a);
+								URL.revokeObjectURL(url);
+								
+								button.disabled = false;
+								downloadText.textContent = "Download PNG";
+							}, 'image/png', 0.95);
+							
+							URL.revokeObjectURL(svgUrl);
+						};
+						
+						img.onerror = function() {
+							throw new Error('Failed to load SVG for conversion');
+						};
+						
+						img.src = svgUrl;
+						
+					} catch (error) {
+						console.error('PNG export failed:', error);
+						alert('Failed to download PNG. Please try again.');
+						
+						const button = document.getElementById("download-png-btn");
+						const downloadText = document.getElementById("download-text");
+						button.disabled = false;
+						downloadText.textContent = "Download PNG";
+					}
+				}
+
+				window.downloadSankeyAsPNG = downloadSankeyAsPNG;
 			})();
 		</script>
 	</div>
