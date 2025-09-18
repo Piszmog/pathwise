@@ -1,0 +1,72 @@
+name: CI HN
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'hn/**'
+      - 'cmd/hn/**'
+      - 'internal/**'
+      - 'sqlc.yml'
+      - 'go.mod'
+      - 'go.sum'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'hn/**'
+      - 'cmd/hn/**'
+      - 'internal/**'
+      - 'sqlc.yml'
+      - 'go.mod'
+      - 'go.sum'
+jobs:
+  release-dryrun:
+    name: Release Dry Run
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+      - name: Run HN GoReleaser
+        run: |
+          docker run \
+            --rm \
+            -v $PWD:/go/src/github.com/user/repo \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -w /go/src/github.com/user/repo \
+            -e GITHUB_TOKEN \
+            ghcr.io/goreleaser/goreleaser-cross:latest \
+            release --clean --snapshot --skip=publish --config cmd/hn/.goreleaser.yaml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  docker-publish:
+    name: Docker
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ghcr.io/piszmog/pathwise
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: cmd/hn/Dockerfile
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
