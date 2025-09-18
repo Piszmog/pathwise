@@ -1,0 +1,54 @@
+version: 2
+
+project_name: pathwise-hn
+dist: goreleaser-dist
+
+before:
+  hooks:
+    - go mod download
+    - go tool sqlc generate
+
+builds:
+  - id: "linux-amd64"
+    env:
+      - CGO_ENABLED=1
+      - CC=x86_64-linux-gnu-gcc
+      - CXX=x86_64-linux-gnu-g++
+      - CGO_LDFLAGS=-ldl -lm -lpthread
+    main: ./cmd/hn
+    binary: pathwise-hn
+    ldflags:
+      - -s -w -X github.com/Piszmog/pathwise/internal/version.Value={{ .Version }}
+    goos:
+      - linux
+    goarch:
+      - amd64
+
+archives:
+  - formats: ['tar.gz']
+    # this name template makes the OS and Arch compatible with the results of `uname`.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    # use zip for windows archives
+    format_overrides:
+      - goos: windows
+        formats: ['zip']
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+release:
+  footer: >-
+
+    ---
+
+    Released by [GoReleaser](https://github.com/goreleaser/goreleaser).
