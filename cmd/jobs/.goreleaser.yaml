@@ -1,6 +1,6 @@
 version: 2
 
-project_name: pathwise-hn
+project_name: pathwise-jobs
 dist: goreleaser-dist
 
 before:
@@ -15,8 +15,8 @@ builds:
       - CC=x86_64-linux-gnu-gcc
       - CXX=x86_64-linux-gnu-g++
       - CGO_LDFLAGS=-ldl -lm -lpthread
-    main: ./cmd/hn
-    binary: pathwise-hn
+    main: ./cmd/jobs
+    binary: pathwise-jobs
     ldflags:
       - -s -w -X github.com/Piszmog/pathwise/internal/version.Value={{ .Version }}
     goos:

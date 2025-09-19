@@ -4,15 +4,15 @@ tmp_dir = "./tmp"
 
 [build]
   args_bin = []
-  bin = "./tmp/hn"
-  cmd = "go build -o ../../tmp/hn ."
+  bin = "./tmp/jobs"
+  cmd = "go build -o ../../tmp/jobs ."
   delay = 1000
   exclude_dir = ["ui/assets/css", "tmp", "cmd/ui/tmp", "cmd/mcp/tmp", "vendor", "testdata", "cmd/ui", "cmd/mcp", "ui", "mcp", "bin", "ui/e2e", "goreleaser-dist"]
   exclude_file = ["internal/db/queries/*.go"]
   exclude_regex = ["_test.go",".*_templ.go"]
   exclude_unchanged = true
   follow_symlink = false
-  full_bin = "cd ../.. && LOG_LEVEL=debug go tool godotenv ./tmp/hn"
+  full_bin = "cd ../.. && LOG_LEVEL=debug go tool godotenv ./tmp/jobs"
   include_dir = []
   include_ext = ["go", "sql"]
   include_file = []

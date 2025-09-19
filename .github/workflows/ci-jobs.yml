@@ -1,12 +1,12 @@
-name: CI HN
+name: CI Jobs
 on:
   workflow_dispatch:
   push:
     branches:
       - main
     paths:
-      - 'hn/**'
-      - 'cmd/hn/**'
+      - 'jobs/**'
+      - 'cmd/jobs/**'
       - 'internal/**'
       - 'sqlc.yml'
       - 'go.mod'
@@ -15,8 +15,8 @@ on:
     branches:
       - main
     paths:
-      - 'hn/**'
-      - 'cmd/hn/**'
+      - 'jobs/**'
+      - 'cmd/jobs/**'
       - 'internal/**'
       - 'sqlc.yml'
       - 'go.mod'
@@ -34,7 +34,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: false
-      - name: Run HN GoReleaser
+      - name: Run Jobs GoReleaser
         run: |
           docker run \
             --rm \
@@ -43,7 +43,7 @@ jobs:
             -w /go/src/github.com/user/repo \
             -e GITHUB_TOKEN \
             ghcr.io/goreleaser/goreleaser-cross:latest \
-            release --clean --snapshot --skip=publish --config cmd/hn/.goreleaser.yaml
+            release --clean --snapshot --skip=publish --config cmd/jobs/.goreleaser.yaml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   docker-publish:
@@ -66,7 +66,7 @@ jobs:
       - uses: docker/build-push-action@v5
         with:
           context: .
-          file: cmd/hn/Dockerfile
+          file: cmd/jobs/Dockerfile
           push: ${{ github.ref == 'refs/heads/main' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
