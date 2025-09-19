@@ -58,12 +58,12 @@ func (c *GeminiClient) ParseJobPosting(ctx context.Context, input string) (JobPo
 	return jobPosting, nil
 }
 
-const promptTemplate = `# Hacker News Job Posting Parser Prompt
+const promptTemplate = `# Posting Parser Prompt
 
-You are a specialized parser for Hacker News "Who is Hiring" posts. Your task is to extract structured job information from text that may contain job postings or regular comments.
+You are a specialized parser for job posts. Your task is to extract structured job information from text that may contain job postings or regular comments.
 
 ## Input Format
-You will receive HTML-encoded text from Hacker News posts that may contain:
+You will receive HTML-encoded text from job posts that may contain:
 - Job postings with company information, roles, locations, and compensation
 - Regular comments that are not job postings
 - Mixed content with multiple job roles from the same company
