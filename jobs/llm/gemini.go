@@ -117,7 +117,8 @@ func getRateLimitError(err error) error {
 		return nil
 	}
 
-	if apiErr, ok := err.(*googleapi.Error); ok {
+	var apiErr *googleapi.Error
+	if errors.As(err, &apiErr) {
 		switch apiErr.Code {
 		case 429:
 			return fmt.Errorf("%w: %s", ErrRateLimit, apiErr.Message)
