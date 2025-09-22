@@ -13,6 +13,11 @@ import (
 	"github.com/Piszmog/pathwise/internal/db/queries"
 )
 
+var (
+	ErrExpectedStory   = errors.New("expected a story")
+	ErrExpectedComment = errors.New("expected a comment")
+)
+
 type Scraper struct {
 	c        *hnclient.Client
 	database db.Database
@@ -106,7 +111,7 @@ func (s *Scraper) getStory(ctx context.Context, id int64) (hnclient.Story, error
 	case hnclient.Story:
 		story = v
 	default:
-		return story, errors.New("expected a story")
+		return story, ErrExpectedStory
 	}
 
 	return story, nil
@@ -123,7 +128,7 @@ func (s *Scraper) getComment(ctx context.Context, id int64) (hnclient.Comment, e
 	case hnclient.Comment:
 		comment = v
 	default:
-		return comment, errors.New("expected a comment")
+		return comment, ErrExpectedComment
 	}
 	return comment, nil
 }
