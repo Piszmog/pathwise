@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/Piszmog/hnclient"
 	"github.com/Piszmog/pathwise/internal/db"
@@ -24,8 +23,7 @@ type Scraper struct {
 	logger   *slog.Logger
 }
 
-func NewScraper(logger *slog.Logger, database db.Database) *Scraper {
-	httpClient := &http.Client{Timeout: 10 * time.Second}
+func NewScraper(logger *slog.Logger, database db.Database, httpClient *http.Client) *Scraper {
 	client := hnclient.New(httpClient, hnclient.URLV0)
 	return &Scraper{
 		c:        client,

@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/Piszmog/pathwise/internal/db"
 	"github.com/Piszmog/pathwise/internal/logger"
@@ -36,7 +38,8 @@ func main() {
 		return
 	}
 
-	scraper := hn.NewScraper(l, database)
+	httpClient := &http.Client{Timeout: 10 * time.Second}
+	scraper := hn.NewScraper(l, database, httpClient)
 	err = scraper.Run(context.Background())
 	if err != nil {
 		l.Error("failed to scrape", "error", err)
