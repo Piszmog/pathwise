@@ -32,7 +32,7 @@ func NewScraper(logger *slog.Logger, database db.Database, httpClient *http.Clie
 	}
 }
 
-func (s *Scraper) Run(ctx context.Context) error {
+func (s *Scraper) Run(ctx context.Context, ids chan<- int64) error {
 	s.logger.DebugContext(ctx, "Running scraper")
 	user, err := s.c.GetUser(ctx, "whoishiring")
 	if err != nil {
@@ -93,6 +93,7 @@ func (s *Scraper) Run(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+		ids <- comment.ID
 	}
 	s.logger.DebugContext(ctx, "Completed scraping")
 	return nil

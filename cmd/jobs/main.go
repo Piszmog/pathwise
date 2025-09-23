@@ -40,7 +40,9 @@ func main() {
 
 	httpClient := &http.Client{Timeout: 10 * time.Second}
 	scraper := hn.NewScraper(l, database, httpClient)
-	err = scraper.Run(context.Background())
+
+	commentIDsChan := make(chan int64, 1000)
+	err = scraper.Run(context.Background(), commentIDsChan)
 	if err != nil {
 		l.Error("failed to scrape", "error", err)
 		return
