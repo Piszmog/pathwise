@@ -3,7 +3,11 @@ package hn
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log/slog"
+	"math"
+	"math/rand/v2"
+	"time"
 
 	"github.com/Piszmog/pathwise/internal/db"
 	"github.com/Piszmog/pathwise/internal/db/queries"
@@ -17,15 +21,54 @@ type Processor struct {
 	logger   *slog.Logger
 }
 
-func (p *Processor) Run(ctx context.Context, ids <-chan int64) error {
+func (p *Processor) Run(ctx context.Context, ids <-chan int64) {
 	for id := range ids {
-		p.handleID(ctx, id)
+		err := p.handleIDWithRetry(ctx, id)
+		if err != nil {
+			p.logger.ErrorContext(ctx, "Failed to handle ID", "id", id, "error", err)
+			dbErr := p.database.Queries().UpdateHNComment(ctx, queries.UpdateHNCommentParams{ID: id, Status: "failed"})
+			if dbErr != nil {
+				p.logger.ErrorContext(ctx, "Failed to update HN comment to errored", "id", id, "error", err)
+			}
+		}
 	}
+}
 
-	return nil
+const maxAttempts = 5
+
+func (p *Processor) handleIDWithRetry(ctx context.Context, id int64) error {
+	for attempt := range maxAttempts {
+		err := p.handleID(ctx, id)
+		if err == nil {
+			return nil
+		} else if errors.Is(err, llm.ErrQuotaExhausted) {
+			p.logger.DebugContext(ctx, "Quota exhaused", "id", id)
+			select {
+			case <-time.After(24 * time.Hour):
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		} else if errors.Is(err, llm.ErrRateLimit) &&
+			errors.Is(err, llm.ErrNoResponse) &&
+			errors.Is(err, llm.ErrServiceUnavailable) &&
+			errors.Is(err, llm.ErrQuotaExhausted) {
+			delay := calculateBackoffDelay(attempt)
+			p.logger.DebugContext(ctx, "Retrying ID", "id", id, "delay", delay)
+
+			select {
+			case <-time.After(delay):
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		} else {
+			return err
+		}
+	}
+	return errors.New("max attempts exceeded")
 }
 
 func (p *Processor) handleID(ctx context.Context, id int64) error {
+	p.logger.DebugContext(ctx, "Handling ID", "id", id)
 	err := p.database.Queries().UpdateHNComment(ctx, queries.UpdateHNCommentParams{
 		Status: "in_progress",
 		ID:     id,
@@ -39,16 +82,19 @@ func (p *Processor) handleID(ctx context.Context, id int64) error {
 		return err
 	}
 
+	p.logger.DebugContext(ctx, "Parsing value", "value", value)
 	jobPosting, err := p.client.ParseJobPosting(ctx, value)
 	if err != nil {
 		return err
 	}
 
+	p.logger.DebugContext(ctx, "Handling parsed job data", "data", jobPosting)
 	err = p.insertJobs(ctx, id, jobPosting)
 	if err != nil {
 		return err
 	}
 
+	p.logger.DebugContext(ctx, "Completed handling ID", "id", id)
 	return p.database.Queries().UpdateHNComment(ctx, queries.UpdateHNCommentParams{
 		Status: "completed",
 		ID:     id,
@@ -131,4 +177,16 @@ func newNullString(value string) sql.NullString {
 		Valid:  isValid,
 		String: value,
 	}
+}
+
+func calculateBackoffDelay(attempt int) time.Duration {
+	baseDelay := 4 * time.Second
+	maxDelay := 5 * time.Minute
+
+	delay := min(time.Duration(float64(baseDelay)*math.Pow(2, float64(attempt))), maxDelay)
+
+	jitterRange := float64(delay) * 0.25
+	jitter := (rand.Float64() - 0.5) * 2 * jitterRange
+
+	return max(time.Duration(float64(delay)+jitter), baseDelay)
 }
