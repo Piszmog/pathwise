@@ -49,9 +49,13 @@ func (p *Processor) handleIDWithRetry(ctx context.Context, id int64) error {
 		err := p.handleID(ctx, id)
 		switch {
 		case err == nil:
-			return nil
+			p.logger.DebugContext(ctx, "completed handling ID", "id", id)
+			return p.database.Queries().UpdateHNComment(ctx, queries.UpdateHNCommentParams{
+				Status: "completed",
+				ID:     id,
+			})
 		case errors.Is(err, llm.ErrQuotaExhausted):
-			p.logger.DebugContext(ctx, "quota exhausted", "id", id)
+			p.logger.DebugContext(ctx, "quota exhausted", "id", id, "error", err)
 			select {
 			case <-time.After(24 * time.Hour):
 			case <-ctx.Done():
@@ -61,7 +65,7 @@ func (p *Processor) handleIDWithRetry(ctx context.Context, id int64) error {
 			errors.Is(err, llm.ErrNoResponse) ||
 			errors.Is(err, llm.ErrServiceUnavailable):
 			delay := calculateBackoffDelay(attempt)
-			p.logger.DebugContext(ctx, "retrying ID", "id", id, "delay", delay)
+			p.logger.DebugContext(ctx, "retrying ID", "id", id, "delay", delay, "error", err)
 			select {
 			case <-time.After(delay):
 			case <-ctx.Done():
@@ -91,6 +95,10 @@ func (p *Processor) handleID(ctx context.Context, id int64) error {
 		return err
 	}
 
+	if len(value) == 0 {
+		return nil
+	}
+
 	p.logger.DebugContext(ctx, "parsing value", "value", value)
 	jobPosting, err := p.client.ParseJobPosting(ctx, value)
 	if err != nil {
@@ -98,16 +106,7 @@ func (p *Processor) handleID(ctx context.Context, id int64) error {
 	}
 
 	p.logger.DebugContext(ctx, "handling parsed job data", "data", jobPosting)
-	err = p.insertJobs(ctx, id, jobPosting)
-	if err != nil {
-		return err
-	}
-
-	p.logger.DebugContext(ctx, "completed handling ID", "id", id)
-	return p.database.Queries().UpdateHNComment(ctx, queries.UpdateHNCommentParams{
-		Status: "completed",
-		ID:     id,
-	})
+	return p.insertJobs(ctx, id, jobPosting)
 }
 
 func (p *Processor) insertJobs(ctx context.Context, id int64, jobPosting llm.JobPosting) error {

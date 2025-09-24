@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/Piszmog/pathwise/internal/db"
@@ -21,7 +23,9 @@ func main() {
 		return
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	llmClient, err := llm.NewGeminiClient(ctx, geminiToken)
 	if err != nil {
 		l.Error("failed to create Gemini client", "error", err)
@@ -62,13 +66,37 @@ func main() {
 	scraper := hn.NewScraper(l, database, httpClient)
 
 	commentIDsChan := make(chan int64, 1000)
-	processor := hn.NewProcessor(l, database, llmClient)
 
+	processor := hn.NewProcessor(l, database, llmClient)
 	go processor.Run(ctx, commentIDsChan)
 
-	err = scraper.Run(ctx, commentIDsChan)
-	if err != nil {
-		l.Error("failed to scrape", "error", err)
-		return
+	go func() {
+		l.DebugContext(ctx, "running scraper")
+		if scrapeErr := scraper.Run(ctx, commentIDsChan); scrapeErr != nil {
+			l.Error("failed to scrape", "error", scrapeErr)
+		}
+	}()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	ticker := time.NewTicker(24 * time.Hour)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			go func() {
+				l.DebugContext(ctx, "running scraper")
+				if err := scraper.Run(ctx, commentIDsChan); err != nil {
+					l.Error("failed to scrape", "error", err)
+				}
+			}()
+		case <-sigChan:
+			l.Info("shutting down...")
+			close(commentIDsChan)
+			cancel()
+			return
+		}
 	}
 }
