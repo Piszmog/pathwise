@@ -33,19 +33,19 @@ func NewScraper(logger *slog.Logger, database db.Database, httpClient *http.Clie
 }
 
 func (s *Scraper) Run(ctx context.Context, ids chan<- int64) error {
-	s.logger.DebugContext(ctx, "Running scraper")
+	s.logger.DebugContext(ctx, "running scraper")
 	user, err := s.c.GetUser(ctx, "whoishiring")
 	if err != nil {
 		return err
 	}
 
-	s.logger.DebugContext(ctx, "Retrieved user data", "user", user)
+	s.logger.DebugContext(ctx, "retrieved user data", "user", user)
 	story, err := s.getStory(ctx, user.Submitted[0])
 	if err != nil {
 		return err
 	}
 
-	s.logger.DebugContext(ctx, "Retrieved story", "story", story)
+	s.logger.DebugContext(ctx, "retrieved story", "story", story)
 	if !strings.HasPrefix(story.Title, "Ask HN: Who is hiring?") {
 		return nil
 	}
@@ -56,7 +56,7 @@ func (s *Scraper) Run(ctx context.Context, ids chan<- int64) error {
 	}
 
 	if exists == 0 {
-		s.logger.DebugContext(ctx, "Inserting story", "id", story.ID)
+		s.logger.DebugContext(ctx, "inserting story", "id", story.ID)
 		err = s.database.Queries().InsertHNStory(ctx, queries.InsertHNStoryParams{
 			PostedAt: story.Time.Time(),
 			Title:    story.Title,
@@ -74,7 +74,7 @@ func (s *Scraper) Run(ctx context.Context, ids chan<- int64) error {
 		}
 
 		if commentExists == 1 {
-			s.logger.DebugContext(ctx, "Skipping comment", "id", kidID)
+			s.logger.DebugContext(ctx, "skipping comment", "id", kidID)
 			continue
 		}
 
@@ -83,7 +83,7 @@ func (s *Scraper) Run(ctx context.Context, ids chan<- int64) error {
 			return err
 		}
 
-		s.logger.DebugContext(ctx, "Retrieved comment", "comment", comment)
+		s.logger.DebugContext(ctx, "retrieved comment", "comment", comment)
 		err = s.database.Queries().InsertHNComment(ctx, queries.InsertHNCommentParams{
 			CommentedAt: comment.Time.Time(),
 			Value:       comment.Text,
@@ -95,7 +95,7 @@ func (s *Scraper) Run(ctx context.Context, ids chan<- int64) error {
 		}
 		ids <- comment.ID
 	}
-	s.logger.DebugContext(ctx, "Completed scraping")
+	s.logger.DebugContext(ctx, "completed scraping")
 	return nil
 }
 
