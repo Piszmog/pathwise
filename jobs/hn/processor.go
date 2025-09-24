@@ -21,14 +21,22 @@ type Processor struct {
 	logger   *slog.Logger
 }
 
+func NewProcessor(logger *slog.Logger, database db.Database, client *llm.GeminiClient) *Processor {
+	return &Processor{
+		client:   client,
+		database: database,
+		logger:   logger,
+	}
+}
+
 func (p *Processor) Run(ctx context.Context, ids <-chan int64) {
 	for id := range ids {
 		err := p.handleIDWithRetry(ctx, id)
 		if err != nil {
-			p.logger.ErrorContext(ctx, "Failed to handle ID", "id", id, "error", err)
+			p.logger.ErrorContext(ctx, "failed to handle ID", "id", id, "error", err)
 			dbErr := p.database.Queries().UpdateHNComment(ctx, queries.UpdateHNCommentParams{ID: id, Status: "failed"})
 			if dbErr != nil {
-				p.logger.ErrorContext(ctx, "Failed to update HN comment to errored", "id", id, "error", dbErr)
+				p.logger.ErrorContext(ctx, "failed to update HN comment to errored", "id", id, "error", dbErr)
 			}
 		}
 	}
@@ -43,7 +51,7 @@ func (p *Processor) handleIDWithRetry(ctx context.Context, id int64) error {
 		case err == nil:
 			return nil
 		case errors.Is(err, llm.ErrQuotaExhausted):
-			p.logger.DebugContext(ctx, "Quota exhausted", "id", id)
+			p.logger.DebugContext(ctx, "quota exhausted", "id", id)
 			select {
 			case <-time.After(24 * time.Hour):
 			case <-ctx.Done():
@@ -53,7 +61,7 @@ func (p *Processor) handleIDWithRetry(ctx context.Context, id int64) error {
 			errors.Is(err, llm.ErrNoResponse) ||
 			errors.Is(err, llm.ErrServiceUnavailable):
 			delay := calculateBackoffDelay(attempt)
-			p.logger.DebugContext(ctx, "Retrying ID", "id", id, "delay", delay)
+			p.logger.DebugContext(ctx, "retrying ID", "id", id, "delay", delay)
 			select {
 			case <-time.After(delay):
 			case <-ctx.Done():
@@ -69,7 +77,7 @@ func (p *Processor) handleIDWithRetry(ctx context.Context, id int64) error {
 var errMaxAttempts = errors.New("max attempts exceeded")
 
 func (p *Processor) handleID(ctx context.Context, id int64) error {
-	p.logger.DebugContext(ctx, "Handling ID", "id", id)
+	p.logger.DebugContext(ctx, "handling ID", "id", id)
 	err := p.database.Queries().UpdateHNComment(ctx, queries.UpdateHNCommentParams{
 		Status: "in_progress",
 		ID:     id,
@@ -83,19 +91,19 @@ func (p *Processor) handleID(ctx context.Context, id int64) error {
 		return err
 	}
 
-	p.logger.DebugContext(ctx, "Parsing value", "value", value)
+	p.logger.DebugContext(ctx, "parsing value", "value", value)
 	jobPosting, err := p.client.ParseJobPosting(ctx, value)
 	if err != nil {
 		return err
 	}
 
-	p.logger.DebugContext(ctx, "Handling parsed job data", "data", jobPosting)
+	p.logger.DebugContext(ctx, "handling parsed job data", "data", jobPosting)
 	err = p.insertJobs(ctx, id, jobPosting)
 	if err != nil {
 		return err
 	}
 
-	p.logger.DebugContext(ctx, "Completed handling ID", "id", id)
+	p.logger.DebugContext(ctx, "completed handling ID", "id", id)
 	return p.database.Queries().UpdateHNComment(ctx, queries.UpdateHNCommentParams{
 		Status: "completed",
 		ID:     id,

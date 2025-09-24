@@ -9,10 +9,30 @@ import (
 	"github.com/Piszmog/pathwise/internal/db"
 	"github.com/Piszmog/pathwise/internal/logger"
 	"github.com/Piszmog/pathwise/jobs/hn"
+	"github.com/Piszmog/pathwise/jobs/llm"
 )
 
 func main() {
 	l := logger.New(os.Getenv("LOG_LEVEL"), os.Getenv("LOG_OUTPUT"))
+
+	geminiToken := os.Getenv("GEMINI_API_KEY")
+	if geminiToken == "" {
+		l.Error("missing Gemini token")
+		return
+	}
+
+	ctx := context.Background()
+	llmClient, err := llm.NewGeminiClient(ctx, geminiToken)
+	if err != nil {
+		l.Error("failed to create Gemini client", "error", err)
+		return
+	}
+	defer func() {
+		llmErr := llmClient.Close()
+		if llmErr != nil {
+			l.Error("failed to close the Gemini client", "error", llmErr)
+		}
+	}()
 
 	dbURL := os.Getenv("DB_URL")
 	if dbURL == "" {
@@ -42,7 +62,11 @@ func main() {
 	scraper := hn.NewScraper(l, database, httpClient)
 
 	commentIDsChan := make(chan int64, 1000)
-	err = scraper.Run(context.Background(), commentIDsChan)
+	processor := hn.NewProcessor(l, database, llmClient)
+
+	go processor.Run(ctx, commentIDsChan)
+
+	err = scraper.Run(ctx, commentIDsChan)
 	if err != nil {
 		l.Error("failed to scrape", "error", err)
 		return
