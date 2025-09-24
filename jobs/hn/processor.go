@@ -28,7 +28,7 @@ func (p *Processor) Run(ctx context.Context, ids <-chan int64) {
 			p.logger.ErrorContext(ctx, "Failed to handle ID", "id", id, "error", err)
 			dbErr := p.database.Queries().UpdateHNComment(ctx, queries.UpdateHNCommentParams{ID: id, Status: "failed"})
 			if dbErr != nil {
-				p.logger.ErrorContext(ctx, "Failed to update HN comment to errored", "id", id, "error", err)
+				p.logger.ErrorContext(ctx, "Failed to update HN comment to errored", "id", id, "error", dbErr)
 			}
 		}
 	}
