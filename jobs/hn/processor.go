@@ -39,33 +39,34 @@ const maxAttempts = 5
 func (p *Processor) handleIDWithRetry(ctx context.Context, id int64) error {
 	for attempt := range maxAttempts {
 		err := p.handleID(ctx, id)
-		if err == nil {
+		switch {
+		case err == nil:
 			return nil
-		} else if errors.Is(err, llm.ErrQuotaExhausted) {
-			p.logger.DebugContext(ctx, "Quota exhaused", "id", id)
+		case errors.Is(err, llm.ErrQuotaExhausted):
+			p.logger.DebugContext(ctx, "Quota exhausted", "id", id)
 			select {
 			case <-time.After(24 * time.Hour):
 			case <-ctx.Done():
 				return ctx.Err()
 			}
-		} else if errors.Is(err, llm.ErrRateLimit) &&
-			errors.Is(err, llm.ErrNoResponse) &&
-			errors.Is(err, llm.ErrServiceUnavailable) &&
-			errors.Is(err, llm.ErrQuotaExhausted) {
+		case errors.Is(err, llm.ErrRateLimit) ||
+			errors.Is(err, llm.ErrNoResponse) ||
+			errors.Is(err, llm.ErrServiceUnavailable):
 			delay := calculateBackoffDelay(attempt)
 			p.logger.DebugContext(ctx, "Retrying ID", "id", id, "delay", delay)
-
 			select {
 			case <-time.After(delay):
 			case <-ctx.Done():
 				return ctx.Err()
 			}
-		} else {
+		default:
 			return err
 		}
 	}
-	return errors.New("max attempts exceeded")
+	return errMaxAttempts
 }
+
+var errMaxAttempts = errors.New("max attempts exceeded")
 
 func (p *Processor) handleID(ctx context.Context, id int64) error {
 	p.logger.DebugContext(ctx, "Handling ID", "id", id)
@@ -106,7 +107,11 @@ func (p *Processor) insertJobs(ctx context.Context, id int64, jobPosting llm.Job
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() {
+		if txErr := tx.Rollback(); txErr != nil {
+			err = errors.Join(err, txErr)
+		}
+	}()
 
 	q := queries.New(tx)
 
@@ -186,6 +191,7 @@ func calculateBackoffDelay(attempt int) time.Duration {
 	delay := min(time.Duration(float64(baseDelay)*math.Pow(2, float64(attempt))), maxDelay)
 
 	jitterRange := float64(delay) * 0.25
+	// #nosec G404 -- Using weak RNG for jitter is acceptable
 	jitter := (rand.Float64() - 0.5) * 2 * jitterRange
 
 	return max(time.Duration(float64(delay)+jitter), baseDelay)
