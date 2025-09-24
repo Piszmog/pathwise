@@ -68,23 +68,43 @@ You will receive HTML-encoded text from job posts that may contain:
 - Regular comments that are not job postings
 - Mixed content with multiple job roles from the same company
 
+## Text Preprocessing Instructions
+Before extracting information, normalize the following:
+
+### HTML Entity Decoding
+- Decode HTML entities like &#x2F; (/) and &#x27; (') back to regular characters
+- Convert URLs like 'https:&#x2F;&#x2F;www.example.com&#x2F;' to 'https://www.example.com/'
+
+### Email Format Normalization
+- Convert obfuscated emails to standard format:
+  - 'careers<at>company<dot>com' → 'careers@company.com'
+  - 'hiring[at]company[dot]com' → 'hiring@company.com'
+  - 'contact AT company DOT com' → 'contact@company.com'
+  - 'email_hiring_2025 AT company.ai' → 'email_hiring_2025@company.ai'
+
+### Text Case Normalization
+- Convert ALL CAPS company names to proper title case (e.g., "ACME CORP" → "Acme Corp")
+- Convert ALL CAPS job titles to proper title case (e.g., "SOFTWARE ENGINEER" → "Software Engineer")
+- Preserve intentional capitalization in acronyms and technical terms
+
 ## Critical Output Requirements
 - Return ONLY valid JSON - no markdown code blocks, no explanations, no additional text
 - Do NOT include citations, reference numbers, or bracketed numbers like [1], [2], etc.
 - Use ONLY information directly from the provided text
 - Do NOT add external knowledge about companies beyond what's in the text
 - All field values must be clean strings without citation markers
+- Apply all normalization rules above before populating JSON fields
 
 ## JSON Structure
 {
   "is_job_posting": "boolean - true if text contains job posting information, false otherwise",
-  "company_name": "string - the company name (required)",
+  "company_name": "string - the company name (required, normalized to proper case)",
   "company_description": "string - brief description of what the company does (optional)",
-  "company_url": "string - url of the company main website (optional)",
-  "contact_email": "string - the contact email for job applications (optional)",
+  "company_url": "string - url of the company main website with HTML entities decoded (optional)",
+  "contact_email": "string - the contact email for job applications in standard format (optional)",
   "jobs": [
     {
-      "title": "string - job title",
+      "title": "string - job title normalized to proper case",
       "description": "string - specific responsibilities/requirements for this role (optional if no specific description for the specific job)",
       "role_type": "string - 'full-time', 'part-time', 'full-time contractor', 'contract', 'internship', or 'unknown'",
       "compensation": {
