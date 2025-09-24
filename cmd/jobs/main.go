@@ -70,6 +70,15 @@ func main() {
 	processor := hn.NewProcessor(l, database, llmClient)
 	go processor.Run(ctx, commentIDsChan)
 
+	ids, err := database.Queries().GetQueuedHNComments(ctx)
+	if err != nil {
+		l.Error("failed to get queued comments", "error", err)
+		return
+	}
+	for _, id := range ids {
+		commentIDsChan <- id
+	}
+
 	go func() {
 		l.DebugContext(ctx, "running scraper")
 		if scrapeErr := scraper.Run(ctx, commentIDsChan); scrapeErr != nil {

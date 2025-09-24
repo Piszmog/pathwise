@@ -40,6 +40,14 @@ SET
 WHERE
   id = ?;
 
+-- name: GetQueuedHNComments :many
+SELECT
+  id
+FROM
+  hn_comments
+WHERE
+  status IN ('queued', 'in_progress');
+
 -- name: GetHNCommentValue :one
 SELECT
   value
