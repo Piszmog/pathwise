@@ -6,6 +6,7 @@ A modern job application tracking system with both web interface and programmati
 
 - **Web Application**: Interactive web interface for managing job applications
 - **MCP Server**: Model Context Protocol server providing programmatic access to your job data
+- **Jobs Processor**: Background service that scrapes job postings from Hacker News and processes them with AI/LLM integration
 
 > **Note**: This follows standard Go project layout with applications in `cmd/` and private code in `internal/`. Commands should be run from the project root unless otherwise specified.
 
@@ -19,6 +20,7 @@ A modern job application tracking system with both web interface and programmati
 - **Export Functionality**: Export your data in various formats
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
 - **User Authentication**: Secure login system with session management
+- **HN Job Scraping**: Automated scraping of job postings from Hacker News with AI-powered processing
 - **MCP Integration**: Programmatic access via Model Context Protocol for AI assistants and automation
 
 ## MCP Server
@@ -30,7 +32,7 @@ Generate an API key through the web application settings, then configure your MC
 
 ## Tech Stack
 
-- **Backend**: Go 1.24+ with standard library HTTP server
+- **Backend**: Go 1.25.0+ with standard library HTTP server
 - **Frontend**: [templ](https://templ.guide) templates with [HTMX](https://htmx.org) for dynamic interactions
 - **Database**: SQLite with [sqlc](https://sqlc.dev) for type-safe queries
 - **Styling**: Tailwind CSS processed with go-tw
@@ -39,7 +41,7 @@ Generate an API key through the web application settings, then configure your MC
 
 ## Prerequisites
 
-- **Go+** - [Download Go](https://golang.org/dl/)
+- **Go 1.25.0+** - [Download Go](https://golang.org/dl/)
 - **Air** (optional, for development) - `go install github.com/air-verse/air@latest`
 - **golangci-lint** (optional, for linting) - [Installation guide](https://golangci-lint.run/welcome/install/)
 
@@ -72,10 +74,15 @@ Generate an API key through the web application settings, then configure your MC
    go build -o ./tmp/main ./cmd/ui
    ./tmp/main
 
-   # MCP server (optional, for programmatic access)
-   go build -o ./tmp/mcp ./cmd/mcp
-   ./tmp/mcp
-   ```
+    # MCP server (optional, for programmatic access)
+    go build -o ./tmp/mcp ./cmd/mcp
+    ./tmp/mcp
+
+    # Jobs processor (optional, for HN scraping - requires GEMINI_API_KEY)
+    export GEMINI_API_KEY=your_api_key_here
+    go build -o ./tmp/jobs ./cmd/jobs
+    ./tmp/jobs
+    ```
 
 5. **Open your browser**
    Navigate to `http://localhost:8080`
@@ -89,6 +96,7 @@ Generate an API key through the web application settings, then configure your MC
 | `LOG_OUTPUT` | Log output (stdout or file path) | `stdout` |
 | `DB_URL` | Database URL | `./db.sqlite3` |
 | `DB_TOKEN` | Database token (for remote databases) | - |
+| `GEMINI_API_KEY` | Google Gemini API key (required for jobs processor) | - |
 | `VERSION` | Application version | - |
 
 ## Development
@@ -96,12 +104,14 @@ Generate an API key through the web application settings, then configure your MC
 ### Commands
 
 ```bash
-# Web application development server with hot reload
-cd cmd/ui && air
+# Development servers with hot reload
+cd cmd/ui && air                   # Web application
+cd cmd/jobs && air                 # Jobs processor (requires GEMINI_API_KEY)
 
 # Build applications
 go build -o ./tmp/main ./cmd/ui    # Web application
 go build -o ./tmp/mcp ./cmd/mcp    # MCP server
+go build -o ./tmp/jobs ./cmd/jobs  # Jobs processor
 
 # Run tests
 go test ./...                                    # All tests
@@ -126,8 +136,12 @@ pathwise/
 │   │   ├── main.go    # Web application entry point
 │   │   ├── .air.toml  # Hot reload configuration
 │   │   └── Dockerfile # Container configuration
-│   └── mcp/           # MCP server
-│       ├── main.go    # MCP server entry point
+│   ├── mcp/           # MCP server
+│   │   ├── main.go    # MCP server entry point
+│   │   └── Dockerfile # Container configuration
+│   └── jobs/          # Jobs processor
+│       ├── main.go    # Jobs processor entry point
+│       ├── .air.toml  # Hot reload configuration
 │       └── Dockerfile # Container configuration
 ├── internal/          # Private application code
 │   ├── db/
@@ -136,6 +150,9 @@ pathwise/
 │   ├── logger/        # Structured logging setup
 │   ├── context_key/   # Context key definitions
 │   └── version/       # Application version management
+├── jobs/              # Jobs processor implementation
+│   ├── hn/            # Hacker News scraper
+│   └── llm/           # LLM client (Gemini integration)
 ├── mcp/               # MCP server implementation
 │   ├── server/        # MCP server setup and middleware
 │   │   └── middleware/# Authentication middleware
@@ -186,29 +203,31 @@ go test ./ui/server/handler -run TestJobHandler
 ### Docker
 
 ```bash
-# Build web application image
+# Build application images
 docker build -f cmd/ui/Dockerfile -t pathwise-ui .
-
-# Build MCP server image  
 docker build -f cmd/mcp/Dockerfile -t pathwise-mcp .
+docker build -f cmd/jobs/Dockerfile -t pathwise-jobs .
 
 # Run containers
-docker run -p 8080:8080 pathwise-ui   # Web application
-docker run -p 8081:8080 pathwise-mcp  # MCP server
+docker run -p 8080:8080 pathwise-ui                              # Web application
+docker run -p 8081:8080 pathwise-mcp                             # MCP server
+docker run -e GEMINI_API_KEY=your_key pathwise-jobs              # Jobs processor
 ```
 
 ### Manual Deployment
 
 1. Build the applications:
    ```bash
-   go build -o pathwise-ui ./cmd/ui    # Web application
-   go build -o pathwise-mcp ./cmd/mcp  # MCP server
+   go build -o pathwise-ui ./cmd/ui      # Web application
+   go build -o pathwise-mcp ./cmd/mcp    # MCP server
+   go build -o pathwise-jobs ./cmd/jobs  # Jobs processor
    ```
 2. Set environment variables as needed
 3. Run the binaries:
    ```bash
-   ./pathwise-ui   # Web application on port 8080
-   ./pathwise-mcp  # MCP server on port 8080 (or different port)
+   ./pathwise-ui    # Web application on port 8080
+   ./pathwise-mcp   # MCP server on port 8080 (or different port)
+   ./pathwise-jobs  # Jobs processor (requires GEMINI_API_KEY)
    ```
 
 ## Contributing
