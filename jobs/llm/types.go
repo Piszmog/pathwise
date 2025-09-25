@@ -2,6 +2,7 @@ package llm
 
 // JobPosting represents the expected JSON structure from Gemini
 type JobPosting struct {
+	ID                  int64               `json:"id"`
 	IsJobPosting        bool                `json:"is_job_posting"`
 	CompanyName         string              `json:"company_name"`
 	CompanyDescription  string              `json:"company_description"`
