@@ -18,7 +18,7 @@ import (
 const (
 	maxAttempts  = 5
 	batchSize    = 10
-	batchTimeout = 30 * time.Second
+	batchTimeout = 5 * time.Second
 )
 
 type Processor struct {
