@@ -39,10 +39,10 @@ func NewGeminiClient(ctx context.Context, apiKey string) (*GeminiClient, error) 
 
 func (c *GeminiClient) ParseJobPostings(ctx context.Context, inputs map[int64]string) ([]JobPosting, error) {
 	if len(inputs) == 0 {
-		return nil, errors.New("no inputs provided")
+		return nil, ErrNoInputs
 	}
 	if len(inputs) > 10 {
-		return nil, errors.New("maximum 10 job postings per batch")
+		return nil, ErrMaxBatch
 	}
 
 	var jobPostings []JobPosting
@@ -66,10 +66,11 @@ func (c *GeminiClient) ParseJobPostings(ctx context.Context, inputs map[int64]st
 	return jobPostings, nil
 }
 
-// formatInputsForPrompt formats multiple inputs for the batch prompt
+var ErrNoInputs = errors.New("no inputs provided")
+var ErrMaxBatch = errors.New("maximum 10 job postings per batch")
+
 func formatInputsForPrompt(inputs map[int64]string) string {
-	// Sort IDs to ensure consistent ordering
-	var ids []int64
+	var ids = make([]int64, 0, len(inputs))
 	for id := range inputs {
 		ids = append(ids, id)
 	}
