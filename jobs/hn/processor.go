@@ -15,6 +15,12 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	maxAttempts  = 5
+	batchSize    = 10
+	batchTimeout = 5 * time.Second
+)
+
 type Processor struct {
 	client   *llm.GeminiClient
 	database db.Database
@@ -30,32 +36,59 @@ func NewProcessor(logger *slog.Logger, database db.Database, client *llm.GeminiC
 }
 
 func (p *Processor) Run(ctx context.Context, ids <-chan int64) {
-	for id := range ids {
-		err := p.handleIDWithRetry(ctx, id)
+	for {
+		batch := p.collectBatch(ctx, ids)
+		if len(batch) == 0 {
+			return
+		}
+
+		err := p.handleBatchWithRetry(ctx, batch)
 		if err != nil {
-			p.logger.ErrorContext(ctx, "failed to handle ID", "id", id, "error", err)
-			dbErr := p.database.Queries().UpdateHNComment(ctx, queries.UpdateHNCommentParams{ID: id, Status: "failed"})
+			p.logger.ErrorContext(ctx, "failed to handle batch", "ids", batch, "error", err)
+			dbErr := p.database.Queries().UpdateHNComments(ctx, queries.UpdateHNCommentsParams{Ids: batch, Status: "failed"})
 			if dbErr != nil {
-				p.logger.ErrorContext(ctx, "failed to update HN comment to errored", "id", id, "error", dbErr)
+				p.logger.ErrorContext(ctx, "failed to update HN comments to failed", "ids", batch, "error", dbErr)
 			}
 		}
 	}
 }
 
-const maxAttempts = 5
+func (p *Processor) collectBatch(ctx context.Context, ids <-chan int64) []int64 {
+	var batch []int64
+	for {
+		timeout := time.After(batchTimeout)
 
-func (p *Processor) handleIDWithRetry(ctx context.Context, id int64) error {
+		select {
+		case id, ok := <-ids:
+			if !ok {
+				return batch
+			}
+			batch = append(batch, id)
+			if len(batch) >= batchSize {
+				return batch
+			}
+		case <-timeout:
+			if len(batch) > 0 {
+				return batch
+			}
+		case <-ctx.Done():
+			return batch
+		}
+	}
+}
+
+func (p *Processor) handleBatchWithRetry(ctx context.Context, ids []int64) error {
 	for attempt := range maxAttempts {
-		err := p.handleID(ctx, id)
+		err := p.handleIDs(ctx, ids)
 		switch {
 		case err == nil:
-			p.logger.DebugContext(ctx, "completed handling ID", "id", id)
-			return p.database.Queries().UpdateHNComment(ctx, queries.UpdateHNCommentParams{
+			p.logger.DebugContext(ctx, "completed handling IDs", "ids", ids)
+			return p.database.Queries().UpdateHNComments(ctx, queries.UpdateHNCommentsParams{
 				Status: "completed",
-				ID:     id,
+				Ids:    ids,
 			})
 		case errors.Is(err, llm.ErrQuotaExhausted):
-			p.logger.DebugContext(ctx, "quota exhausted", "id", id, "error", err)
+			p.logger.DebugContext(ctx, "quota exhausted", "ids", ids, "error", err)
 			select {
 			case <-time.After(24 * time.Hour):
 			case <-ctx.Done():
@@ -65,7 +98,7 @@ func (p *Processor) handleIDWithRetry(ctx context.Context, id int64) error {
 			errors.Is(err, llm.ErrNoResponse) ||
 			errors.Is(err, llm.ErrServiceUnavailable):
 			delay := calculateBackoffDelay(attempt)
-			p.logger.DebugContext(ctx, "retrying ID", "id", id, "delay", delay, "error", err)
+			p.logger.DebugContext(ctx, "retrying IDs", "ids", ids, "delay", delay, "error", err)
 			select {
 			case <-time.After(delay):
 			case <-ctx.Done():
@@ -80,36 +113,44 @@ func (p *Processor) handleIDWithRetry(ctx context.Context, id int64) error {
 
 var errMaxAttempts = errors.New("max attempts exceeded")
 
-func (p *Processor) handleID(ctx context.Context, id int64) error {
-	p.logger.DebugContext(ctx, "handling ID", "id", id)
-	err := p.database.Queries().UpdateHNComment(ctx, queries.UpdateHNCommentParams{
+func (p *Processor) handleIDs(ctx context.Context, ids []int64) error {
+	p.logger.DebugContext(ctx, "handling IDs", "ids", ids)
+	err := p.database.Queries().UpdateHNComments(ctx, queries.UpdateHNCommentsParams{
 		Status: "in_progress",
-		ID:     id,
+		Ids:    ids,
 	})
 	if err != nil {
 		return err
 	}
 
-	value, err := p.database.Queries().GetHNCommentValue(ctx, id)
+	values, err := p.database.Queries().GetHNCommentValues(ctx, ids)
 	if err != nil {
 		return err
 	}
 
-	if len(value) == 0 {
+	if len(values) == 0 {
 		return nil
 	}
 
-	p.logger.DebugContext(ctx, "parsing value", "value", value)
-	jobPosting, err := p.client.ParseJobPosting(ctx, value)
+	valuesToParse := make(map[int64]string)
+	for _, row := range values {
+		if row.Value == "" {
+			continue
+		}
+		valuesToParse[row.ID] = row.Value
+	}
+
+	p.logger.DebugContext(ctx, "parsing values", "values", valuesToParse)
+	jobPostings, err := p.client.ParseJobPostings(ctx, valuesToParse)
 	if err != nil {
 		return err
 	}
 
-	p.logger.DebugContext(ctx, "handling parsed job data", "data", jobPosting)
-	return p.insertJobs(ctx, id, jobPosting)
+	p.logger.DebugContext(ctx, "handling parsed job data", "data", jobPostings)
+	return p.insertJobs(ctx, jobPostings)
 }
 
-func (p *Processor) insertJobs(ctx context.Context, id int64, jobPosting llm.JobPosting) error {
+func (p *Processor) insertJobs(ctx context.Context, jobPostings []llm.JobPosting) error {
 	tx, err := p.database.DB().BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -122,47 +163,50 @@ func (p *Processor) insertJobs(ctx context.Context, id int64, jobPosting llm.Job
 
 	q := queries.New(tx)
 
-	for _, job := range jobPosting.Jobs {
-		jobID := uuid.NewString()
-		salary := job.Compensation.BaseSalary
-		if salary == "" {
-			salary = jobPosting.GeneralCompensation.BaseSalary
-		}
-		equity := job.Compensation.Equity
-		if equity == "" {
-			equity = jobPosting.GeneralCompensation.Equity
-		}
-		jobParam := queries.InsertHNJobParams{
-			Company:            jobPosting.CompanyName,
-			CompanyDescription: jobPosting.CompanyDescription,
-			Title:              job.Title,
-			ID:                 jobID,
-			CompanyUrl:         newNullString(jobPosting.CompanyURL),
-			ContactEmail:       newNullString(jobPosting.ContactEmail),
-			Description:        newNullString(job.Description),
-			RoleType:           newNullString(job.RoleType),
-			Location:           newNullString(jobPosting.Location),
-			Salary:             newNullString(salary),
-			Equity:             newNullString(equity),
-			IsHybrid:           boolToInt64(jobPosting.IsHybrid),
-			IsRemote:           boolToInt64(jobPosting.IsRemote),
-			HnCommentID:        id,
-		}
-
-		err = q.InsertHNJob(ctx, jobParam)
-		if err != nil {
-			return err
-		}
-
-		for _, tech := range job.TechStack {
-			stack := queries.InsertHNTechStackParams{
-				HnJobID: jobID,
-				Value:   tech,
+	for _, jobPosting := range jobPostings {
+		p.logger.DebugContext(ctx, "inserting job posting data", "id", jobPosting.ID, "data", jobPosting)
+		for _, job := range jobPosting.Jobs {
+			jobID := uuid.NewString()
+			salary := job.Compensation.BaseSalary
+			if salary == "" {
+				salary = jobPosting.GeneralCompensation.BaseSalary
+			}
+			equity := job.Compensation.Equity
+			if equity == "" {
+				equity = jobPosting.GeneralCompensation.Equity
+			}
+			jobParam := queries.InsertHNJobParams{
+				Company:            jobPosting.CompanyName,
+				CompanyDescription: jobPosting.CompanyDescription,
+				Title:              job.Title,
+				ID:                 jobID,
+				CompanyUrl:         newNullString(jobPosting.CompanyURL),
+				ContactEmail:       newNullString(jobPosting.ContactEmail),
+				Description:        newNullString(job.Description),
+				RoleType:           newNullString(job.RoleType),
+				Location:           newNullString(jobPosting.Location),
+				Salary:             newNullString(salary),
+				Equity:             newNullString(equity),
+				IsHybrid:           boolToInt64(jobPosting.IsHybrid),
+				IsRemote:           boolToInt64(jobPosting.IsRemote),
+				HnCommentID:        jobPosting.ID,
 			}
 
-			err = q.InsertHNTechStack(ctx, stack)
+			err = q.InsertHNJob(ctx, jobParam)
 			if err != nil {
 				return err
+			}
+
+			for _, tech := range job.TechStack {
+				stack := queries.InsertHNTechStackParams{
+					HnJobID: jobID,
+					Value:   tech,
+				}
+
+				err = q.InsertHNTechStack(ctx, stack)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}

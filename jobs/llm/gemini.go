@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/google/generative-ai-go/genai"
@@ -36,81 +37,139 @@ func NewGeminiClient(ctx context.Context, apiKey string) (*GeminiClient, error) 
 	}, nil
 }
 
-func (c *GeminiClient) ParseJobPosting(ctx context.Context, input string) (JobPosting, error) {
-	var jobPosting JobPosting
-	prompt := fmt.Sprintf(promptTemplate, input)
+func (c *GeminiClient) ParseJobPostings(ctx context.Context, inputs map[int64]string) ([]JobPosting, error) {
+	if len(inputs) == 0 {
+		return nil, ErrNoInputs
+	}
+	if len(inputs) > 10 {
+		return nil, ErrMaxBatch
+	}
+
+	var jobPostings []JobPosting
+	prompt := fmt.Sprintf(batchPromptTemplate, formatInputsForPrompt(inputs))
 
 	resp, err := c.model.GenerateContent(ctx, genai.Text(prompt))
 	if err != nil {
-		return jobPosting, getRateLimitError(err)
+		return jobPostings, getRateLimitError(err)
 	}
 
 	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
-		return jobPosting, ErrNoResponse
+		return jobPostings, ErrNoResponse
 	}
 
 	responseText := fmt.Sprintf("%v", resp.Candidates[0].Content.Parts[0])
 
-	if err := json.Unmarshal([]byte(responseText), &jobPosting); err != nil {
-		return jobPosting, fmt.Errorf("failed to parse JSON response: %w", err)
+	if err := json.Unmarshal([]byte(responseText), &jobPostings); err != nil {
+		return jobPostings, fmt.Errorf("failed to parse JSON response: %w", err)
 	}
 
-	return jobPosting, nil
+	return jobPostings, nil
 }
 
-const promptTemplate = `# Posting Parser Prompt
+var ErrNoInputs = errors.New("no inputs provided")
+var ErrMaxBatch = errors.New("maximum 10 job postings per batch")
 
-You are a specialized parser for job posts. Your task is to extract structured job information from text that may contain job postings or regular comments.
+func formatInputsForPrompt(inputs map[int64]string) string {
+	var ids = make([]int64, 0, len(inputs))
+	for id := range inputs {
+		ids = append(ids, id)
+	}
+	slices.Sort(ids)
+
+	var formatted strings.Builder
+	for i, id := range ids {
+		input := inputs[id]
+		formatted.WriteString(fmt.Sprintf("## Text %d (ID: %d):\n", i+1, id))
+		formatted.WriteString("```\n")
+		formatted.WriteString(input)
+		formatted.WriteString("\n```\n")
+		if i < len(ids)-1 {
+			formatted.WriteString("\n")
+		}
+	}
+	return formatted.String()
+}
+
+const batchPromptTemplate = `# Batch Posting Parser Prompt
+
+You are a specialized parser for job posts. Your task is to extract structured job information from multiple texts that may contain job postings or regular comments.
 
 ## Input Format
-You will receive HTML-encoded text from job posts that may contain:
+You will receive 1-10 HTML-encoded texts from job posts. Each text has a unique ID that you MUST include in your response. Each text may contain:
 - Job postings with company information, roles, locations, and compensation
 - Regular comments that are not job postings
 - Mixed content with multiple job roles from the same company
 
+## Text Preprocessing Instructions
+Before extracting information, normalize the following for each text:
+
+### HTML Entity Decoding
+- Decode HTML entities like &#x2F; (/) and &#x27; (') back to regular characters
+- Convert URLs like 'https:&#x2F;&#x2F;www.example.com&#x2F;' to 'https://www.example.com/'
+
+### Email Format Normalization
+- Convert obfuscated emails to standard format:
+  - 'careers<at>company<dot>com' → 'careers@company.com'
+  - 'hiring[at]company[dot]com' → 'hiring@company.com'
+  - 'contact AT company DOT com' → 'contact@company.com'
+  - 'email_hiring_2025 AT company.ai' → 'email_hiring_2025@company.ai'
+
+### Text Case Normalization
+- Convert ALL CAPS company names to proper title case (e.g., "ACME CORP" → "Acme Corp")
+- Convert ALL CAPS job titles to proper title case (e.g., "SOFTWARE ENGINEER" → "Software Engineer")
+- Preserve intentional capitalization in acronyms and technical terms
+
 ## Critical Output Requirements
-- Return ONLY valid JSON - no markdown code blocks, no explanations, no additional text
+- Return ONLY valid JSON array - no markdown code blocks, no explanations, no additional text
+- Process each text independently and return results in the same order as inputs
+- MUST include the correct ID for each text in the "id" field
 - Do NOT include citations, reference numbers, or bracketed numbers like [1], [2], etc.
 - Use ONLY information directly from the provided text
 - Do NOT add external knowledge about companies beyond what's in the text
 - All field values must be clean strings without citation markers
+- Apply all normalization rules above before populating JSON fields
 
 ## JSON Structure
-{
-  "is_job_posting": "boolean - true if text contains job posting information, false otherwise",
-  "company_name": "string - the company name (required)",
-  "company_description": "string - brief description of what the company does (optional)",
-  "company_url": "string - url of the company main website (optional)",
-  "contact_email": "string - the contact email for job applications (optional)",
-  "jobs": [
-    {
-      "title": "string - job title",
-      "description": "string - specific responsibilities/requirements for this role (optional if no specific description for the specific job)",
-      "role_type": "string - 'full-time', 'part-time', 'full-time contractor', 'contract', 'internship', or 'unknown'",
-      "compensation": {
-        "base_salary": "salary range specific to this job (optional)",
-        "equity": "equity details specific to this job (optional)",
-        "other": "other compensation specific to this job (optional)"
-      },
-      "tech_stack": [
-        "technologies specific to this job (optional)"
-      ]
-    }
-  ],
-  "is_hybrid": "boolean - true only if hybrid work is explicitly mentioned AND remote is not",
-  "is_remote": "boolean - true if remote/distributed work is mentioned AND hybrid is not",
-  "location": "string - office location, 'Remote', or 'unknown'",
-  "general_compensation": {
-    "base_salary": "salary that applies to all jobs (optional)",
-    "equity": "equity that applies to all jobs (optional)"
-  },
-  "general_tech_stack": [
-    "technologies that apply to all jobs or empty array (optional)"
-  ]
-}
+Return an array of job posting objects, one for each input text, maintaining the same order:
 
-## Text to Parse:
-` + "```\n%s\n```"
+[
+  {
+    "id": "int64 - the ID provided for this specific text (REQUIRED)",
+    "is_job_posting": "boolean - true if text contains job posting information, false otherwise",
+    "company_name": "string - the company name (required, normalized to proper case)",
+    "company_description": "string - brief description of what the company does (optional)",
+    "company_url": "string - url of the company main website with HTML entities decoded (optional)",
+    "contact_email": "string - the contact email for job applications in standard format (optional)",
+    "jobs": [
+      {
+        "title": "string - job title normalized to proper case",
+        "description": "string - specific responsibilities/requirements for this role (optional if no specific description for the specific job)",
+        "role_type": "string - 'full-time', 'part-time', 'full-time contractor', 'contract', 'internship', or 'unknown'",
+        "compensation": {
+          "base_salary": "salary range specific to this job (optional)",
+          "equity": "equity details specific to this job (optional)",
+          "other": "other compensation specific to this job (optional)"
+        },
+        "tech_stack": [
+          "technologies specific to this job (optional)"
+        ]
+      }
+    ],
+    "is_hybrid": "boolean - true only if hybrid work is explicitly mentioned AND remote is not",
+    "is_remote": "boolean - true if remote/distributed work is mentioned AND hybrid is not",
+    "location": "string - office location, 'Remote', or 'unknown'",
+    "general_compensation": {
+      "base_salary": "salary that applies to all jobs (optional)",
+      "equity": "equity that applies to all jobs (optional)"
+    },
+    "general_tech_stack": [
+      "technologies that apply to all jobs or empty array (optional)"
+    ]
+  }
+]
+
+## Texts to Parse:
+%s`
 
 func getRateLimitError(err error) error {
 	if err == nil {
