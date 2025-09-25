@@ -32,13 +32,13 @@ INSERT INTO
 VALUES
   (?, ?, ?, ?);
 
--- name: UpdateHNComment :exec
+-- name: UpdateHNComments :exec
 UPDATE hn_comments
 SET
   updated_at = CURRENT_TIMESTAMP,
   status = ?
 WHERE
-  id = ?;
+  id IN (sqlc.slice ('ids'));
 
 -- name: GetQueuedHNComments :many
 SELECT
@@ -48,13 +48,14 @@ FROM
 WHERE
   status IN ('queued', 'in_progress');
 
--- name: GetHNCommentValue :one
+-- name: GetHNCommentValues :many
 SELECT
+  id,
   value
 FROM
   hn_comments
 WHERE
-  id = ?;
+  id IN (sqlc.slice ('ids'));
 
 -- name: InsertHNJob :exec
 INSERT INTO
