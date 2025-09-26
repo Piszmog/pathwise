@@ -33,6 +33,8 @@ func New(logger *slog.Logger, database db.Database) http.Handler {
 		Database: database,
 	}
 	protected.HandleFunc(http.MethodGet+" /", h.Main)
+	protected.HandleFunc(http.MethodGet+" /job-listings", h.GetJobListings)
+	protected.HandleFunc(http.MethodGet+" /job-listings/{id}", h.GetJobListingDetails)
 	protected.HandleFunc(http.MethodGet+" /stats", h.GetStats)
 	protected.HandleFunc(http.MethodPost+" /jobs", h.AddJob)
 	protected.HandleFunc(http.MethodGet+" /archives", h.Archives)
