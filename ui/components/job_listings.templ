@@ -27,12 +27,6 @@ templ jobListingsBody(jobs []types.JobListing) {
 
 templ jobListingsContent(jobs []types.JobListing) {
 	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-		<div class="sm:flex sm:items-center">
-			<div class="sm:flex-auto">
-				<h1 class="text-base font-semibold leading-6 text-gray-900">Job Listings</h1>
-				<p class="mt-2 text-sm text-gray-700">Latest opportunities from various sources</p>
-			</div>
-		</div>
 		<div class="mt-8 flow-root">
 			<div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
 				<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
@@ -46,7 +40,7 @@ templ jobListingsContent(jobs []types.JobListing) {
 								<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Work Type</th>
 								<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Salary</th>
 								<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Posted</th>
-								<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Actions</th>
+								<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"></th>
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-gray-200">
@@ -146,3 +140,4 @@ templ jobSourceBadge(source types.JobSource) {
 		<span class="text-gray-400">Unknown</span>
 	}
 }
+
