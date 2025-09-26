@@ -17,7 +17,7 @@ import (
 
 const (
 	maxAttempts  = 5
-	batchSize    = 10
+	batchSize    = 15
 	batchTimeout = 5 * time.Second
 )
 
