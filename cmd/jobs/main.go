@@ -16,6 +16,7 @@ import (
 
 func main() {
 	l := logger.New(os.Getenv("LOG_LEVEL"), os.Getenv("LOG_OUTPUT"))
+	l.Info("starting jobs app")
 
 	geminiToken := os.Getenv("GEMINI_API_KEY")
 	if geminiToken == "" {
@@ -68,6 +69,7 @@ func main() {
 	commentIDsChan := make(chan int64, 1000)
 
 	processor := hn.NewProcessor(l, database, llmClient)
+	l.InfoContext(ctx, "running processor")
 	go processor.Run(ctx, commentIDsChan)
 
 	ids, err := database.Queries().GetQueuedHNComments(ctx)
@@ -80,7 +82,7 @@ func main() {
 	}
 
 	go func() {
-		l.DebugContext(ctx, "running scraper")
+		l.InfoContext(ctx, "running scraper")
 		if scrapeErr := scraper.Run(ctx, commentIDsChan); scrapeErr != nil {
 			l.Error("failed to scrape", "error", scrapeErr)
 		}
@@ -96,7 +98,7 @@ func main() {
 		select {
 		case <-ticker.C:
 			go func() {
-				l.DebugContext(ctx, "running scraper")
+				l.InfoContext(ctx, "running scraper")
 				if err := scraper.Run(ctx, commentIDsChan); err != nil {
 					l.Error("failed to scrape", "error", err)
 				}
