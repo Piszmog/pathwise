@@ -36,6 +36,7 @@ func NewProcessor(logger *slog.Logger, database db.Database, client *llm.GeminiC
 }
 
 func (p *Processor) Run(ctx context.Context, ids <-chan int64) {
+	p.logger.DebugContext(ctx, "processor running")
 	for {
 		batch := p.collectBatch(ctx, ids)
 		if len(batch) == 0 {
