@@ -1,0 +1,148 @@
+package components
+
+import (
+	"github.com/Piszmog/pathwise/ui/types"
+)
+
+templ JobListings(jobs []types.JobListing) {
+	<!DOCTYPE html>
+	<html lang="en">
+		@Head(false)
+		@jobListingsBody(jobs)
+	</html>
+}
+
+templ jobListingsBody(jobs []types.JobListing) {
+	<body class="min-h-screen flex flex-col">
+		<main class="flex-1">
+			@header(CurrentPageJobListings)
+			@jobListingsContent(jobs)
+			@drawer("job-listing-details", "Job Details") {
+				<div id="job-listing-details"></div>
+			}
+		</main>
+		@footer()
+	</body>
+}
+
+templ jobListingsContent(jobs []types.JobListing) {
+	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+		<div class="sm:flex sm:items-center">
+			<div class="sm:flex-auto">
+				<h1 class="text-base font-semibold leading-6 text-gray-900">Job Listings</h1>
+				<p class="mt-2 text-sm text-gray-700">Latest opportunities from various sources</p>
+			</div>
+		</div>
+		<div class="mt-8 flow-root">
+			<div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+				<div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+					<table class="min-w-full divide-y divide-gray-300">
+						<thead>
+							<tr>
+								<th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-0">Company</th>
+								<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Title</th>
+								<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Source</th>
+								<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Location</th>
+								<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Work Type</th>
+								<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Salary</th>
+								<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Posted</th>
+								<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Actions</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-gray-200">
+							for _, job := range jobs {
+								@jobListingRow(job)
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+templ jobListingRow(job types.JobListing) {
+	<tr>
+		<td class="whitespace-nowrap py-4 pl-4 pr-3 sm:pl-0">
+			<div class="flex items-center">
+				<div>
+					<div class="text-sm font-medium text-gray-900">{ job.Company }</div>
+					if job.CompanyURL != nil {
+						<div class="text-sm text-gray-500">
+							<a href={ templ.SafeURL(*job.CompanyURL) } target="_blank" class="text-blue-600 hover:text-blue-900">
+								View Company
+							</a>
+						</div>
+					}
+				</div>
+			</div>
+		</td>
+		<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-900">
+			<div class="text-sm font-medium text-gray-900">{ job.Title }</div>
+			if job.RoleType != nil {
+				<div class="text-sm text-gray-500">{ *job.RoleType }</div>
+			}
+		</td>
+		<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+			@jobSourceBadge(job.Source)
+		</td>
+		<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+			if job.Location != nil {
+				{ *job.Location }
+			} else {
+				<span class="text-gray-400">Not specified</span>
+			}
+		</td>
+		<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+			<div class="flex gap-1">
+				if job.IsRemote {
+					<span class="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+						Remote
+					</span>
+				}
+				if job.IsHybrid {
+					<span class="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20">
+						Hybrid
+					</span>
+				}
+				if !job.IsRemote && !job.IsHybrid {
+					<span class="inline-flex items-center rounded-full bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+						On-site
+					</span>
+				}
+			</div>
+		</td>
+		<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+			if job.Salary != nil {
+				{ *job.Salary }
+			} else {
+				<span class="text-gray-400">Not specified</span>
+			}
+		</td>
+		<td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+			{ job.CreatedAt.Format("Jan 2, 2006") }
+		</td>
+		<td class="whitespace-nowrap px-3 py-4 text-sm">
+			<button
+				class="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:block cursor-pointer"
+				onclick="toggleSlideOver('job-listing-details')"
+				hx-get={ "/job-listings/" + job.ID }
+				hx-target="#job-listing-details"
+				hx-trigger="click"
+			>
+				View Details
+			</button>
+		</td>
+	</tr>
+}
+
+templ jobSourceBadge(source types.JobSource) {
+	{{ sourceInfo := source.Info() }}
+	if source != "" {
+		<span class={ "inline-flex items-center rounded-full px-2 py-1 text-xs font-medium", sourceInfo.BadgeClass }>
+			{ sourceInfo.DisplayName }
+		</span>
+	} else {
+		<span class="text-gray-400">Unknown</span>
+	}
+}

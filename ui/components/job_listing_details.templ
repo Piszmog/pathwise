@@ -1,0 +1,126 @@
+package components
+
+import (
+	"github.com/Piszmog/pathwise/ui/types"
+)
+
+templ JobListingDetails(job types.JobListingDetails) {
+	<div class="space-y-6">
+		<!-- Header Section -->
+		<div class="border-b border-gray-200 pb-4">
+			<div class="flex items-start justify-between">
+				<div>
+					<h1 class="text-xl font-semibold text-gray-900">{ job.Company }</h1>
+					<h2 class="text-lg text-gray-700 mt-1">{ job.Title }</h2>
+				</div>
+				@jobSourceBadge(job.Source)
+			</div>
+			<div class="flex gap-2 mt-3">
+				if job.IsRemote {
+					<span class="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+						Remote
+					</span>
+				}
+				if job.IsHybrid {
+					<span class="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-600/20">
+						Hybrid
+					</span>
+				}
+				if !job.IsRemote && !job.IsHybrid {
+					<span class="inline-flex items-center rounded-full bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+						On-site
+					</span>
+				}
+			</div>
+		</div>
+		<!-- Job Information -->
+		<div>
+			<h3 class="text-lg font-medium text-gray-900 mb-3">Job Information</h3>
+			<div class="space-y-3">
+				if job.Description != nil {
+					<div>
+						<span class="font-medium text-gray-700">Description:</span>
+						<p class="text-gray-600 mt-1">{ *job.Description }</p>
+					</div>
+				}
+				if job.RoleType != nil {
+					<div>
+						<span class="font-medium text-gray-700">Role Type:</span>
+						<span class="text-gray-600 ml-2">{ *job.RoleType }</span>
+					</div>
+				}
+				if job.Location != nil {
+					<div>
+						<span class="font-medium text-gray-700">Location:</span>
+						<span class="text-gray-600 ml-2">{ *job.Location }</span>
+					</div>
+				}
+				if job.Salary != nil {
+					<div>
+						<span class="font-medium text-gray-700">Salary:</span>
+						<span class="text-gray-600 ml-2">{ *job.Salary }</span>
+					</div>
+				}
+				if job.Equity != nil {
+					<div>
+						<span class="font-medium text-gray-700">Equity:</span>
+						<span class="text-gray-600 ml-2">{ *job.Equity }</span>
+					</div>
+				}
+			</div>
+		</div>
+		<!-- Company Information -->
+		<div>
+			<h3 class="text-lg font-medium text-gray-900 mb-3">Company Information</h3>
+			<div class="space-y-3">
+				<div>
+					<span class="font-medium text-gray-700">About:</span>
+					<p class="text-gray-600 mt-1">{ job.CompanyDescription }</p>
+				</div>
+				if job.CompanyURL != nil {
+					<div>
+						<span class="font-medium text-gray-700">Website:</span>
+						<a href={ templ.SafeURL(*job.CompanyURL) } target="_blank" class="text-blue-600 hover:text-blue-900 ml-2">
+							{ *job.CompanyURL }
+						</a>
+					</div>
+				}
+			</div>
+		</div>
+		<!-- Technology Stack -->
+		if len(job.TechStacks) > 0 {
+			<div>
+				<h3 class="text-lg font-medium text-gray-900 mb-3">Technology Stack</h3>
+				<div class="flex flex-wrap gap-2">
+					for _, tech := range job.TechStacks {
+						<span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-800">
+							{ tech }
+						</span>
+					}
+				</div>
+			</div>
+		}
+		<!-- Contact & Links -->
+		<div>
+			<h3 class="text-lg font-medium text-gray-900 mb-3">Contact & Links</h3>
+			<div class="space-y-3">
+				if job.ContactEmail != nil {
+					<div>
+						<span class="font-medium text-gray-700">Email:</span>
+						<a href={ templ.SafeURL("mailto:" + *job.ContactEmail) } class="text-blue-600 hover:text-blue-900 ml-2">
+							{ *job.ContactEmail }
+						</a>
+					</div>
+				}
+				if job.SourceURL != nil {
+					<div>
+						<span class="font-medium text-gray-700">Original Post:</span>
+						<a href={ templ.SafeURL(*job.SourceURL) } target="_blank" class="text-blue-600 hover:text-blue-900 ml-2">
+							View on { job.Source.Info().DisplayName }
+						</a>
+					</div>
+				}
+			</div>
+		</div>
+	</div>
+}
