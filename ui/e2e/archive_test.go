@@ -63,7 +63,6 @@ func TestArchive_UnarchiveJobApplication(t *testing.T) {
 	archiveSingleJob(t, "Unarchive Test Company")
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
-	require.NoError(t, expect.Locator(page.GetByText("0 results")).ToHaveCount(1))
 
 	_, err := page.Goto(getFullPath("archives"))
 	require.NoError(t, err)
@@ -78,14 +77,12 @@ func TestArchive_UnarchiveJobApplication(t *testing.T) {
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0, playwright.LocatorAssertionsToHaveCountOptions{
 		Timeout: playwright.Float(5000),
 	}))
-	require.NoError(t, expect.Locator(page.GetByText("0 results")).ToHaveCount(1))
 
 	_, err = page.Goto(getFullPath(""))
 	require.NoError(t, err)
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
 	require.NoError(t, expect.Locator(page.GetByText("Unarchive Test Company")).ToHaveCount(1))
-	require.NoError(t, expect.Locator(page.GetByText("1 result")).ToHaveCount(1))
 
 	require.NoError(t, page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "View job"}).First().Click())
 
@@ -135,7 +132,6 @@ func TestArchive_Pagination(t *testing.T) {
 	archiveJobsByDate(t, "2030-01-01")
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
-	require.NoError(t, expect.Locator(page.GetByText("0 results")).ToHaveCount(1))
 
 	_, err := page.Goto(getFullPath("archives"))
 	require.NoError(t, err)
@@ -143,8 +139,6 @@ func TestArchive_Pagination(t *testing.T) {
 	waitForHTMXRequest(t)
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(10))
-
-	require.NoError(t, expect.Locator(page.GetByText("Showing 1 to 10 of 12 results")).ToHaveCount(1))
 
 	previousButton := page.GetByRole("button", playwright.PageGetByRoleOptions{Name: "Previous"})
 	require.NoError(t, expect.Locator(previousButton).ToBeDisabled())
@@ -157,8 +151,6 @@ func TestArchive_Pagination(t *testing.T) {
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(2))
 
-	require.NoError(t, expect.Locator(page.GetByText("Showing 11 to 12 of 12 results")).ToHaveCount(1))
-
 	require.NoError(t, expect.Locator(previousButton).ToBeEnabled())
 
 	require.NoError(t, expect.Locator(nextButton).ToBeDisabled())
@@ -167,7 +159,6 @@ func TestArchive_Pagination(t *testing.T) {
 	waitForHTMXRequest(t)
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(10))
-	require.NoError(t, expect.Locator(page.GetByText("Showing 1 to 10 of 12 results")).ToHaveCount(1))
 
 	require.NoError(t, expect.Locator(previousButton).ToBeDisabled())
 

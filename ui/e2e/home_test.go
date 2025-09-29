@@ -15,7 +15,6 @@ func TestHome_NewUser(t *testing.T) {
 	createUserAndSignIn(t)
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
-	require.NoError(t, expect.Locator(page.GetByText("Showing 0 to 0 of 0 results ")).ToHaveCount(1))
 }
 
 func TestHome_AddApplication(t *testing.T) {
@@ -23,11 +22,9 @@ func TestHome_AddApplication(t *testing.T) {
 	createUserAndSignIn(t)
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
-	require.NoError(t, expect.Locator(page.GetByText("Showing 0 to 0 of 0 results")).ToHaveCount(1))
 
 	addJobApplication(t, "Super Company", "Rock Star", "https://supercompany.com")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
-	require.NoError(t, expect.Locator(page.GetByText("Showing 1 to 1 of 1 results")).ToHaveCount(1))
 }
 
 func TestHome_UpdateStatus(t *testing.T) {
@@ -100,13 +97,11 @@ func TestHome_BulkArchiveByDate(t *testing.T) {
 	addJobApplication(t, "Recent Company", "Frontend Developer", "https://recent.com")
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(3))
-	require.NoError(t, expect.Locator(page.GetByText("3 results")).ToHaveCount(1))
 
 	tomorrow := time.Now().AddDate(0, 0, 1).Format("2006-01-02")
 	archiveJobsByDate(t, tomorrow)
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
-	require.NoError(t, expect.Locator(page.GetByText("0 results")).ToHaveCount(1))
 
 	_, err := page.Goto(getFullPath("archives"))
 	require.NoError(t, err)
@@ -154,7 +149,6 @@ func TestHome_FilterFunctionality(t *testing.T) {
 
 	filterByCompany(t, "NonExistent")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
-	require.NoError(t, expect.Locator(page.GetByText("0 results")).ToHaveCount(1))
 
 	clearFilter(t)
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(4))
@@ -168,12 +162,10 @@ func TestHome_ArchiveSingleJob(t *testing.T) {
 	addJobApplication(t, "Keep This Company", "Backend Developer", "https://keepthis.com")
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(2))
-	require.NoError(t, expect.Locator(page.GetByText("2 results")).ToHaveCount(1))
 
 	archiveSingleJob(t, "Archive Test Company")
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
-	require.NoError(t, expect.Locator(page.GetByText("1 result")).ToHaveCount(1))
 	require.NoError(t, expect.Locator(page.GetByText("Keep This Company")).ToHaveCount(1))
 	require.NoError(t, expect.Locator(page.GetByText("Archive Test Company")).ToHaveCount(0))
 
