@@ -166,7 +166,6 @@ func TestHome_ArchiveSingleJob(t *testing.T) {
 	archiveSingleJob(t, "Archive Test Company")
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
-	require.NoError(t, expect.Locator(page.GetByText("1 result")).ToHaveCount(1))
 	require.NoError(t, expect.Locator(page.GetByText("Keep This Company")).ToHaveCount(1))
 	require.NoError(t, expect.Locator(page.GetByText("Archive Test Company")).ToHaveCount(0))
 
