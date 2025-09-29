@@ -83,3 +83,69 @@ INSERT INTO
   hn_job_tech_stacks (hn_job_id, value)
 VALUES
   (?, ?);
+
+-- name: GetHNJobs :many
+SELECT
+  hn_jobs.id,
+  hn_jobs.company,
+  hn_jobs.title,
+  hn_jobs.role_type,
+  hn_jobs.location,
+  hn_jobs.salary,
+  hn_jobs.is_hybrid,
+  hn_jobs.is_remote
+FROM
+  hn_jobs
+  LEFT JOIN hn_comments ON hn_comments.id = hn_jobs.hn_comment_id
+ORDER BY
+  hn_comments.commented_at DESC;
+
+-- name: GetHNJobByID :one
+SELECT
+  id,
+  company,
+  company_description,
+  title,
+  company_url,
+  contact_email,
+  description,
+  role_type,
+  location,
+  salary,
+  equity,
+  is_hybrid,
+  is_remote,
+  created_at,
+  hn_comment_id
+FROM
+  hn_jobs
+WHERE
+  id = ?;
+
+-- name: GetHNJobTechStacks :many
+SELECT
+  value
+FROM
+  hn_job_tech_stacks
+WHERE
+  hn_job_id = ?;
+
+-- name: GetHNJobsPaginated :many
+SELECT
+  hn_jobs.id,
+  hn_jobs.company,
+  hn_jobs.title,
+  hn_jobs.role_type,
+  hn_jobs.location,
+  hn_jobs.salary,
+  hn_jobs.is_hybrid,
+  hn_jobs.is_remote
+FROM
+  hn_jobs
+  LEFT JOIN hn_comments ON hn_comments.id = hn_jobs.hn_comment_id
+ORDER BY
+  hn_comments.commented_at DESC
+LIMIT
+  ?
+OFFSET
+  ?;

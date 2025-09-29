@@ -81,7 +81,7 @@ type FilterOpts struct {
 type PaginationOpts struct {
 	Page    int64
 	PerPage int64
-	Total   int64
+	Showing int
 }
 
 type AlertType string

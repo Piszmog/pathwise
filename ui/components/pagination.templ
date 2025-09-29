@@ -2,7 +2,6 @@ package components
 
 import (
 	"github.com/Piszmog/pathwise/ui/types"
-	"github.com/Piszmog/pathwise/ui/utils"
 	"strconv"
 )
 
@@ -12,32 +11,12 @@ templ pagination(paginationOpts types.PaginationOpts, filterOpts types.FilterOpt
 		class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6"
 		aria-label="Pagination"
 	>
-		<div class="hidden sm:block">
-			<p class="text-sm text-gray-700">
-				Showing
-				<span class="font-medium">
-					{ strconv.FormatInt(utils.GetActualMin(paginationOpts.Page *
-				paginationOpts.PerPage + 1, paginationOpts.Total), 10) }
-				</span>
-				to
-				<span class="font-medium">
-					{ strconv.FormatInt(utils.GetActualMax((paginationOpts.Page+1) *
-				paginationOpts.PerPage, paginationOpts.Total), 10) }
-				</span>
-				of
-				<span class="font-medium">{ strconv.FormatInt(paginationOpts.Total,10) }</span>
-				results
-			</p>
-		</div>
 		<div class="flex flex-1 justify-between sm:justify-end">
 			<button
 				type="button"
-				class="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+				class="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
 				disabled?={ paginationOpts.Page==0 }
-				hx-get={ "/jobs?page=" +
-			strconv.FormatInt(paginationOpts.Page-1, 10) + "&per_page=" +
-			strconv.FormatInt(paginationOpts.PerPage, 10) + "&company=" + filterOpts.Company + "&status=" +
-			filterOpts.Status.String() + "&archived=" + strconv.FormatBool(filterOpts.IsArchived) }
+				hx-get={ "/jobs?page=" + strconv.FormatInt(paginationOpts.Page-1, 10) + "&per_page=" + strconv.FormatInt(paginationOpts.PerPage, 10) + "&company=" + filterOpts.Company + "&status=" + filterOpts.Status.String() + "&archived=" + strconv.FormatBool(filterOpts.IsArchived) }
 				hx-target="#jobs"
 				hx-trigger="click"
 			>
@@ -45,11 +24,9 @@ templ pagination(paginationOpts types.PaginationOpts, filterOpts types.FilterOpt
 			</button>
 			<button
 				type="button"
-				class="relative ml-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-				disabled?={ paginationOpts.Total <=(paginationOpts.Page+1) * paginationOpts.PerPage }
-				hx-get={ "/jobs?page=" + strconv.FormatInt(paginationOpts.Page+1, 10) + "&per_page=" +
-			strconv.FormatInt(paginationOpts.PerPage, 10) + "&company=" + filterOpts.Company + "&status=" +
-			filterOpts.Status.String() + "&archived=" + strconv.FormatBool(filterOpts.IsArchived) }
+				class="relative ml-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+				disabled?={ int64(paginationOpts.Showing) < paginationOpts.PerPage }
+				hx-get={ "/jobs?page=" + strconv.FormatInt(paginationOpts.Page+1, 10) + "&per_page=" + strconv.FormatInt(paginationOpts.PerPage, 10) + "&company=" + filterOpts.Company + "&status=" + filterOpts.Status.String() + "&archived=" + strconv.FormatBool(filterOpts.IsArchived) }
 				hx-target="#jobs"
 				hx-trigger="click"
 			>

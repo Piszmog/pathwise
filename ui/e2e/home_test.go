@@ -15,7 +15,6 @@ func TestHome_NewUser(t *testing.T) {
 	createUserAndSignIn(t)
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
-	require.NoError(t, expect.Locator(page.GetByText("Showing 0 to 0 of 0 results ")).ToHaveCount(1))
 }
 
 func TestHome_AddApplication(t *testing.T) {
@@ -23,11 +22,9 @@ func TestHome_AddApplication(t *testing.T) {
 	createUserAndSignIn(t)
 
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(0))
-	require.NoError(t, expect.Locator(page.GetByText("Showing 0 to 0 of 0 results")).ToHaveCount(1))
 
 	addJobApplication(t, "Super Company", "Rock Star", "https://supercompany.com")
 	require.NoError(t, expect.Locator(page.Locator("#job-list > li")).ToHaveCount(1))
-	require.NoError(t, expect.Locator(page.GetByText("Showing 1 to 1 of 1 results")).ToHaveCount(1))
 }
 
 func TestHome_UpdateStatus(t *testing.T) {
