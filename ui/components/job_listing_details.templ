@@ -12,12 +12,6 @@ templ JobListingDetails(job types.JobListingDetails) {
 				<div class="flex-1 min-w-0">
 					<h1 class="text-2xl font-bold text-gray-900">{ job.Company }</h1>
 					<p class="text-lg text-gray-600 mt-1">{ job.Title }</p>
-					<div class="flex items-center gap-x-2 text-sm text-gray-500 mt-2">
-						<svg viewBox="0 0 2 2" class="h-1 w-1 fill-current">
-							<circle cx="1" cy="1" r="1"></circle>
-						</svg>
-						<span>Source: { job.Source.Info().DisplayName }</span>
-					</div>
 				</div>
 				<div class="flex-shrink-0">
 					@jobSourceBadge(job.Source)
@@ -168,4 +162,3 @@ func getTechStackColor(tech string) string {
 		return "bg-gray-100 text-gray-800 ring-1 ring-gray-200"
 	}
 }
-
