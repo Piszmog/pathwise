@@ -2,7 +2,9 @@ package handler
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/Piszmog/pathwise/ui/components"
 	"github.com/Piszmog/pathwise/ui/types"
@@ -13,7 +15,7 @@ func (h *Handler) GetJobListingDetails(w http.ResponseWriter, r *http.Request) {
 
 	hnJob, err := h.Database.Queries().GetHNJobByID(r.Context(), id)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			h.html(r.Context(), w, http.StatusNotFound,
 				components.Alert(types.AlertTypeError, "Job not found", "The requested job could not be found."))
 			return
@@ -69,7 +71,7 @@ func (h *Handler) GetJobListingDetails(w http.ResponseWriter, r *http.Request) {
 		JobListing: types.JobListing{
 			ID:                 hnJob.ID,
 			Source:             types.JobSourceHackerNews,
-			SourceID:           string(hnJob.HnCommentID),
+			SourceID:           strconv.FormatInt(hnJob.HnCommentID, 10),
 			SourceURL:          nil,
 			Company:            hnJob.Company,
 			CompanyDescription: hnJob.CompanyDescription,

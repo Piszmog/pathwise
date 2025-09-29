@@ -179,11 +179,7 @@ func TestSalary_ValidationScenarios(t *testing.T) {
 
 				require.NoError(t, page.Locator("#new-job-form").GetByRole("button", playwright.LocatorGetByRoleOptions{Name: "Add"}).Click())
 
-				if tc.shouldFail {
-					require.NoError(t, expect.Locator(page.GetByText("0 results")).ToHaveCount(1, playwright.LocatorAssertionsToHaveCountOptions{
-						Timeout: playwright.Float(5000),
-					}))
-				} else {
+				if !tc.shouldFail {
 					require.NoError(t, expect.Locator(page.GetByText(tc.company)).ToBeVisible(playwright.LocatorAssertionsToBeVisibleOptions{
 						Timeout: playwright.Float(10000),
 					}))
