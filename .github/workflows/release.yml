@@ -453,7 +453,6 @@ jobs:
     name: Deploy Jobs to VM
     runs-on: ubuntu-latest
     needs: [release-jobs, migrate-database]
-    if: false  # Set to true when ready to enable production deployment
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v4
