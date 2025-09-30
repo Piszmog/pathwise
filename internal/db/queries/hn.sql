@@ -149,3 +149,34 @@ LIMIT
   ?
 OFFSET
   ?;
+
+-- name: GetHNJobsFiltered :many
+SELECT
+  hn_jobs.id,
+  hn_jobs.company,
+  hn_jobs.title,
+  hn_jobs.role_type,
+  hn_jobs.location,
+  hn_jobs.salary,
+  hn_jobs.is_hybrid,
+  hn_jobs.is_remote
+FROM
+  hn_jobs
+  LEFT JOIN hn_comments ON hn_comments.id = hn_jobs.hn_comment_id
+WHERE
+  (? = -1 OR hn_jobs.is_remote = ?)
+  AND (? = -1 OR hn_jobs.is_hybrid = ?)
+  AND (
+    ? = ''
+    OR hn_jobs.id IN (
+      SELECT hn_job_id
+      FROM hn_job_tech_stacks
+      WHERE hn_job_tech_stacks.value = ?
+    )
+  )
+ORDER BY
+  hn_comments.commented_at DESC
+LIMIT
+  ?
+OFFSET
+  ?;

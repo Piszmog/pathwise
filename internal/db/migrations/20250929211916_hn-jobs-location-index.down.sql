@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS hn_jobs_location_idx;

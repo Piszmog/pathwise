@@ -5,19 +5,20 @@ import (
 	"strconv"
 )
 
-templ JobListings(jobs []types.JobListing, paginationOpts types.PaginationOpts) {
+templ JobListings(jobs []types.JobListing, paginationOpts types.PaginationOpts, filterOpts types.JobListingFilterOpts) {
 	<!DOCTYPE html>
 	<html lang="en">
 		@Head(false)
-		@jobListingsBody(jobs, paginationOpts)
+		@jobListingsBody(jobs, paginationOpts, filterOpts)
 	</html>
 }
 
-templ jobListingsBody(jobs []types.JobListing, paginationOpts types.PaginationOpts) {
+templ jobListingsBody(jobs []types.JobListing, paginationOpts types.PaginationOpts, filterOpts types.JobListingFilterOpts) {
 	<body class="min-h-screen flex flex-col">
 		<main class="flex-1">
 			@header(CurrentPageJobListings)
-			@jobListingsContent(jobs, paginationOpts)
+			@jobListingsFilter(filterOpts)
+			@jobListingsContent(jobs, paginationOpts, filterOpts)
 			@drawer("job-listing-details", "Job Details") {
 				<div id="job-listing-details"></div>
 			}
@@ -26,14 +27,14 @@ templ jobListingsBody(jobs []types.JobListing, paginationOpts types.PaginationOp
 	</body>
 }
 
-templ jobListingsContent(jobs []types.JobListing, paginationOpts types.PaginationOpts) {
+templ jobListingsContent(jobs []types.JobListing, paginationOpts types.PaginationOpts, filterOpts types.JobListingFilterOpts) {
 	<div class="sm:hidden mt-8">
 		<div class="space-y-4">
 			for _, job := range jobs {
 				@jobListingCard(job)
 			}
 		</div>
-		@jobListingsPagination(paginationOpts)
+		@jobListingsPagination(paginationOpts, filterOpts)
 	</div>
 	<div class="hidden sm:block mt-8">
 		<div class="overflow-hidden">
@@ -57,7 +58,7 @@ templ jobListingsContent(jobs []types.JobListing, paginationOpts types.Paginatio
 				</table>
 			</div>
 		</div>
-		@jobListingsPagination(paginationOpts)
+		@jobListingsPagination(paginationOpts, filterOpts)
 	</div>
 }
 
@@ -71,9 +72,6 @@ templ jobListingRow(job types.JobListing) {
 		<td class="px-2 py-4">
 			<div>
 				<div class="text-sm font-medium text-gray-900 truncate">{ job.Title }</div>
-				if job.RoleType != nil {
-					<div class="text-xs text-gray-500 truncate">{ *job.RoleType }</div>
-				}
 			</div>
 		</td>
 		<td class="px-2 py-4 text-sm text-gray-500 hidden md:table-cell">
@@ -202,14 +200,14 @@ templ jobSourceBadge(source types.JobSource) {
 	}
 }
 
-templ jobListingsPagination(paginationOpts types.PaginationOpts) {
+templ jobListingsPagination(paginationOpts types.PaginationOpts, filterOpts types.JobListingFilterOpts) {
 	<nav class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-8" aria-label="Pagination">
 		<div class="flex flex-1 justify-between sm:justify-end">
 			<button
 				type="button"
 				class="relative inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
 				disabled?={ paginationOpts.Page == 0 }
-				hx-get={ "/job-listings?page=" + strconv.FormatInt(paginationOpts.Page-1, 10) + "&per_page=" + strconv.FormatInt(paginationOpts.PerPage, 10) }
+				hx-get={ buildJobListingsURL(paginationOpts.Page-1, paginationOpts.PerPage, filterOpts) }
 				hx-target="body"
 				hx-trigger="click"
 			>
@@ -219,7 +217,7 @@ templ jobListingsPagination(paginationOpts types.PaginationOpts) {
 				type="button"
 				class="relative ml-3 inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus-visible:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
 				disabled?={ int64(paginationOpts.Showing) < paginationOpts.PerPage }
-				hx-get={ "/job-listings?page=" + strconv.FormatInt(paginationOpts.Page+1, 10) + "&per_page=" + strconv.FormatInt(paginationOpts.PerPage, 10) }
+				hx-get={ buildJobListingsURL(paginationOpts.Page+1, paginationOpts.PerPage, filterOpts) }
 				hx-target="body"
 				hx-trigger="click"
 			>
@@ -227,4 +225,97 @@ templ jobListingsPagination(paginationOpts types.PaginationOpts) {
 			</button>
 		</div>
 	</nav>
+}
+
+func buildJobListingsURL(page int64, perPage int64, filterOpts types.JobListingFilterOpts) string {
+	url := "/job-listings?page=" + strconv.FormatInt(page, 10) + "&per_page=" + strconv.FormatInt(perPage, 10)
+
+	if filterOpts.IsRemote != nil {
+		url += "&is_remote=" + strconv.FormatBool(*filterOpts.IsRemote)
+	}
+	if filterOpts.IsHybrid != nil {
+		url += "&is_hybrid=" + strconv.FormatBool(*filterOpts.IsHybrid)
+	}
+	if filterOpts.TechStack != nil {
+		url += "&tech_stack=" + *filterOpts.TechStack
+	}
+
+	return url
+}
+
+templ jobListingsFilter(filterOpts types.JobListingFilterOpts) {
+	<script type="text/javascript">
+		function clearJobListingsFilter() {
+			document.getElementById("is_remote").checked = false;
+			document.getElementById("is_hybrid").checked = false;
+			document.getElementById("tech_stack").value = "";
+		}
+	</script>
+	<form
+		id="job-listings-filter-form"
+		class="px-4 sm:px-6 lg:px-8 mt-8"
+		hx-get="/job-listings"
+		hx-target="body"
+		hx-swap="outerHTML"
+	>
+		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			<div>
+				<label for="tech_stack" class="block text-sm font-medium leading-6 text-gray-900">Tech Stack</label>
+				<div class="mt-2">
+					<input
+						type="text"
+						name="tech_stack"
+						id="tech_stack"
+						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6"
+						placeholder="Go"
+						if filterOpts.TechStack != nil {
+							value={ *filterOpts.TechStack }
+						}
+					/>
+				</div>
+			</div>
+			<div>
+				<label class="block text-sm font-medium leading-6 text-gray-900">Work Type</label>
+				<div class="mt-2 flex items-center gap-4 h-[42px]">
+					<div class="flex items-center">
+						<input
+							type="checkbox"
+							name="is_remote"
+							id="is_remote"
+							value="true"
+							class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+							checked?={ filterOpts.IsRemote != nil && *filterOpts.IsRemote }
+						/>
+						<label for="is_remote" class="ml-2 block text-sm text-gray-900">Remote</label>
+					</div>
+					<div class="flex items-center">
+						<input
+							type="checkbox"
+							name="is_hybrid"
+							id="is_hybrid"
+							value="true"
+							class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+							checked?={ filterOpts.IsHybrid != nil && *filterOpts.IsHybrid }
+						/>
+						<label for="is_hybrid" class="ml-2 block text-sm text-gray-900">Hybrid</label>
+					</div>
+				</div>
+			</div>
+			<div class="flex items-end gap-2">
+				<button
+					type="submit"
+					class="flex-1 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+				>
+					Filter
+				</button>
+				<button
+					onclick="clearJobListingsFilter()"
+					type="submit"
+					class="flex-1 rounded-md px-3 py-2 text-sm font-semibold bg-white text-gray-900 shadow-sm hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-600 ring-1 ring-inset ring-gray-300"
+				>
+					Clear
+				</button>
+			</div>
+		</div>
+	</form>
 }
