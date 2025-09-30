@@ -2,9 +2,6 @@ package components
 
 import (
 	"github.com/Piszmog/pathwise/ui/types"
-)
-
-import (
 	"strconv"
 )
 
@@ -30,45 +27,43 @@ templ jobListingsBody(jobs []types.JobListing, paginationOpts types.PaginationOp
 }
 
 templ jobListingsContent(jobs []types.JobListing, paginationOpts types.PaginationOpts) {
-	<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-		<div class="sm:hidden mt-8">
-			<div class="space-y-4">
-				for _, job := range jobs {
-					@jobListingCard(job)
-				}
-			</div>
-			@jobListingsPagination(paginationOpts)
+	<div class="sm:hidden mt-8">
+		<div class="space-y-4">
+			for _, job := range jobs {
+				@jobListingCard(job)
+			}
 		</div>
-		<div class="hidden sm:block mt-8">
-			<div class="overflow-hidden">
-				<div class="px-4 sm:px-6 lg:px-8">
-					<table class="w-full divide-y divide-gray-300 table-fixed">
-						<thead>
-							<tr>
-								<th scope="col" class="w-1/5 py-3.5 pr-3 text-left text-sm font-semibold text-gray-900">Company</th>
-								<th scope="col" class="w-1/4 px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Title</th>
-								<th scope="col" class="w-1/6 px-2 py-3.5 text-left text-sm font-semibold text-gray-900 hidden md:table-cell">Location</th>
-								<th scope="col" class="w-1/6 px-2 py-3.5 text-left text-sm font-semibold text-gray-900 hidden lg:table-cell">Work Type</th>
-								<th scope="col" class="w-1/6 px-2 py-3.5 text-left text-sm font-semibold text-gray-900 hidden lg:table-cell">Salary</th>
-								<th scope="col" class="w-16 py-3.5 text-right text-sm font-semibold text-gray-900"></th>
-							</tr>
-						</thead>
-						<tbody class="divide-y divide-gray-200">
-							for _, job := range jobs {
-								@jobListingRow(job)
-							}
-						</tbody>
-					</table>
-				</div>
+		@jobListingsPagination(paginationOpts)
+	</div>
+	<div class="hidden sm:block mt-8">
+		<div class="overflow-hidden">
+			<div class="px-4 sm:px-6 lg:px-8">
+				<table class="w-full divide-y divide-gray-300 table-fixed">
+					<thead>
+						<tr>
+							<th scope="col" class="w-1/5 px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Company</th>
+							<th scope="col" class="w-1/4 px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Title</th>
+							<th scope="col" class="w-1/6 px-2 py-3.5 text-left text-sm font-semibold text-gray-900 hidden md:table-cell">Location</th>
+							<th scope="col" class="w-1/6 px-2 py-3.5 text-left text-sm font-semibold text-gray-900 hidden lg:table-cell">Work Type</th>
+							<th scope="col" class="w-1/6 px-2 py-3.5 text-left text-sm font-semibold text-gray-900 hidden lg:table-cell">Salary</th>
+							<th scope="col" class="w-16 px-2 py-3.5 text-right text-sm font-semibold text-gray-900"></th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-gray-200">
+						for _, job := range jobs {
+							@jobListingRow(job)
+						}
+					</tbody>
+				</table>
 			</div>
-			@jobListingsPagination(paginationOpts)
 		</div>
+		@jobListingsPagination(paginationOpts)
 	</div>
 }
 
 templ jobListingRow(job types.JobListing) {
 	<tr class="hover:bg-gray-50">
-		<td class="py-4 pr-3">
+		<td class="px-2 py-4">
 			<div class="truncate">
 				<div class="text-sm font-medium text-gray-900 truncate">{ job.Company }</div>
 			</div>
@@ -120,7 +115,7 @@ templ jobListingRow(job types.JobListing) {
 		</td>
 		<td class="py-4 text-right">
 			<button
-				class="rounded-md bg-white px-2 py-1 text-xs font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 cursor-pointer"
+				class="rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:block"
 				onclick="toggleSlideOver('job-listing-details')"
 				hx-get={ "/job-listings/" + job.ID }
 				hx-target="#job-listing-details"
@@ -154,14 +149,12 @@ templ jobListingCard(job types.JobListing) {
 				}
 			</div>
 		</div>
-		<!-- Job Title -->
 		<div class="mb-3">
 			<h4 class="text-base font-medium text-gray-900 mb-1">{ job.Title }</h4>
 			if job.RoleType != nil {
 				<p class="text-sm text-gray-600">{ *job.RoleType }</p>
 			}
 		</div>
-		<!-- Details Grid -->
 		<div class="grid grid-cols-2 gap-3 mb-4 text-sm">
 			<div>
 				<span class="text-gray-500">Location:</span>
@@ -184,7 +177,6 @@ templ jobListingCard(job types.JobListing) {
 				</p>
 			</div>
 		</div>
-		<!-- View Details Button -->
 		<div class="flex justify-end">
 			<button
 				class="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 cursor-pointer"
