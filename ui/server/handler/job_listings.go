@@ -119,36 +119,21 @@ func (h *Handler) filterHNJobs(ctx context.Context, filterOpts types.JobListingF
 
 	jobs := make([]types.JobListing, len(hnJobs))
 	for i, hnJob := range hnJobs {
-		var roleType *string
-		if hnJob.RoleType.Valid {
-			roleType = &hnJob.RoleType.String
-		}
-
-		var location *string
-		if hnJob.Location.Valid {
-			location = &hnJob.Location.String
-		}
-
-		var salary *string
-		if hnJob.Salary.Valid {
-			salary = &hnJob.Salary.String
-		}
-
 		jobs[i] = types.JobListing{
 			ID:                 hnJob.ID,
 			Source:             types.JobSourceHackerNews,
 			SourceID:           "",
-			SourceURL:          nil,
+			SourceURL:          "",
 			Company:            hnJob.Company,
 			CompanyDescription: "",
 			Title:              hnJob.Title,
-			CompanyURL:         nil,
-			ContactEmail:       nil,
-			Description:        nil,
-			RoleType:           roleType,
-			Location:           location,
-			Salary:             salary,
-			Equity:             nil,
+			CompanyURL:         "",
+			ContactEmail:       "",
+			Description:        "",
+			RoleType:           hnJob.RoleType.String,
+			Location:           hnJob.Location.String,
+			Salary:             hnJob.Salary.String,
+			Equity:             "",
 			IsHybrid:           hnJob.IsHybrid != 0,
 			IsRemote:           hnJob.IsRemote != 0,
 		}

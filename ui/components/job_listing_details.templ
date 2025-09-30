@@ -39,44 +39,44 @@ templ JobListingDetails(job types.JobListingDetails) {
 			<div class="sm:col-span-2">
 				<h3 class="text-base font-semibold leading-6 text-gray-900 mb-4">Job Information</h3>
 			</div>
-			if job.Location != nil {
+			if job.Location != "" {
 				<div>
 					<label class="block text-sm font-medium leading-6 text-gray-900">Location</label>
 					<div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
-						<p class="text-sm text-gray-900">{ *job.Location }</p>
+						<p class="text-sm text-gray-900">{ job.Location }</p>
 					</div>
 				</div>
 			}
-			if job.RoleType != nil {
+			if job.RoleType != "" {
 				<div>
 					<label class="block text-sm font-medium leading-6 text-gray-900">Role Type</label>
 					<div class="mt-2 p-3 bg-gray-50 rounded-md border border-gray-200">
-						<p class="text-sm text-gray-900">{ *job.RoleType }</p>
+						<p class="text-sm text-gray-900">{ job.RoleType }</p>
 					</div>
 				</div>
 			}
-			if job.Salary != nil {
+			if job.Salary != "" {
 				<div>
 					<label class="block text-sm font-medium leading-6 text-gray-900">Salary</label>
 					<div class="mt-2 p-3 bg-green-50 rounded-md border border-green-200">
-						<p class="text-sm font-semibold text-green-700">{ *job.Salary }</p>
+						<p class="text-sm font-semibold text-green-700">{ job.Salary }</p>
 					</div>
 				</div>
 			}
-			if job.Equity != nil {
+			if job.Equity != "" {
 				<div>
 					<label class="block text-sm font-medium leading-6 text-gray-900">Equity</label>
 					<div class="mt-2 p-3 bg-purple-50 rounded-md border border-purple-200">
-						<p class="text-sm font-semibold text-purple-700">{ *job.Equity }</p>
+						<p class="text-sm font-semibold text-purple-700">{ job.Equity }</p>
 					</div>
 				</div>
 			}
 		</div>
-		if job.Description != nil {
+		if job.Description != "" {
 			<div class="bg-white rounded-lg border border-gray-200 p-6">
 				<h3 class="text-base font-semibold leading-6 text-gray-900 mb-3">Job Description</h3>
 				<div class="prose prose-sm max-w-none">
-					<p class="text-gray-700 leading-relaxed">{ *job.Description }</p>
+					<p class="text-gray-700 leading-relaxed">{ job.Description }</p>
 				</div>
 			</div>
 		}
@@ -93,8 +93,8 @@ templ JobListingDetails(job types.JobListingDetails) {
 		<div class="bg-blue-50 rounded-lg border border-blue-200 p-6">
 			<h3 class="text-base font-semibold leading-6 text-blue-900 mb-3">About the Company</h3>
 			<p class="text-blue-800 leading-relaxed mb-4">{ job.CompanyDescription }</p>
-			if job.CompanyURL != nil {
-				<a href={ templ.SafeURL(*job.CompanyURL) } target="_blank" class="inline-flex items-center text-blue-700 hover:text-blue-900 font-medium">
+			if job.CompanyURL != "" {
+				<a href={ templ.SafeURL(job.CompanyURL) } target="_blank" class="inline-flex items-center text-blue-700 hover:text-blue-900 font-medium">
 					<svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
 					</svg>
@@ -105,22 +105,22 @@ templ JobListingDetails(job types.JobListingDetails) {
 		<div class="bg-green-50 rounded-lg border border-green-200 p-6">
 			<h3 class="text-base font-semibold leading-6 text-green-900 mb-4">Contact & Links</h3>
 			<div class="space-y-3">
-				if job.ContactEmail != nil {
+				if job.ContactEmail != "" {
 					<div class="flex items-center">
 						<svg class="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
 						</svg>
-						<a href={ templ.SafeURL("mailto:" + *job.ContactEmail) } class="text-green-700 hover:text-green-900 font-medium">
-							{ *job.ContactEmail }
+						<a href={ templ.SafeURL("mailto:" + job.ContactEmail) } class="text-green-700 hover:text-green-900 font-medium">
+							{ job.ContactEmail }
 						</a>
 					</div>
 				}
-				if job.SourceURL != nil {
+				if job.SourceURL != "" {
 					<div class="flex items-center">
 						<svg class="w-5 h-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
 						</svg>
-						<a href={ templ.SafeURL(*job.SourceURL) } target="_blank" class="text-green-700 hover:text-green-900 font-medium">
+						<a href={ templ.SafeURL(job.SourceURL) } target="_blank" class="text-green-700 hover:text-green-900 font-medium">
 							View Original Post on { job.Source.Info().DisplayName }
 						</a>
 					</div>

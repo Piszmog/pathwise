@@ -76,8 +76,8 @@ templ jobListingRow(job types.JobListing) {
 		</td>
 		<td class="px-2 py-4 text-sm text-gray-500 hidden md:table-cell">
 			<div class="truncate">
-				if job.Location != nil {
-					{ *job.Location }
+				if job.Location != "" {
+					{ job.Location }
 				} else {
 					<span class="text-gray-400">Not specified</span>
 				}
@@ -104,8 +104,8 @@ templ jobListingRow(job types.JobListing) {
 		</td>
 		<td class="px-2 py-4 text-sm text-gray-500 hidden lg:table-cell">
 			<div class="truncate">
-				if job.Salary != nil {
-					{ *job.Salary }
+				if job.Salary != "" {
+					{ job.Salary }
 				} else {
 					<span class="text-gray-400">Not specified</span>
 				}
@@ -149,16 +149,16 @@ templ jobListingCard(job types.JobListing) {
 		</div>
 		<div class="mb-3">
 			<h4 class="text-base font-medium text-gray-900 mb-1">{ job.Title }</h4>
-			if job.RoleType != nil {
-				<p class="text-sm text-gray-600">{ *job.RoleType }</p>
+			if job.RoleType != "" {
+				<p class="text-sm text-gray-600">{ job.RoleType }</p>
 			}
 		</div>
 		<div class="grid grid-cols-2 gap-3 mb-4 text-sm">
 			<div>
 				<span class="text-gray-500">Location:</span>
 				<p class="font-medium text-gray-900">
-					if job.Location != nil {
-						{ *job.Location }
+					if job.Location != "" {
+						{ job.Location }
 					} else {
 						<span class="text-gray-400">Not specified</span>
 					}
@@ -167,8 +167,8 @@ templ jobListingCard(job types.JobListing) {
 			<div>
 				<span class="text-gray-500">Salary:</span>
 				<p class="font-medium text-gray-900">
-					if job.Salary != nil {
-						{ *job.Salary }
+					if job.Salary != "" {
+						{ job.Salary }
 					} else {
 						<span class="text-gray-400">Not specified</span>
 					}

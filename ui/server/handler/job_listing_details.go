@@ -31,58 +31,24 @@ func (h *Handler) GetJobListingDetails(w http.ResponseWriter, r *http.Request) {
 			components.Alert(types.AlertTypeError, "Error", "Failed to load job tech stacks."))
 		return
 	}
-
-	var companyURL *string
-	if hnJob.CompanyUrl.Valid {
-		companyURL = &hnJob.CompanyUrl.String
-	}
-
-	var contactEmail *string
-	if hnJob.ContactEmail.Valid {
-		contactEmail = &hnJob.ContactEmail.String
-	}
-
-	var description *string
-	if hnJob.Description.Valid {
-		description = &hnJob.Description.String
-	}
-
-	var roleType *string
-	if hnJob.RoleType.Valid {
-		roleType = &hnJob.RoleType.String
-	}
-
-	var location *string
-	if hnJob.Location.Valid {
-		location = &hnJob.Location.String
-	}
-
-	var salary *string
-	if hnJob.Salary.Valid {
-		salary = &hnJob.Salary.String
-	}
-
-	var equity *string
-	if hnJob.Equity.Valid {
-		equity = &hnJob.Equity.String
-	}
+	sourceID := strconv.FormatInt(hnJob.HnCommentID, 10)
 
 	jobDetails := types.JobListingDetails{
 		JobListing: types.JobListing{
 			ID:                 hnJob.ID,
 			Source:             types.JobSourceHackerNews,
-			SourceID:           strconv.FormatInt(hnJob.HnCommentID, 10),
-			SourceURL:          nil,
+			SourceID:           sourceID,
+			SourceURL:          "https://news.ycombinator.com/item?id=" + sourceID,
 			Company:            hnJob.Company,
 			CompanyDescription: hnJob.CompanyDescription,
 			Title:              hnJob.Title,
-			CompanyURL:         companyURL,
-			ContactEmail:       contactEmail,
-			Description:        description,
-			RoleType:           roleType,
-			Location:           location,
-			Salary:             salary,
-			Equity:             equity,
+			CompanyURL:         hnJob.CompanyUrl.String,
+			ContactEmail:       hnJob.ContactEmail.String,
+			Description:        hnJob.Description.String,
+			RoleType:           hnJob.RoleType.String,
+			Location:           hnJob.Location.String,
+			Salary:             hnJob.Salary.String,
+			Equity:             hnJob.Equity.String,
 			IsHybrid:           hnJob.IsHybrid != 0,
 			IsRemote:           hnJob.IsRemote != 0,
 		},
