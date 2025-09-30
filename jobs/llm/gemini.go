@@ -41,7 +41,7 @@ func (c *GeminiClient) ParseJobPostings(ctx context.Context, inputs map[int64]st
 	if len(inputs) == 0 {
 		return nil, ErrNoInputs
 	}
-	if len(inputs) > 20 {
+	if len(inputs) > 30 {
 		return nil, ErrMaxBatch
 	}
 
@@ -95,7 +95,7 @@ const batchPromptTemplate = `# Batch Posting Parser Prompt
 You are a specialized parser for job posts. Your task is to extract structured job information from multiple texts that may contain job postings or regular comments.
 
 ## Input Format
-You will receive 1-20 HTML-encoded texts from job posts. Each text has a unique ID that you MUST include in your response. Each text may contain:
+You will receive 1-30 HTML-encoded texts from job posts. Each text has a unique ID that you MUST include in your response. Each text may contain:
 - Job postings with company information, roles, locations, and compensation
 - Regular comments that are not job postings
 - Mixed content with multiple job roles from the same company
