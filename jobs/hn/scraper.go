@@ -2,6 +2,7 @@ package hn
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -51,11 +52,11 @@ func (s *Scraper) Run(ctx context.Context, ids chan<- int64) error {
 	}
 
 	exists, err := s.database.Queries().ExistsHNStory(ctx, story.ID)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
 
-	if exists == 0 {
+	if errors.Is(err, sql.ErrNoRows) || exists == 0 {
 		s.logger.DebugContext(ctx, "inserting story", "id", story.ID)
 		err = s.database.Queries().InsertHNStory(ctx, queries.InsertHNStoryParams{
 			PostedAt: story.Time.Time(),
@@ -69,7 +70,7 @@ func (s *Scraper) Run(ctx context.Context, ids chan<- int64) error {
 
 	for _, kidID := range story.Kids {
 		commentExists, err := s.database.Queries().ExistsHNComment(ctx, kidID)
-		if err != nil {
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
 

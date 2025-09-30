@@ -1,13 +1,12 @@
 -- name: ExistsHNStory :one
 SELECT
-  EXISTS (
-    SELECT
-      1
-    FROM
-      hn_stories
-    WHERE
-      id = ?
-  );
+  1
+FROM
+  hn_stories
+WHERE
+  id = ?
+LIMIT
+  1;
 
 -- name: InsertHNStory :exec
 INSERT INTO
@@ -17,14 +16,13 @@ VALUES
 
 -- name: ExistsHNComment :one
 SELECT
-  EXISTS (
-    SELECT
-      1
-    FROM
-      hn_comments
-    WHERE
-      id = ?
-  );
+  1
+FROM
+  hn_comments
+WHERE
+  id = ?
+LIMIT
+  1;
 
 -- name: InsertHNComment :exec
 INSERT INTO
@@ -164,14 +162,23 @@ FROM
   hn_jobs
   LEFT JOIN hn_comments ON hn_comments.id = hn_jobs.hn_comment_id
 WHERE
-  (? = -1 OR hn_jobs.is_remote = ?)
-  AND (? = -1 OR hn_jobs.is_hybrid = ?)
+  (
+    ? = -1
+    OR hn_jobs.is_remote = ?
+  )
+  AND (
+    ? = -1
+    OR hn_jobs.is_hybrid = ?
+  )
   AND (
     ? = ''
     OR hn_jobs.id IN (
-      SELECT hn_job_id
-      FROM hn_job_tech_stacks
-      WHERE hn_job_tech_stacks.value = ?
+      SELECT
+        hn_job_id
+      FROM
+        hn_job_tech_stacks
+      WHERE
+        hn_job_tech_stacks.value = ?
     )
   )
 ORDER BY
