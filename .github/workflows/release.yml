@@ -443,9 +443,9 @@ jobs:
             sudo systemctl start pathwise-mcp
             sudo systemctl enable pathwise-mcp
 
-           # Check status
-           sudo systemctl status pathwise-mcp
-         EOF
+            # Check status
+            sudo systemctl status pathwise-mcp
+          EOF
       - name: Cleanup
         run: |
           rm -f ~/.ssh/id_rsa
