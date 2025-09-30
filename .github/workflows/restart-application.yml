@@ -9,6 +9,7 @@ on:
         options:
           - ui
           - mcp
+          - jobs
       environment:
         description: 'Environment to restart'
         required: true
@@ -34,7 +35,6 @@ jobs:
         run: |
           APP="${{ github.event.inputs.app }}"
           ENV="${{ github.event.inputs.environment }}"
-          
           # Determine service name based on app and environment
           if [ "$APP" = "ui" ] && [ "$ENV" = "dev" ]; then
             SERVICE_NAME="pathwise-dev"
@@ -44,11 +44,14 @@ jobs:
             SERVICE_NAME="pathwise-mcp-dev"
           elif [ "$APP" = "mcp" ] && [ "$ENV" = "prod" ]; then
             SERVICE_NAME="pathwise-mcp"
+          elif [ "$APP" = "jobs" ] && [ "$ENV" = "dev" ]; then
+            SERVICE_NAME="pathwise-jobs-dev"
+          elif [ "$APP" = "jobs" ] && [ "$ENV" = "prod" ]; then
+            SERVICE_NAME="pathwise-jobs"
           else
             echo "Invalid app/environment combination: $APP/$ENV"
             exit 1
           fi
-          
           echo "Validation passed for restarting $APP in $ENV environment (service: $SERVICE_NAME)"
           echo "app=$APP" >> $GITHUB_OUTPUT
           echo "environment=$ENV" >> $GITHUB_OUTPUT
@@ -165,7 +168,6 @@ jobs:
               exit 1
             fi
             
-            # Health check for UI apps only (MCP doesn't have health endpoint)
             if [ "$APP" = "ui" ]; then
               if curl -f http://localhost:$PORT/health; then
                 echo ""
@@ -176,7 +178,7 @@ jobs:
                 exit 1
               fi
             else
-              echo "✅ MCP service restart completed (no health endpoint to check)"
+              echo "✅ $APP service restart completed (no health endpoint to check)"
             fi
           EOF
 
