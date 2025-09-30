@@ -88,13 +88,6 @@ func (p *Processor) handleBatchWithRetry(ctx context.Context, ids []int64) error
 				Status: "completed",
 				Ids:    ids,
 			})
-		case errors.Is(err, llm.ErrQuotaExhausted):
-			p.logger.DebugContext(ctx, "quota exhausted", "ids", ids, "error", err)
-			select {
-			case <-time.After(24 * time.Hour):
-			case <-ctx.Done():
-				return ctx.Err()
-			}
 		case errors.Is(err, llm.ErrRateLimit) ||
 			errors.Is(err, llm.ErrNoResponse) ||
 			errors.Is(err, llm.ErrServiceUnavailable):
