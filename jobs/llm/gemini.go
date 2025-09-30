@@ -146,6 +146,20 @@ Before extracting information, normalize the following for each text:
 - Convert ALL CAPS job titles to proper title case (e.g., "SOFTWARE ENGINEER" → "Software Engineer")
 - Preserve intentional capitalization in acronyms and technical terms
 
+### Technology Stack Extraction - CRITICAL
+- ALWAYS extract technologies mentioned in job titles
+  - Example: "Senior Go Engineer" → tech_stack: ["Go"]
+  - Example: "Python/React Developer" → tech_stack: ["Python", "React"]
+  - Example: "Staff React Native SDK Engineer" → tech_stack: ["React Native"]
+  - Example: "WebRTC SFU Engineer" → tech_stack: ["WebRTC"]
+- Extract technologies from job descriptions and company tech stack sections
+- Look for phrases like "tech stack:", "Our tech stack:", "using:", "technologies:", "experience with:", "We use:"
+- Common patterns: "We use X, Y, and Z" → extract [X, Y, Z]
+- Include: programming languages, frameworks, databases, tools, protocols
+- Normalize technology names (e.g., "golang" → "Go", "reactjs" → "React", "postgres" → "PostgreSQL")
+- If tech applies to ALL jobs, use general_tech_stack; if job-specific, use job's tech_stack
+- When both title AND body mention tech for a specific job, combine them in that job's tech_stack
+
 ## Critical Output Requirements
 - Return ONLY valid JSON array - no markdown code blocks, no explanations, no additional text
 - Process each text independently and return results in the same order as inputs
@@ -181,7 +195,7 @@ Return an array of job posting objects, one for each input text, maintaining the
           "other": "other compensation specific to this job (optional)"
         },
         "tech_stack": [
-          "technologies specific to this job (optional)"
+          "technologies specific to this job - MUST extract from job title AND job description (optional)"
         ]
       }
     ],
@@ -193,7 +207,7 @@ Return an array of job posting objects, one for each input text, maintaining the
       "equity": "equity that applies to all jobs (optional)"
     },
     "general_tech_stack": [
-      "technologies that apply to all jobs or empty array (optional)"
+      "technologies that apply to all jobs - extract from phrases like 'Our tech stack:', 'We use:', etc. (optional)"
     ]
   }
 ]
