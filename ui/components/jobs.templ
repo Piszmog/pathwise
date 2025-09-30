@@ -253,13 +253,13 @@ templ JobDetails(j types.JobApplication, timelineEntries []types.JobApplicationT
 
 templ jobApplicationForm() {
 	<script type="text/javascript">
-	function afterRequest(form) {
-		form.reset();
-		const slideOver = document.getElementById('new-job-slideOver');
-		const overlay = document.getElementById('new-job-overlay');
-		slideOver.classList.toggle('translate-x-full');
-		overlay.classList.toggle('hidden');
-	}
+		function afterRequest(form) {
+			form.reset();
+			const slideOver = document.getElementById("new-job-slideOver");
+			const overlay = document.getElementById("new-job-overlay");
+			slideOver.classList.toggle("translate-x-full");
+			overlay.classList.toggle("hidden");
+		}
 	</script>
 	<form
 		id="new-job-form"
@@ -304,7 +304,6 @@ templ jobApplicationForm() {
 						name="url"
 						id="url"
 						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6"
-						required
 					/>
 				</div>
 			</div>

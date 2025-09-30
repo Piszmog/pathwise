@@ -2,7 +2,6 @@ package hn
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"log/slog"
 	"math"
@@ -174,15 +173,15 @@ func (p *Processor) insertJobs(ctx context.Context, jobPostings []llm.JobPosting
 				CompanyDescription: jobPosting.CompanyDescription,
 				Title:              job.Title,
 				ID:                 jobID,
-				CompanyUrl:         newNullString(jobPosting.CompanyURL),
-				ContactEmail:       newNullString(jobPosting.ContactEmail),
-				Description:        newNullString(job.Description),
-				ApplicationUrl:     newNullString(job.ApplicationURL),
-				JobsUrl:            newNullString(jobPosting.JobsURL),
-				RoleType:           newNullString(job.RoleType),
-				Location:           newNullString(jobPosting.Location),
-				Salary:             newNullString(salary),
-				Equity:             newNullString(equity),
+				CompanyUrl:         db.NewNullString(jobPosting.CompanyURL),
+				ContactEmail:       db.NewNullString(jobPosting.ContactEmail),
+				Description:        db.NewNullString(job.Description),
+				ApplicationUrl:     db.NewNullString(job.ApplicationURL),
+				JobsUrl:            db.NewNullString(jobPosting.JobsURL),
+				RoleType:           db.NewNullString(job.RoleType),
+				Location:           db.NewNullString(jobPosting.Location),
+				Salary:             db.NewNullString(salary),
+				Equity:             db.NewNullString(equity),
 				IsHybrid:           boolToInt64(jobPosting.IsHybrid),
 				IsRemote:           boolToInt64(jobPosting.IsRemote),
 				HnCommentID:        jobPosting.ID,
@@ -218,17 +217,6 @@ func boolToInt64(b bool) int64 {
 		i = 0
 	}
 	return i
-}
-
-func newNullString(value string) sql.NullString {
-	var isValid bool
-	if value != "" {
-		isValid = true
-	}
-	return sql.NullString{
-		Valid:  isValid,
-		String: value,
-	}
 }
 
 func calculateBackoffDelay(attempt int) time.Duration {

@@ -73,7 +73,7 @@ func (h *Handler) ExportCSV(w http.ResponseWriter, r *http.Request) {
 			minSalary,
 			maxSalary,
 			currency,
-			job.Url,
+			job.Url.String,
 			job.AppliedAt.Format("2006-01-02"),
 			job.UpdatedAt.Format("2006-01-02 15:04:05"),
 		}

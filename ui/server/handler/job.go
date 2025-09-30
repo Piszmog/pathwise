@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Piszmog/pathwise/internal/db"
 	"github.com/Piszmog/pathwise/internal/db/queries"
 	"github.com/Piszmog/pathwise/ui/components"
 	"github.com/Piszmog/pathwise/ui/types"
@@ -44,7 +45,7 @@ func (h *Handler) JobDetails(w http.ResponseWriter, r *http.Request) {
 		ID:             job.ID,
 		Company:        job.Company,
 		Title:          job.Title,
-		URL:            job.Url,
+		URL:            job.Url.String,
 		Status:         types.JobApplicationStatus(job.Status),
 		AppliedAt:      job.AppliedAt,
 		UpdatedAt:      job.UpdatedAt,
@@ -99,8 +100,8 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 	company := r.FormValue("company")
 	title := r.FormValue("title")
 	url := r.FormValue("url")
-	if company == "" || title == "" || url == "" {
-		h.Logger.WarnContext(r.Context(), "missing required form values", "company", company, "title", title, "url", url)
+	if company == "" || title == "" {
+		h.Logger.WarnContext(r.Context(), "missing required form values", "company", company, "title", title)
 		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Missing company, title, or url", "Please enter a company, title, and url."))
 		return
 	}
@@ -168,7 +169,7 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 	job := queries.InsertJobApplicationParams{
 		Company:        company,
 		Title:          title,
-		Url:            url,
+		Url:            db.NewNullString(url),
 		UserID:         userID,
 		SalaryMin:      salaryMin,
 		SalaryMax:      salaryMax,
@@ -293,8 +294,8 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if company == "" || title == "" || url == "" || status == "" {
-		h.Logger.WarnContext(r.Context(), "missing required form values", "company", company, "title", title, "url", url, "status", status)
+	if company == "" || title == "" || status == "" {
+		h.Logger.WarnContext(r.Context(), "missing required form values", "company", company, "title", title, "status", status)
 		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Missing company, title, url, or status", "Please enter a company, title, url, and status."))
 		return
 	}
@@ -320,7 +321,7 @@ func (h *Handler) UpdateJob(w http.ResponseWriter, r *http.Request) {
 		ID:             job.ID,
 		Company:        company,
 		Title:          title,
-		Url:            url,
+		Url:            db.NewNullString(url),
 		Status:         status,
 		SalaryMin:      salaryMin,
 		SalaryMax:      salaryMax,
