@@ -136,6 +136,7 @@ func (h *Handler) filterHNJobs(ctx context.Context, filterOpts types.JobListingF
 			Equity:             "",
 			IsHybrid:           hnJob.IsHybrid != 0,
 			IsRemote:           hnJob.IsRemote != 0,
+			PostedAt:           hnJob.CommentedAt.Time.Format("Jan, 2, 2006"),
 		}
 	}
 

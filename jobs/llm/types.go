@@ -7,6 +7,7 @@ type JobPosting struct {
 	CompanyName         string              `json:"company_name"`
 	CompanyDescription  string              `json:"company_description"`
 	CompanyURL          string              `json:"company_url"`
+	JobsURL             string              `json:"jobs_url"`
 	ContactEmail        string              `json:"contact_email"`
 	Jobs                []Job               `json:"jobs"`
 	IsHybrid            bool                `json:"is_hybrid"`
@@ -17,11 +18,12 @@ type JobPosting struct {
 }
 
 type Job struct {
-	Title        string       `json:"title"`
-	Description  string       `json:"description"`
-	RoleType     string       `json:"role_type"`
-	Compensation Compensation `json:"compensation"`
-	TechStack    []string     `json:"tech_stack"`
+	Title          string       `json:"title"`
+	Description    string       `json:"description"`
+	ApplicationURL string       `json:"application_url"`
+	RoleType       string       `json:"role_type"`
+	Compensation   Compensation `json:"compensation"`
+	TechStack      []string     `json:"tech_stack"`
 }
 
 type Compensation struct {

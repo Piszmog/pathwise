@@ -177,6 +177,8 @@ func (p *Processor) insertJobs(ctx context.Context, jobPostings []llm.JobPosting
 				CompanyUrl:         newNullString(jobPosting.CompanyURL),
 				ContactEmail:       newNullString(jobPosting.ContactEmail),
 				Description:        newNullString(job.Description),
+				ApplicationUrl:     newNullString(job.ApplicationURL),
+				JobsUrl:            newNullString(jobPosting.JobsURL),
 				RoleType:           newNullString(job.RoleType),
 				Location:           newNullString(jobPosting.Location),
 				Salary:             newNullString(salary),

@@ -46,7 +46,7 @@ templ jobListingsContent(jobs []types.JobListing, paginationOpts types.Paginatio
 							<th scope="col" class="w-1/4 px-2 py-3.5 text-left text-sm font-semibold text-gray-900">Title</th>
 							<th scope="col" class="w-1/6 px-2 py-3.5 text-left text-sm font-semibold text-gray-900 hidden md:table-cell">Location</th>
 							<th scope="col" class="w-1/6 px-2 py-3.5 text-left text-sm font-semibold text-gray-900 hidden lg:table-cell">Work Type</th>
-							<th scope="col" class="w-1/6 px-2 py-3.5 text-left text-sm font-semibold text-gray-900 hidden lg:table-cell">Salary</th>
+							<th scope="col" class="w-1/6 px-2 py-3.5 text-left text-sm font-semibold text-gray-900 hidden lg:table-cell">Posted</th>
 							<th scope="col" class="w-16 px-2 py-3.5 text-right text-sm font-semibold text-gray-900"></th>
 						</tr>
 					</thead>
@@ -104,11 +104,7 @@ templ jobListingRow(job types.JobListing) {
 		</td>
 		<td class="px-2 py-4 text-sm text-gray-500 hidden lg:table-cell">
 			<div class="truncate">
-				if job.Salary != "" {
-					{ job.Salary }
-				} else {
-					<span class="text-gray-400">Not specified</span>
-				}
+				{ job.PostedAt }
 			</div>
 		</td>
 		<td class="py-4 text-right">
@@ -165,13 +161,9 @@ templ jobListingCard(job types.JobListing) {
 				</p>
 			</div>
 			<div>
-				<span class="text-gray-500">Salary:</span>
+				<span class="text-gray-500">Posted:</span>
 				<p class="font-medium text-gray-900">
-					if job.Salary != "" {
-						{ job.Salary }
-					} else {
-						<span class="text-gray-400">Not specified</span>
-					}
+					{ job.PostedAt }
 				</p>
 			</div>
 		</div>

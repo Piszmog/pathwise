@@ -7,6 +7,7 @@ type JobListing struct {
 	SourceURL          string
 	Company            string
 	CompanyDescription string
+	ApplicationURL     string
 	Title              string
 	CompanyURL         string
 	ContactEmail       string
@@ -17,6 +18,7 @@ type JobListing struct {
 	Equity             string
 	IsHybrid           bool
 	IsRemote           bool
+	PostedAt           string
 }
 
 type JobListingDetails struct {

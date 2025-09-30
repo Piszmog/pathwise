@@ -114,6 +114,33 @@ Before extracting information, normalize the following for each text:
   - 'contact AT company DOT com' → 'contact@company.com'
   - 'email_hiring_2025 AT company.ai' → 'email_hiring_2025@company.ai'
 
+### URL Extraction and Decoding - CRITICAL
+- ALWAYS look for <a href="URL"> tags in the HTML text
+- Extract the FULL URL from the href attribute value, NOT the display text
+- Example: <a href="https:&#x2F;&#x2F;example.com&#x2F;apply">https:&#x2F;&#x2F;example.com&#x2F;ap...</a>
+  → Extract: https:&#x2F;&#x2F;example.com&#x2F;apply (from href, not the truncated "..." text)
+- Decode ALL HTML entities in the extracted URL:
+  - &#x2F; → /
+  - &#x3A; → :
+  - &#x3D; → =
+  - &#x3F; → ?
+  - &#x26; → &
+- Example full conversion:
+  - Input: <a href="https:&#x2F;&#x2F;ats.rippling.com&#x2F;company&#x2F;jobs&#x2F;123">
+  - Extract href value: https:&#x2F;&#x2F;ats.rippling.com&#x2F;company&#x2F;jobs&#x2F;123
+  - Decode: https://ats.rippling.com/company/jobs/123
+  - This becomes application_url in the job object
+- Prioritize URLs containing: 'apply', 'application', 'jobs', 'careers', 'positions', 'hiring'
+- Look for context clues like "Apply here:", "Apply at:", "Application link:"
+- If a single job posting contains one application URL, put it in that job's application_url field
+- If multiple jobs share the same application URL, include it in each job object
+
+### Determining jobs_url vs application_url
+- If a single <a href> tag appears and applies to all jobs mentioned, use jobs_url
+- If specific URLs are provided for individual job titles/roles, use application_url within each job object
+- If text says "Apply here:" followed by a URL and only one job is listed, put URL in that job's application_url
+- If uncertain whether URL applies to all jobs or one specific job, prefer application_url in the job object
+
 ### Text Case Normalization
 - Convert ALL CAPS company names to proper title case (e.g., "ACME CORP" → "Acme Corp")
 - Convert ALL CAPS job titles to proper title case (e.g., "SOFTWARE ENGINEER" → "Software Engineer")
@@ -128,6 +155,7 @@ Before extracting information, normalize the following for each text:
 - Do NOT add external knowledge about companies beyond what's in the text
 - All field values must be clean strings without citation markers
 - Apply all normalization rules above before populating JSON fields
+- MUST extract application_url from <a href="..."> tags when present and include in job objects
 
 ## JSON Structure
 Return an array of job posting objects, one for each input text, maintaining the same order:
@@ -138,13 +166,15 @@ Return an array of job posting objects, one for each input text, maintaining the
     "is_job_posting": "boolean - true if text contains job posting information, false otherwise",
     "company_name": "string - the company name (required, normalized to proper case)",
     "company_description": "string - brief description of what the company does (optional)",
-    "company_url": "string - url of the company main website with HTML entities decoded (optional)",
+    "company_url": "string - company main website URL with HTML entities decoded (optional)",
     "contact_email": "string - the contact email for job applications in standard format (optional)",
+    "jobs_url": "string - FULL URL extracted from <a href> attribute (NOT display text), with HTML entities decoded that is the general url link to apply for all jobs (optional)",
     "jobs": [
       {
         "title": "string - job title normalized to proper case",
         "description": "string - specific responsibilities/requirements for this role (optional if no specific description for the specific job)",
         "role_type": "string - 'full-time', 'part-time', 'full-time contractor', 'contract', 'internship', or 'unknown'",
+        "application_url": "string - FULL URL extracted from <a href> attribute (NOT display text), with HTML entities decoded - look for URLs with 'apply', 'jobs', 'careers' keywords (optional but REQUIRED if <a href> tag is present in text and applicable to the specific job)",
         "compensation": {
           "base_salary": "salary range specific to this job (optional)",
           "equity": "equity details specific to this job (optional)",

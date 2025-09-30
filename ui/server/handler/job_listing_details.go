@@ -31,6 +31,11 @@ func (h *Handler) GetJobListingDetails(w http.ResponseWriter, r *http.Request) {
 			components.Alert(types.AlertTypeError, "Error", "Failed to load job tech stacks."))
 		return
 	}
+	appURL := hnJob.ApplicationUrl.String
+	if appURL == "" {
+		appURL = hnJob.JobsUrl.String
+	}
+
 	sourceID := strconv.FormatInt(hnJob.HnCommentID, 10)
 
 	jobDetails := types.JobListingDetails{
@@ -51,6 +56,7 @@ func (h *Handler) GetJobListingDetails(w http.ResponseWriter, r *http.Request) {
 			Equity:             hnJob.Equity.String,
 			IsHybrid:           hnJob.IsHybrid != 0,
 			IsRemote:           hnJob.IsRemote != 0,
+			ApplicationURL:     appURL,
 		},
 		TechStacks: techStacks,
 	}

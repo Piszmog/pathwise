@@ -65,6 +65,8 @@ INSERT INTO
     company_url,
     contact_email,
     description,
+    application_url,
+    jobs_url,
     role_type,
     location,
     salary,
@@ -74,7 +76,7 @@ INSERT INTO
     hn_comment_id
   )
 VALUES
-  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+  (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- name: InsertHNTechStack :exec
 INSERT INTO
@@ -106,6 +108,8 @@ SELECT
   title,
   company_url,
   contact_email,
+  application_url,
+  jobs_url,
   description,
   role_type,
   location,
@@ -137,7 +141,8 @@ SELECT
   hn_jobs.location,
   hn_jobs.salary,
   hn_jobs.is_hybrid,
-  hn_jobs.is_remote
+  hn_jobs.is_remote,
+  hn_comments.commented_at
 FROM
   hn_jobs
   LEFT JOIN hn_comments ON hn_comments.id = hn_jobs.hn_comment_id
@@ -157,7 +162,8 @@ SELECT
   hn_jobs.location,
   hn_jobs.salary,
   hn_jobs.is_hybrid,
-  hn_jobs.is_remote
+  hn_jobs.is_remote,
+  hn_comments.commented_at
 FROM
   hn_jobs
   LEFT JOIN hn_comments ON hn_comments.id = hn_jobs.hn_comment_id
