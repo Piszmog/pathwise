@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS hn_jobs_location_idx ON hn_jobs(location);
