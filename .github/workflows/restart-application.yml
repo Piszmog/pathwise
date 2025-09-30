@@ -148,9 +148,6 @@ jobs:
           elif [ "$SERVICE_NAME" = "pathwise-mcp" ]; then
             # Assuming prod MCP runs on a different port, adjust as needed
             PORT=8081
-          else
-            echo "Unknown service for health check: $SERVICE_NAME"
-            exit 1
           fi
           
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
