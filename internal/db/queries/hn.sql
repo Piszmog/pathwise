@@ -44,7 +44,7 @@ SELECT
 FROM
   hn_comments
 WHERE
-  status IN ('queued', 'in_progress', 'failed');
+  status IN (sqlc.slice ('statuses'));
 
 -- name: GetHNCommentValues :many
 SELECT

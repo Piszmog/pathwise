@@ -84,7 +84,7 @@ func main() {
 }
 
 func startCommentProcessor(ctx context.Context, logger *slog.Logger, database db.Database, commentIDsChan chan<- int64) {
-	processQueuedComments(ctx, logger, database, commentIDsChan)
+	processQueuedComments(ctx, logger, database, []string{"queued", "in_progress", "failed"}, commentIDsChan)
 
 	ticker := time.NewTicker(24 * time.Hour)
 	defer ticker.Stop()
@@ -92,16 +92,16 @@ func startCommentProcessor(ctx context.Context, logger *slog.Logger, database db
 	for {
 		select {
 		case <-ticker.C:
-			processQueuedComments(ctx, logger, database, commentIDsChan)
+			processQueuedComments(ctx, logger, database, []string{"failed"}, commentIDsChan)
 		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func processQueuedComments(ctx context.Context, logger *slog.Logger, database db.Database, commentIDsChan chan<- int64) {
+func processQueuedComments(ctx context.Context, logger *slog.Logger, database db.Database, status []string, commentIDsChan chan<- int64) {
 	logger.DebugContext(ctx, "getting un-completed comments")
-	ids, err := database.Queries().GetQueuedHNComments(ctx)
+	ids, err := database.Queries().GetQueuedHNComments(ctx, status)
 	if err != nil {
 		logger.ErrorContext(ctx, "failed to get queued comments", "error", err)
 		return
@@ -114,7 +114,7 @@ func processQueuedComments(ctx context.Context, logger *slog.Logger, database db
 func startScraper(ctx context.Context, logger *slog.Logger, scraper *hn.Scraper, commentIDsChan chan<- int64) {
 	runScraper(ctx, logger, scraper, commentIDsChan)
 
-	ticker := time.NewTicker(24 * time.Hour)
+	ticker := time.NewTicker(4 * time.Hour)
 	defer ticker.Stop()
 
 	for {
