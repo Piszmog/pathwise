@@ -86,7 +86,7 @@ func main() {
 func startCommentProcessor(ctx context.Context, logger *slog.Logger, database db.Database, commentIDsChan chan<- int64) {
 	processQueuedComments(ctx, logger, database, []string{"queued", "in_progress", "failed"}, commentIDsChan)
 
-	ticker := time.NewTicker(24 * time.Hour)
+	ticker := time.NewTicker(12 * time.Hour)
 	defer ticker.Stop()
 
 	for {
