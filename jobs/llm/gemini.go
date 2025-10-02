@@ -67,7 +67,7 @@ func (c *GeminiClient) ParseJobPostings(ctx context.Context, inputs map[int64]st
 }
 
 var ErrNoInputs = errors.New("no inputs provided")
-var ErrMaxBatch = errors.New("maximum 20 job postings per batch")
+var ErrMaxBatch = errors.New("maximum 30 job postings per batch")
 
 func formatInputsForPrompt(inputs map[int64]string) string {
 	var ids = make([]int64, 0, len(inputs))
