@@ -106,7 +106,6 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse salary fields
 	salaryMinStr := r.FormValue("salary_min")
 	salaryMaxStr := r.FormValue("salary_max")
 	salaryCurrencyStr := r.FormValue("salary_currency")
@@ -138,7 +137,6 @@ func (h *Handler) AddJob(w http.ResponseWriter, r *http.Request) {
 		salaryCurrency = sql.NullString{String: salaryCurrencyStr, Valid: true}
 	}
 
-	// Validate salary range
 	if salaryMin.Valid && salaryMax.Valid && salaryMin.Int64 > salaryMax.Int64 {
 		h.Logger.WarnContext(r.Context(), "validation error: minimum salary cannot be greater than maximum salary", "min_salary", salaryMin.Int64, "max_salary", salaryMax.Int64)
 		h.html(r.Context(), w, http.StatusBadRequest, components.Alert(types.AlertTypeError, "Invalid Salary Range", "Minimum salary cannot be greater than maximum salary."))

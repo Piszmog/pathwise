@@ -41,13 +41,22 @@ func (s *Scraper) Run(ctx context.Context, ids chan<- int64) error {
 	}
 
 	s.logger.DebugContext(ctx, "retrieved user data", "user", user)
-	story, err := s.getStory(ctx, user.Submitted[0])
-	if err != nil {
-		return err
+
+	var story hnclient.Story
+	for i := range 3 {
+		userStory, storyErr := s.getStory(ctx, user.Submitted[i])
+		if storyErr != nil {
+			return storyErr
+		}
+
+		s.logger.DebugContext(ctx, "retrieved story", "story", userStory)
+		if strings.HasPrefix(userStory.Title, "Ask HN: Who is hiring?") {
+			story = userStory
+			break
+		}
 	}
 
-	s.logger.DebugContext(ctx, "retrieved story", "story", story)
-	if !strings.HasPrefix(story.Title, "Ask HN: Who is hiring?") {
+	if story.ID == 0 {
 		return nil
 	}
 
