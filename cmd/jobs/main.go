@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"log/slog"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -64,13 +62,8 @@ func main() {
 		return
 	}
 
-	scraper := hn.NewScraper(l, database, &http.Client{Timeout: 10 * time.Second})
-	processor := hn.NewProcessor(l, database, llmClient)
-	commentIDsChan := make(chan int64, 1000)
-
-	go processor.Run(ctx, commentIDsChan)
-	go startCommentProcessor(ctx, l, database, commentIDsChan)
-	go startScraper(ctx, l, scraper, commentIDsChan)
+	hnRunner := hn.NewRunner(l, database, llmClient)
+	hnRunner.Run(ctx)
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -78,58 +71,6 @@ func main() {
 	<-sigChan
 	l.Info("shutting down...")
 	cancel()
-	close(commentIDsChan)
 	time.Sleep(100 * time.Millisecond)
-	close(commentIDsChan)
-}
-
-func startCommentProcessor(ctx context.Context, logger *slog.Logger, database db.Database, commentIDsChan chan<- int64) {
-	processQueuedComments(ctx, logger, database, []string{"queued", "in_progress", "failed"}, commentIDsChan)
-
-	ticker := time.NewTicker(12 * time.Hour)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			processQueuedComments(ctx, logger, database, []string{"failed"}, commentIDsChan)
-		case <-ctx.Done():
-			return
-		}
-	}
-}
-
-func processQueuedComments(ctx context.Context, logger *slog.Logger, database db.Database, status []string, commentIDsChan chan<- int64) {
-	logger.DebugContext(ctx, "getting un-completed comments")
-	ids, err := database.Queries().GetQueuedHNComments(ctx, status)
-	if err != nil {
-		logger.ErrorContext(ctx, "failed to get queued comments", "error", err)
-		return
-	}
-	for _, id := range ids {
-		commentIDsChan <- id
-	}
-}
-
-func startScraper(ctx context.Context, logger *slog.Logger, scraper *hn.Scraper, commentIDsChan chan<- int64) {
-	runScraper(ctx, logger, scraper, commentIDsChan)
-
-	ticker := time.NewTicker(4 * time.Hour)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			runScraper(ctx, logger, scraper, commentIDsChan)
-		case <-ctx.Done():
-			return
-		}
-	}
-}
-
-func runScraper(ctx context.Context, logger *slog.Logger, scraper *hn.Scraper, commentIDsChan chan<- int64) {
-	logger.DebugContext(ctx, "running scraper")
-	if err := scraper.Run(ctx, commentIDsChan); err != nil {
-		logger.ErrorContext(ctx, "failed to scrape", "error", err)
-	}
+	_ = hnRunner.Close()
 }
