@@ -5,9 +5,13 @@ on:
     branches:
       - main
     paths:
-      - 'ui/**'
+      - 'internal/ui/**'
       - 'cmd/ui/**'
-      - 'internal/**'
+      - 'internal/db/**'
+      - 'internal/logger/**'
+      - 'internal/version/**'
+      - 'internal/context_key/**'
+      - 'internal/testutil/**'
       - 'sqlc.yml'
       - 'go.mod'
       - 'go.sum'
@@ -15,9 +19,13 @@ on:
     branches:
       - main
     paths:
-      - 'ui/**'
+      - 'internal/ui/**'
       - 'cmd/ui/**'
-      - 'internal/**'
+      - 'internal/db/**'
+      - 'internal/logger/**'
+      - 'internal/version/**'
+      - 'internal/context_key/**'
+      - 'internal/testutil/**'
       - 'sqlc.yml'
       - 'go.mod'
       - 'go.sum'
@@ -32,7 +40,7 @@ jobs:
           go-version-file: 'go.mod'
           cache: false
       - run: go mod download
-      - run: go tool templ generate -path ./ui/components
+      - run: go tool templ generate -path ./internal/ui/components
       - run: go tool sqlc generate
       - run: go test ./... -tags=e2e -v
   release-dryrun:

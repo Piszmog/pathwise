@@ -7,8 +7,8 @@ before:
   hooks:
     - go mod download
     - go tool sqlc generate
-    - go tool templ generate -path ./ui/components
-    - go tool go-tw -i ./ui/styles/input.css -o ./ui/dist/assets/css/output@{{ .Version }}.css --minify
+    - go tool templ generate -path ./internal/ui/components
+    - go tool go-tw -i ./internal/ui/styles/input.css -o ./internal/ui/dist/assets/css/output@{{ .Version }}.css --minify
 
 builds:
   - id: "linux-amd64"

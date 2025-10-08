@@ -60,8 +60,8 @@ Generate an API key through the web application settings, then configure your MC
 
 3. **Generate code and build assets**
    ```bash
-   go tool templ generate -path ./ui/components
-   go tool go-tw -i ./ui/styles/input.css -o ./ui/dist/assets/css/output@dev.css
+   go tool templ generate -path ./internal/ui/components
+   go tool go-tw -i ./internal/ui/styles/input.css -o ./internal/ui/dist/assets/css/output@dev.css
    go tool sqlc generate
    ```
 
@@ -114,16 +114,16 @@ go build -o ./tmp/mcp ./cmd/mcp    # MCP server
 go build -o ./tmp/jobs ./cmd/jobs  # Jobs processor
 
 # Run tests
-go test ./...                                    # All tests
-go test -tags=e2e ./ui/e2e/...                  # E2E tests (requires Playwright)
-go test ./mcp/tool/... -tags=integration        # MCP integration tests
+go test ./...                                             # All tests
+go test -tags=e2e ./internal/ui/e2e/...                  # E2E tests (requires Playwright)
+go test ./internal/mcp/tool/... -tags=integration        # MCP integration tests
 
 # Lint code
 golangci-lint run
 
 # Generate code (templates, CSS, SQL)
-go tool templ generate -path ./ui/components
-go tool go-tw -i ./ui/styles/input.css -o ./ui/dist/assets/css/output@dev.css
+go tool templ generate -path ./internal/ui/components
+go tool go-tw -i ./internal/ui/styles/input.css -o ./internal/ui/dist/assets/css/output@dev.css
 go tool sqlc generate
 ```
 
@@ -147,27 +147,28 @@ pathwise/
 │   ├── db/
 │   │   ├── migrations/# Database schema migrations
 │   │   └── queries/   # SQL queries for sqlc
+│   ├── jobs/          # Jobs processor implementation
+│   │   ├── hn/        # Hacker News scraper
+│   │   └── llm/       # LLM client (Gemini integration)
+│   ├── mcp/           # MCP server implementation
+│   │   ├── server/    # MCP server setup and middleware
+│   │   │   └── middleware/# Authentication middleware
+│   │   └── tool/      # MCP tool implementations
+│   ├── ui/            # Frontend code and assets
+│   │   ├── components/# Templ templates (.templ files)
+│   │   ├── dist/      # Static assets (CSS, JS, images)
+│   │   ├── e2e/       # End-to-end tests
+│   │   ├── server/
+│   │   │   ├── handler/   # HTTP request handlers
+│   │   │   ├── middleware/# HTTP middleware
+│   │   │   └── router/    # Route definitions
+│   │   ├── styles/    # Tailwind CSS source files
+│   │   ├── types/     # Domain types and business logic
+│   │   └── utils/     # Utility functions
 │   ├── logger/        # Structured logging setup
 │   ├── context_key/   # Context key definitions
+│   ├── testutil/      # Test utilities
 │   └── version/       # Application version management
-├── jobs/              # Jobs processor implementation
-│   ├── hn/            # Hacker News scraper
-│   └── llm/           # LLM client (Gemini integration)
-├── mcp/               # MCP server implementation
-│   ├── server/        # MCP server setup and middleware
-│   │   └── middleware/# Authentication middleware
-│   └── tool/          # MCP tool implementations
-├── ui/                # Frontend code and assets
-│   ├── components/    # Templ templates (.templ files)
-│   ├── dist/          # Static assets (CSS, JS, images)
-│   ├── e2e/           # End-to-end tests
-│   ├── server/
-│   │   ├── handler/   # HTTP request handlers
-│   │   ├── middleware/# HTTP middleware
-│   │   └── router/    # Route definitions
-│   ├── styles/        # Tailwind CSS source files
-│   ├── types/         # Domain types and business logic
-│   └── utils/         # Utility functions
 ├── .github/           # GitHub workflows
 ├── go.mod             # Go module with tools
 ├── README.md
@@ -189,13 +190,13 @@ The project uses several code generation tools:
 go test ./...
 
 # E2E tests (requires Playwright setup)
-go test -tags=e2e ./ui/e2e/...
+go test -tags=e2e ./internal/ui/e2e/...
 
 # MCP integration tests
-go test ./mcp/tool/... -tags=integration
+go test ./internal/mcp/tool/... -tags=integration
 
 # Test specific package
-go test ./ui/server/handler -run TestJobHandler
+go test ./internal/ui/server/handler -run TestJobHandler
 ```
 
 ## Deployment

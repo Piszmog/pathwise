@@ -5,9 +5,13 @@ on:
     branches:
       - main
     paths:
-      - 'mcp/**'
+      - 'internal/mcp/**'
       - 'cmd/mcp/**'
-      - 'internal/**'
+      - 'internal/db/**'
+      - 'internal/logger/**'
+      - 'internal/version/**'
+      - 'internal/context_key/**'
+      - 'internal/testutil/**'
       - 'sqlc.yml'
       - 'go.mod'
       - 'go.sum'
@@ -15,9 +19,13 @@ on:
     branches:
       - main
     paths:
-      - 'mcp/**'
+      - 'internal/mcp/**'
       - 'cmd/mcp/**'
-      - 'internal/**'
+      - 'internal/db/**'
+      - 'internal/logger/**'
+      - 'internal/version/**'
+      - 'internal/context_key/**'
+      - 'internal/testutil/**'
       - 'sqlc.yml'
       - 'go.mod'
       - 'go.sum'
@@ -33,7 +41,7 @@ jobs:
           cache: false
       - run: go mod download
       - run: go tool sqlc generate
-      - run: go test ./mcp/tool/... -tags=integration -v
+      - run: go test ./internal/mcp/tool/... -tags=integration -v
   release-dryrun:
     name: Release Dry Run
     runs-on: ubuntu-latest

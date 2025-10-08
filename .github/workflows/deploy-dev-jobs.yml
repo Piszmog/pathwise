@@ -4,9 +4,13 @@ on:
     branches:
       - main
     paths:
-      - 'jobs/**'
+      - 'internal/jobs/**'
       - 'cmd/jobs/**'
-      - 'internal/**'
+      - 'internal/db/**'
+      - 'internal/logger/**'
+      - 'internal/version/**'
+      - 'internal/context_key/**'
+      - 'internal/testutil/**'
       - 'sqlc.yml'
       - 'go.mod'
       - 'go.sum'
