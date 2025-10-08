@@ -1,0 +1,7 @@
+package components
+
+import "github.com/Piszmog/pathwise/internal/ui/types"
+
+templ JobsReload(jobs []types.JobApplication, paginationOpts types.PaginationOpts, filterOpts types.FilterOpts) {
+	@Jobs(jobs, paginationOpts, filterOpts)
+}

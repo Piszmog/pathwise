@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/Piszmog/pathwise/internal/db"
+	"github.com/Piszmog/pathwise/internal/jobs/hn"
+	"github.com/Piszmog/pathwise/internal/jobs/llm"
 	"github.com/Piszmog/pathwise/internal/logger"
-	"github.com/Piszmog/pathwise/jobs/hn"
-	"github.com/Piszmog/pathwise/jobs/llm"
 )
 
 func main() {

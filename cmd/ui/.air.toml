@@ -7,8 +7,8 @@ tmp_dir = "./tmp"
   bin = "./tmp/ui"
   cmd = "go build -o ../../tmp/ui ."
   delay = 1000
-  exclude_dir = ["ui/assets/css", "tmp", "cmd/ui/tmp", "vendor", "testdata", "cmd/mcp", "mcp", "cmd/jobs", "jobs", "bin", "ui/e2e", "goreleaser-dist"]
-  exclude_file = ["ui/components/**/*.go", "internal/db/queries/*.go", "ui/dist/assets/css/output@dev.css"]
+  exclude_dir = ["internal/ui/assets/css", "tmp", "cmd/ui/tmp", "vendor", "testdata", "cmd/mcp", "internal/mcp", "cmd/jobs", "internal/jobs", "bin", "internal/ui/e2e", "goreleaser-dist"]
+  exclude_file = ["internal/ui/components/**/*.go", "internal/db/queries/*.go", "internal/ui/dist/assets/css/output@dev.css"]
   exclude_regex = ["_test.go",".*_templ.go"]
   exclude_unchanged = true
   follow_symlink = false
@@ -26,8 +26,8 @@ tmp_dir = "./tmp"
   ]
   pre_cmd = [
     "lsof -i :8080 -sTCP:LISTEN | sed 1d | awk '{print $2}' | xargs kill -9",
-    "cd ../.. && go tool templ generate -path ./ui/components",
-    "cd ../.. && go tool go-tw -i ./ui/styles/input.css -o ./ui/dist/assets/css/output@dev.css",
+    "cd ../.. && go tool templ generate -path ./internal/ui/components",
+    "cd ../.. && go tool go-tw -i ./internal/ui/styles/input.css -o ./internal/ui/dist/assets/css/output@dev.css",
     "cd ../.. && go tool sqlc generate",
     "cd ../.. && ./migrate.sh -p \"$(go tool godotenv printenv DB_PROTOCOL)\" -u \"$(go tool godotenv printenv DB_URL)\" -t \"$(go tool godotenv printenv DB_TOKEN)\""
   ]

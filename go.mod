@@ -3,6 +3,7 @@ module github.com/Piszmog/pathwise
 go 1.25.0
 
 require (
+	github.com/Piszmog/hnclient v1.0.0
 	github.com/a-h/templ v0.3.943
 	github.com/google/generative-ai-go v0.20.1
 	github.com/google/uuid v1.6.0
@@ -25,7 +26,6 @@ require (
 	cloud.google.com/go/longrunning v0.5.7 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Piszmog/go-tw v1.0.1 // indirect
-	github.com/Piszmog/hnclient v1.0.0 // indirect
 	github.com/a-h/parse v0.0.0-20250122154542-74294addb73e // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect

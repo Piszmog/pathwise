@@ -1,0 +1,86 @@
+package components
+
+import (
+	"github.com/Piszmog/pathwise/internal/ui/types"
+	"strconv"
+)
+
+templ loadingStats() {
+	<div hx-get="/stats" hx-trigger="load">
+		<div id="stats" class="m-3 border-b">
+			<div class="hidden lg:block">
+				@statsBreakdown(types.StatsOpts{}, true)
+			</div>
+			<details class="lg:hidden">
+				<summary class="my-4 w-full cursor-pointer justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-center text-sm font-medium text-gray-700 shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+					Stats
+				</summary>
+				@statsBreakdown(types.StatsOpts{}, true)
+			</details>
+		</div>
+	</div>
+}
+
+templ Stats(s types.StatsOpts, isLoading bool, oob string) {
+	<div id="stats" class="m-3 border-b" hx-swap-oob={ oob }>
+		<div class="hidden lg:block">
+			@statsBreakdown(s, isLoading)
+		</div>
+		<details class="lg:hidden">
+			<summary class="my-4 w-full cursor-pointer justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-center text-sm font-medium text-gray-700 shadow-sm hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+				Stats
+			</summary>
+			@statsBreakdown(s, isLoading)
+		</details>
+	</div>
+}
+
+templ statsBreakdown(s types.StatsOpts, isLoading bool) {
+	<dl class="mx-auto grid grid-cols-1 gap-px bg-gray-900/5 sm:grid-cols-5 lg:grid-cols-5">
+		<div
+			id="stats-total-applications"
+			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
+		>
+			<dt class="text-sm font-medium leading-6 text-gray-500">Total Applications</dt>
+			<dd class="w-full flex-none text-2xl font-medium leading-10 tracking-tight text-gray-900">
+				{ strconv.FormatInt(s.TotalApplications, 10) }
+			</dd>
+		</div>
+		<div
+			id="stats-total-companies"
+			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
+		>
+			<dt class="text-sm font-medium leading-6 text-gray-500">Total Companies</dt>
+			<dd class="w-full flex-none text-2xl font-medium leading-10 tracking-tight text-gray-900">
+				{ strconv.FormatInt(s.TotalCompanies,10) }
+			</dd>
+		</div>
+		<div
+			id="stats-average-time-to-hear-back"
+			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
+		>
+			<dt class="text-sm font-medium leading-6 text-gray-500">Average time to hear back</dt>
+			<dd class="w-full flex-none text-2xl font-medium leading-10 tracking-tight text-gray-900">
+				{ strconv.FormatInt(s.AverageTimeToHearBackInDays,10) } days
+			</dd>
+		</div>
+		<div
+			id="stats-interview-percentage"
+			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
+		>
+			<dt class="text-sm font-medium leading-6 text-gray-500">Interview Rate</dt>
+			<dd class="w-full flex-none text-2xl font-medium leading-10 tracking-tight text-gray-900">
+				{ s.TotalInterviewingPercentage }%
+			</dd>
+		</div>
+		<div
+			id="stats-rejection-percentage"
+			class={ "flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 bg-white px-4 py-3 sm:px-6 xl:px-8", templ.KV("animate-pulse", isLoading) }
+		>
+			<dt class="text-sm font-medium leading-6 text-gray-500">Rejection Rate</dt>
+			<dd class="w-full flex-none text-2xl font-medium leading-10 tracking-tight text-gray-900">
+				{ s.TotalRejectionsPercentage }%
+			</dd>
+		</div>
+	</dl>
+}

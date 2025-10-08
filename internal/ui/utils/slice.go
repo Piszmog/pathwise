@@ -1,0 +1,19 @@
+package utils
+
+import (
+	"github.com/Piszmog/pathwise/internal/ui/types"
+)
+
+func GetFirstElementID[T types.Record](vals []T) int64 {
+	if len(vals) == 0 {
+		return 0
+	}
+	return vals[0].RecordID()
+}
+
+func GetFirstElementType(vals []types.JobApplicationTimelineEntry) types.JobApplicationTimelineType {
+	if len(vals) == 0 {
+		return ""
+	}
+	return vals[0].Type()
+}

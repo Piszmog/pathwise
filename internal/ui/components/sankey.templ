@@ -1,0 +1,254 @@
+package components
+
+import (
+	"strconv"
+	"github.com/Piszmog/pathwise/internal/ui/types"
+)
+
+func calculatePercentage(part, total int64) string {
+	if total == 0 {
+		return "0"
+	}
+	return strconv.FormatInt((part*100)/total, 10)
+}
+
+templ SankeyGraph(data types.AnalyticsData) {
+	<div class="w-full">
+		<div class="flex justify-between items-center mb-4">
+			<h2 class="text-lg font-semibold text-gray-900">Job Application Flow</h2>
+			<button 
+				id="download-png-btn"
+				onclick="downloadSankeyAsPNG()" 
+				class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition-colors"
+			>
+				<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+				</svg>
+				<span id="download-text">Download PNG</span>
+			</button>
+		</div>
+		<div id="sankey-viz" class="w-full h-64 sm:h-80 md:h-96 lg:h-[500px] border border-gray-100 rounded bg-gray-50"></div>
+		<script>
+			(function () {
+				const analyticsData = {{ data }};
+				renderSankey(analyticsData.SankeyData);
+
+				function renderSankey(data) {
+					const container = document.getElementById("sankey-viz");
+					container.innerHTML = "";
+
+					const isMobile = window.innerWidth < 768;
+					const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
+
+					const margin = isMobile
+						? { top: 10, right: 10, bottom: 10, left: 10 }
+						: { top: 20, right: 20, bottom: 20, left: 20 };
+
+					const containerWidth = container.offsetWidth;
+					const containerHeight = container.offsetHeight;
+					const width = containerWidth - margin.left - margin.right;
+					const height = containerHeight - margin.top - margin.bottom;
+
+					const svg = d3
+						.select("#sankey-viz")
+						.append("svg")
+						.attr("width", width + margin.left + margin.right)
+						.attr("height", height + margin.top + margin.bottom)
+						.attr("xmlns", "http://www.w3.org/2000/svg");
+
+					const g = svg
+						.append("g")
+						.attr("transform", `translate(${margin.left},${margin.top})`);
+
+					if (!data.nodes || data.nodes.length === 0) {
+						g.append("text")
+							.attr("x", width / 2)
+							.attr("y", height / 2)
+							.attr("text-anchor", "middle")
+							.attr("dy", "0.35em")
+							.text("No job application data available")
+							.style("font-size", "14px")
+							.style("fill", "#6b7280")
+							.style("font-family", "system-ui, -apple-system, sans-serif");
+						return;
+					}
+
+					const nodeWidth = isMobile ? 8 : isTablet ? 12 : 15;
+					const nodePadding = isMobile ? 12 : isTablet ? 16 : 20;
+
+					const sankey = d3
+						.sankey()
+						.nodeWidth(nodeWidth)
+						.nodePadding(nodePadding)
+						.extent([
+							[1, 1],
+							[width - 1, height - 6],
+						]);
+
+					const { nodes, links } = sankey(data);
+
+					const colorScale = d3
+						.scaleOrdinal()
+						.domain([
+							"accepted",
+							"applied",
+							"canceled",
+							"closed",
+							"declined",
+							"interviewing",
+							"offered",
+							"rejected",
+							"watching",
+							"withdrawn",
+						])
+						.range([
+							"#22c55e", // accepted - green
+							"#3b82f6", // applied - blue
+							"#dc2626", // canceled - red
+							"#f97316", // closed - orange
+							"#a855f7", // declined - purple
+							"#eab308", // interviewing - yellow
+							"#16a34a", // offered - green (darker)
+							"#ef4444", // rejected - red
+							"#6b7280", // watching - gray
+							"#9ca3af", // withdrawn - gray (lighter)
+						]);
+
+					g.append("g")
+						.selectAll("path")
+						.data(links)
+						.enter()
+						.append("path")
+						.attr("d", d3.sankeyLinkHorizontal())
+						.attr("stroke", (d) => colorScale(d.source.name))
+						.attr("stroke-opacity", 0.3)
+						.attr("stroke-width", (d) => Math.max(1, d.width))
+						.attr("fill", "none")
+						.on("mouseover", function (event, d) {
+							d3.select(this).attr("stroke-opacity", 0.6);
+						})
+						.on("mouseout", function (event, d) {
+							d3.select(this).attr("stroke-opacity", 0.3);
+						})
+						.append("title")
+						.text(
+							(d) =>
+								`${d.source.name} → ${d.target.name}: ${d.value} applications`,
+						);
+
+					g.append("g")
+						.selectAll("rect")
+						.data(nodes)
+						.enter()
+						.append("rect")
+						.attr("x", (d) => d.x0)
+						.attr("y", (d) => d.y0)
+						.attr("height", (d) => d.y1 - d.y0)
+						.attr("width", (d) => d.x1 - d.x0)
+						.attr("fill", (d) => colorScale(d.name))
+						.attr("stroke", "#000")
+						.attr("stroke-width", 0.5)
+						.append("title")
+						.text((d) => `${d.name}: ${d.value || 0} applications`);
+
+					const fontSize = isMobile ? "10px" : isTablet ? "11px" : "12px";
+					const textOffset = isMobile ? 4 : 6;
+
+					g.append("g")
+						.selectAll("text")
+						.data(nodes)
+						.enter()
+						.append("text")
+						.attr("x", (d) =>
+							d.x0 < width / 2 ? d.x1 + textOffset : d.x0 - textOffset,
+						)
+						.attr("y", (d) => (d.y1 + d.y0) / 2)
+						.attr("dy", "0.35em")
+						.attr("text-anchor", (d) => (d.x0 < width / 2 ? "start" : "end"))
+						.text((d) => d.name)
+						.style("font-size", fontSize)
+						.style("font-weight", "500")
+						.style("fill", "#374151")
+						.style("font-family", "system-ui, -apple-system, sans-serif");
+				}
+
+				function downloadSankeyAsPNG() {
+					try {
+						const button = document.getElementById("download-png-btn");
+						const downloadText = document.getElementById("download-text");
+						
+						button.disabled = true;
+						downloadText.textContent = "Generating...";
+
+						const svg = document.querySelector('#sankey-viz svg');
+						if (!svg) {
+							throw new Error('Sankey diagram not found');
+						}
+
+						const canvas = document.createElement('canvas');
+						const ctx = canvas.getContext('2d');
+						const scaleFactor = 2;
+						
+						const svgRect = svg.getBoundingClientRect();
+						canvas.width = svgRect.width * scaleFactor;
+						canvas.height = svgRect.height * scaleFactor;
+						
+						ctx.scale(scaleFactor, scaleFactor);
+						
+						ctx.fillStyle = '#ffffff';
+						ctx.fillRect(0, 0, svgRect.width, svgRect.height);
+
+						const svgClone = svg.cloneNode(true);
+						
+						const svgData = new XMLSerializer().serializeToString(svgClone);
+						const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+						const svgUrl = URL.createObjectURL(svgBlob);
+
+						const img = new Image();
+						img.onload = function() {
+							ctx.drawImage(img, 0, 0, svgRect.width, svgRect.height);
+							
+							canvas.toBlob(function(blob) {
+								const now = new Date();
+								const timestamp = now.toISOString().slice(0, 19).replace(/[:-]/g, '');
+								const filename = `job-analytics-${timestamp}.png`;
+								
+								const url = URL.createObjectURL(blob);
+								const a = document.createElement('a');
+								a.href = url;
+								a.download = filename;
+								a.style.display = 'none';
+								document.body.appendChild(a);
+								a.click();
+								document.body.removeChild(a);
+								URL.revokeObjectURL(url);
+								
+								button.disabled = false;
+								downloadText.textContent = "Download PNG";
+							}, 'image/png', 0.95);
+							
+							URL.revokeObjectURL(svgUrl);
+						};
+						
+						img.onerror = function() {
+							throw new Error('Failed to load SVG for conversion');
+						};
+						
+						img.src = svgUrl;
+						
+					} catch (error) {
+						console.error('PNG export failed:', error);
+						alert('Failed to download PNG. Please try again.');
+						
+						const button = document.getElementById("download-png-btn");
+						const downloadText = document.getElementById("download-text");
+						button.disabled = false;
+						downloadText.textContent = "Download PNG";
+					}
+				}
+
+				window.downloadSankeyAsPNG = downloadSankeyAsPNG;
+			})();
+		</script>
+	</div>
+}

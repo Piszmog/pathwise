@@ -10,8 +10,8 @@ COPY . /app
 RUN apt-get update \
     && apt-get install -y build-essential \
     && go mod download \
-    && go tool templ generate -path ./ui/components \
-    && go tool go-tw -i ./ui/styles/input.css -o ./ui/dist/assets/css/output@${VERSION}.css --minify \
+    && go tool templ generate -path ./internal/ui/components \
+    && go tool go-tw -i ./internal/ui/styles/input.css -o ./internal/ui/dist/assets/css/output@${VERSION}.css --minify \
     && go tool sqlc generate \
     && CGO_ENABLED=1 go build -ldflags="-s -w -X github.com/Piszmog/pathwise/internal/version.Value=${VERSION}" -o ui ./cmd/ui
 
