@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -38,14 +39,27 @@ func main() {
 		}
 	}()
 
-	dbURL := os.Getenv("DB_URL")
-	if dbURL == "" {
-		dbURL = "./db.sqlite3"
+	dir, err := os.MkdirTemp("", "libsql-*")
+	if err != nil {
+		l.Error("failed to create temp dir", "error", err)
+		os.Exit(1)
 	}
+	defer func() {
+		if removeErr := os.RemoveAll(dir); removeErr != nil {
+			l.Error("failed to remove temp dir", "error", removeErr)
+		}
+	}()
+	dbPath := filepath.Join(dir, "db-jobs.sqlite3")
 
 	database, err := db.New(
 		l,
-		db.DatabaseOpts{URL: dbURL, Token: os.Getenv("DB_TOKEN")},
+		db.DatabaseOpts{
+			URL:           dbPath,
+			SyncURL:       os.Getenv("DB_PRIMARY_URL"),
+			Token:         os.Getenv("DB_TOKEN_READONLY"),
+			EncryptionKey: os.Getenv("ENC_KEY"),
+			SyncInterval:  12 * time.Hour,
+		},
 	)
 	if err != nil {
 		l.Error("failed to create database", "error", err)
@@ -64,6 +78,9 @@ func main() {
 
 	hnRunner := hn.NewRunner(l, database, llmClient)
 	hnRunner.Run(ctx)
+	defer func() {
+		_ = hnRunner.Close()
+	}()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
@@ -72,5 +89,4 @@ func main() {
 	l.Info("shutting down...")
 	cancel()
 	time.Sleep(100 * time.Millisecond)
-	_ = hnRunner.Close()
 }
