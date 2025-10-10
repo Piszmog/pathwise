@@ -5,7 +5,7 @@ import (
 
 	"github.com/Piszmog/pathwise/internal/db"
 	"github.com/Piszmog/pathwise/internal/logger"
-	"github.com/Piszmog/pathwise/internal/ui/server"
+	"github.com/Piszmog/pathwise/internal/server"
 	"github.com/Piszmog/pathwise/internal/ui/server/router"
 	"github.com/Piszmog/pathwise/internal/version"
 )
