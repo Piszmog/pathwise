@@ -25,9 +25,11 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 		h.writeError(r.Context(), w, http.StatusBadRequest, "request body is not valid JSON", err)
 		return
 	}
+	h.Logger.DebugContext(r.Context(), "recieved search request", "request", req)
 
 	results := make(map[string]search.JobListing)
 	for _, keyword := range req.Keywords {
+		h.Logger.DebugContext(r.Context(), "searching for job listings", "keyword", keyword)
 		param := queries.SearchHNJobsParams{
 			Title:    db.NewNullString(req.Title),
 			Company:  db.NewNullString(req.Company),
@@ -56,6 +58,7 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	h.Logger.DebugContext(r.Context(), "found search requests", "results", results)
 
 	listings := make([]search.JobListing, 0, len(results))
 	for _, v := range results {
