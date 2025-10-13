@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Piszmog/pathwise/internal/db"
+	"github.com/Piszmog/pathwise/internal/server/health"
 	mw "github.com/Piszmog/pathwise/internal/server/middleware"
 	"github.com/Piszmog/pathwise/internal/server/mux"
 	"github.com/Piszmog/pathwise/internal/ui/dist"
@@ -29,7 +30,7 @@ func New(logger *slog.Logger, database db.Database) http.Handler {
 			mux.WithHandleFunc(http.MethodGet, "/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 				http.Redirect(w, r, "/assets/img/favicon.ico", http.StatusSeeOther)
 			}),
-			mux.WithHandleFunc(http.MethodGet, "/health", h.Health),
+			mux.WithHandleFunc(http.MethodGet, "/health", health.Handle(logger)),
 			mux.WithHandleFunc(http.MethodGet, "/signup", h.Signup),
 			mux.WithHandleFunc(http.MethodPost, "/signup", h.Register),
 			mux.WithHandleFunc(http.MethodGet, "/signin", h.Signin),

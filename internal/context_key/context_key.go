@@ -3,5 +3,6 @@ package contextkey
 type Key string
 
 const (
-	KeyUserID Key = "user_id"
+	KeyCorrelationID Key = "correlation_id"
+	KeyUserID        Key = "user_id"
 )

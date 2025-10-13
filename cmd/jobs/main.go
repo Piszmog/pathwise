@@ -3,15 +3,15 @@ package main
 import (
 	"context"
 	"os"
-	"os/signal"
 	"path/filepath"
-	"syscall"
 	"time"
 
 	"github.com/Piszmog/pathwise/internal/db"
 	"github.com/Piszmog/pathwise/internal/jobs/hn"
 	"github.com/Piszmog/pathwise/internal/jobs/llm"
+	"github.com/Piszmog/pathwise/internal/jobs/server/router"
 	"github.com/Piszmog/pathwise/internal/logger"
+	"github.com/Piszmog/pathwise/internal/server"
 )
 
 func main() {
@@ -82,11 +82,12 @@ func main() {
 		_ = hnRunner.Close()
 	}()
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
-	<-sigChan
-	l.Info("shutting down...")
+	r := router.New(l, database)
+	server.New(l, ":"+port, server.WithHandler(r)).StartAndWait()
 	cancel()
-	time.Sleep(100 * time.Millisecond)
 }

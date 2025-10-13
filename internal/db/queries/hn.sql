@@ -193,3 +193,43 @@ LIMIT
   ?
 OFFSET
   ?;
+
+-- name: SearchHNJobs :many
+SELECT DISTINCT
+  j.id,
+  j.title,
+  j.location,
+  j.is_remote,
+  j.is_hybrid,
+  j.created_at as posted
+FROM
+  hn_jobs j
+  LEFT JOIN hn_job_tech_stacks ts ON j.id = ts.hn_job_id
+WHERE
+  1 = 1
+  AND (
+    sqlc.narg ('title') IS NULL
+    OR j.title LIKE '%' || sqlc.narg ('title') || '%'
+  )
+  AND (
+    sqlc.narg ('company') IS NULL
+    OR j.company LIKE '%' || sqlc.narg ('company') || '%'
+  )
+  AND (
+    sqlc.narg ('location') IS NULL
+    OR j.location LIKE '%' || sqlc.narg ('location') || '%'
+  )
+  AND (
+    sqlc.narg ('is_remote') IS NULL
+    OR j.is_remote = sqlc.narg ('is_remote')
+  )
+  AND (
+    sqlc.narg ('is_hybrid') IS NULL
+    OR j.is_hybrid = sqlc.narg ('is_hybrid')
+  )
+  AND (
+    sqlc.narg ('keyword') IS NULL
+    OR j.description LIKE '%' || sqlc.narg ('keyword') || '%'
+    OR j.company_description LIKE '%' || sqlc.narg ('keyword') || '%'
+    OR ts.value LIKE '%' || sqlc.narg ('keyword') || '%'
+  )
