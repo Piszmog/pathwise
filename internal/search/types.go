@@ -3,14 +3,15 @@ package search
 import "time"
 
 type Request struct {
-	Title    string   `json:"title,omitempty"`
-	Company  string   `json:"company,omitempty"`
-	Location string   `json:"location,omitempty"`
-	Keywords []string `json:"keywords,omitempty"`
-	IsRemote bool     `json:"is_remote,omitempty"`
-	IsHybrid bool     `json:"is_hybrid,omitempty"`
-	Page     int64    `json:"page"`
-	PerPage  int64    `json:"per_page"`
+	Title     string   `json:"title,omitempty"`
+	Company   string   `json:"company,omitempty"`
+	Location  string   `json:"location,omitempty"`
+	Keywords  []string `json:"keywords,omitempty"`
+	TechStack []string `json:"tech_stack,omitempty"`
+	IsRemote  bool     `json:"is_remote,omitempty"`
+	IsHybrid  bool     `json:"is_hybrid,omitempty"`
+	Page      int64    `json:"page"`
+	PerPage   int64    `json:"per_page"`
 }
 
 type Response struct {

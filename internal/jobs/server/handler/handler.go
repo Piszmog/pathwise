@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"sort"
+	"strings"
 
 	contextkey "github.com/Piszmog/pathwise/internal/context_key"
 	"github.com/Piszmog/pathwise/internal/db"
@@ -35,19 +36,21 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	if len(keywords) == 0 {
 		keywords = []string{""}
 	}
+	techStack := strings.ToLower(strings.Join(req.TechStack, ","))
 
 	results := make(map[string]search.JobListing)
 	for _, keyword := range keywords {
 		h.Logger.DebugContext(r.Context(), "searching for job listings", "keyword", keyword)
 		param := queries.SearchHNJobsParams{
-			Title:    db.NewNullString(req.Title),
-			Company:  db.NewNullString(req.Company),
-			Location: db.NewNullString(req.Location),
-			IsRemote: req.IsRemote,
-			IsHybrid: req.IsHybrid,
-			Keyword:  keyword,
-			Limit:    limit,
-			Offset:   offset,
+			Title:     db.NewNullString(req.Title),
+			Company:   db.NewNullString(req.Company),
+			Location:  db.NewNullString(req.Location),
+			IsRemote:  req.IsRemote,
+			IsHybrid:  req.IsHybrid,
+			Keyword:   keyword,
+			TechStack: db.NewNullString(techStack),
+			Limit:     limit,
+			Offset:    offset,
 		}
 
 		res, err := h.Database.Queries().SearchHNJobs(r.Context(), param)
@@ -88,7 +91,7 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) writeError(ctx context.Context, w http.ResponseWriter, status int, message string, parentErr error) {
-	id := ctx.Value(contextkey.KeyCorrelationID).(contextkey.Key)
+	id := ctx.Value(contextkey.KeyCorrelationID).(string)
 	h.Logger.ErrorContext(ctx, "failed to handle request", "error", parentErr, "message", message, "id", id)
 
 	res := search.Error{Message: message}
@@ -96,4 +99,12 @@ func (h *Handler) writeError(ctx context.Context, w http.ResponseWriter, status 
 	if err := json.NewEncoder(w).Encode(res); err != nil {
 		h.Logger.ErrorContext(ctx, "failed to encode error response", "error", err, "status", status, "message", message, "id", id)
 	}
+}
+
+func toInterfaceSlice(strs []string) []any {
+	result := make([]any, len(strs))
+	for i, v := range strs {
+		result[i] = v
+	}
+	return result
 }

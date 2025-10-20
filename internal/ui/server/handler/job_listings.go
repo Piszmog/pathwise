@@ -68,6 +68,7 @@ func newJobListingSearchRequest(r *http.Request) (search.Request, types.JobListi
 	}
 
 	if techStack := queries.Get("tech_stack"); techStack != "" {
+		req.TechStack = strings.Split(techStack, ",")
 		filterOpts.TechStack = &techStack
 	}
 

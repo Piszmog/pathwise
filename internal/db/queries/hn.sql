@@ -240,7 +240,10 @@ WHERE
     OR sqlc.narg ('keyword') = ''
     OR j.description LIKE '%' || sqlc.narg ('keyword') || '%'
     OR j.company_description LIKE '%' || sqlc.narg ('keyword') || '%'
-    OR ts.value LIKE '%' || sqlc.narg ('keyword') || '%'
+  )
+  AND (
+    sqlc.narg ('tech_stack') IS NULL
+    OR LOWER(ts.value) IN (sqlc.narg ('tech_stack'))
   )
 ORDER BY
   posted DESC
