@@ -22,7 +22,7 @@ func New(logger *slog.Logger, database db.Database) http.Handler {
 	return correlationMiddleware.Middleware(
 		loggingMiddleware.Middleware(
 			mux.NewMux(
-				mux.WithHandleFunc(http.MethodPost, "/search", h.Search),
+				mux.WithHandleFunc(http.MethodPost, "/api/v1/search", h.Search),
 				mux.WithHandleFunc(http.MethodGet, "/health", health.Handle(logger)),
 			),
 		),

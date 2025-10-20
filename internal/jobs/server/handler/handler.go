@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"sort"
 
 	contextkey "github.com/Piszmog/pathwise/internal/context_key"
 	"github.com/Piszmog/pathwise/internal/db"
@@ -27,8 +28,16 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	}
 	h.Logger.DebugContext(r.Context(), "recieved search request", "request", req)
 
+	limit := int64(req.PerPage)
+	offset := int64(req.Page) * limit
+	keywords := req.Keywords
+
+	if len(keywords) == 0 {
+		keywords = []string{""}
+	}
+
 	results := make(map[string]search.JobListing)
-	for _, keyword := range req.Keywords {
+	for _, keyword := range keywords {
 		h.Logger.DebugContext(r.Context(), "searching for job listings", "keyword", keyword)
 		param := queries.SearchHNJobsParams{
 			Title:    db.NewNullString(req.Title),
@@ -37,6 +46,8 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 			IsRemote: req.IsRemote,
 			IsHybrid: req.IsHybrid,
 			Keyword:  keyword,
+			Limit:    limit,
+			Offset:   offset,
 		}
 
 		res, err := h.Database.Queries().SearchHNJobs(r.Context(), param)
@@ -50,10 +61,11 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 				results[r.ID] = search.JobListing{
 					ID:       r.ID,
 					Title:    r.Title,
+					Company:  r.Company,
 					Location: r.Location.String,
 					IsRemote: r.IsRemote == 1,
 					IsHybrid: r.IsHybrid == 1,
-					Posted:   r.Posted,
+					Posted:   r.Posted.Time,
 				}
 			}
 		}
@@ -64,6 +76,9 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 	for _, v := range results {
 		listings = append(listings, v)
 	}
+	sort.Slice(listings, func(i, j int) bool {
+		return listings[i].Posted.After(listings[j].Posted)
+	})
 
 	res := search.Response{JobListings: listings}
 	if err := json.NewEncoder(w).Encode(res); err != nil {

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Piszmog/pathwise/internal/db"
+	"github.com/Piszmog/pathwise/internal/search"
 	"github.com/a-h/templ"
 )
 
@@ -18,8 +19,9 @@ const (
 )
 
 type Handler struct {
-	Logger   *slog.Logger
-	Database db.Database
+	Logger       *slog.Logger
+	Database     db.Database
+	SearchClient *search.Client
 }
 
 func (h *Handler) html(ctx context.Context, w http.ResponseWriter, status int, t templ.Component) {

@@ -9,6 +9,8 @@ type Request struct {
 	Keywords []string `json:"keywords,omitempty"`
 	IsRemote bool     `json:"is_remote,omitempty"`
 	IsHybrid bool     `json:"is_hybrid,omitempty"`
+	Page     int64    `json:"page"`
+	PerPage  int64    `json:"per_page"`
 }
 
 type Response struct {
@@ -18,6 +20,7 @@ type Response struct {
 type JobListing struct {
 	ID       string    `json:"id"`
 	Title    string    `json:"title"`
+	Company  string    `json:"company"`
 	Location string    `json:"location"`
 	IsRemote bool      `json:"is_remote"`
 	IsHybrid bool      `json:"is_hybrid"`

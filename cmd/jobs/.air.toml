@@ -22,10 +22,10 @@ tmp_dir = "./tmp"
   poll_interval = 500
   post_cmd = [
     # https://github.com/cosmtrek/air/issues/534
-    "lsof -i :8080 -sTCP:LISTEN | sed 1d | awk '{print $2}' | xargs kill -9",
+    "lsof -i :8081 -sTCP:LISTEN | sed 1d | awk '{print $2}' | xargs kill -9",
   ]
   pre_cmd = [
-    "lsof -i :8080 -sTCP:LISTEN | sed 1d | awk '{print $2}' | xargs kill -9",
+    "lsof -i :8081 -sTCP:LISTEN | sed 1d | awk '{print $2}' | xargs kill -9",
     "cd ../.. && go tool sqlc generate",
     "cd ../.. && ./migrate.sh -p \"$(go tool godotenv printenv DB_PROTOCOL)\" -u \"$(go tool godotenv printenv DB_URL)\" -t \"$(go tool godotenv printenv DB_TOKEN)\""
   ]

@@ -39,22 +39,25 @@ func main() {
 		}
 	}()
 
-	dir, err := os.MkdirTemp("", "libsql-*")
-	if err != nil {
-		l.Error("failed to create temp dir", "error", err)
-		os.Exit(1)
-	}
-	defer func() {
-		if removeErr := os.RemoveAll(dir); removeErr != nil {
-			l.Error("failed to remove temp dir", "error", removeErr)
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		dir, err := os.MkdirTemp("", "libsql-*")
+		if err != nil {
+			l.Error("failed to create temp dir", "error", err)
+			os.Exit(1)
 		}
-	}()
-	dbPath := filepath.Join(dir, "db-jobs.sqlite3")
+		defer func() {
+			if removeErr := os.RemoveAll(dir); removeErr != nil {
+				l.Error("failed to remove temp dir", "error", removeErr)
+			}
+		}()
+		dbURL = filepath.Join(dir, "db-jobs.sqlite3")
+	}
 
 	database, err := db.New(
 		l,
 		db.DatabaseOpts{
-			URL:           dbPath,
+			URL:           dbURL,
 			SyncURL:       os.Getenv("DB_PRIMARY_URL"),
 			Token:         os.Getenv("DB_TOKEN_READONLY"),
 			EncryptionKey: os.Getenv("ENC_KEY"),
@@ -84,7 +87,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = "8081"
 	}
 
 	r := router.New(l, database)

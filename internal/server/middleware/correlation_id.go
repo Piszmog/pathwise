@@ -12,7 +12,10 @@ type CorrelationIDMiddleware struct{}
 
 func (m *CorrelationIDMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := uuid.New().String()
+		id := r.Header.Get("X-Correlation-ID")
+		if id == "" {
+			id = uuid.New().String()
+		}
 		ctx := context.WithValue(r.Context(), contextkey.KeyCorrelationID, id)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

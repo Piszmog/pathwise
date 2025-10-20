@@ -1,10 +1,12 @@
 package main
 
 import (
+	"net/http"
 	"os"
 
 	"github.com/Piszmog/pathwise/internal/db"
 	"github.com/Piszmog/pathwise/internal/logger"
+	"github.com/Piszmog/pathwise/internal/search"
 	"github.com/Piszmog/pathwise/internal/server"
 	"github.com/Piszmog/pathwise/internal/ui/server/router"
 	"github.com/Piszmog/pathwise/internal/version"
@@ -42,7 +44,7 @@ func main() {
 		version.Value = v
 	}
 
-	r := router.New(l, database)
+	r := router.New(l, database, search.NewClient(l, &http.Client{}, "http://localhost:8081"))
 
 	port := os.Getenv("PORT")
 	if port == "" {

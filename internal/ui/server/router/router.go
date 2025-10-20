@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/Piszmog/pathwise/internal/db"
+	"github.com/Piszmog/pathwise/internal/search"
 	"github.com/Piszmog/pathwise/internal/server/health"
 	mw "github.com/Piszmog/pathwise/internal/server/middleware"
 	"github.com/Piszmog/pathwise/internal/server/mux"
@@ -13,10 +14,11 @@ import (
 	"github.com/Piszmog/pathwise/internal/ui/server/middleware"
 )
 
-func New(logger *slog.Logger, database db.Database) http.Handler {
+func New(logger *slog.Logger, database db.Database, searchClient *search.Client) http.Handler {
 	h := &handler.Handler{
-		Logger:   logger,
-		Database: database,
+		Logger:       logger,
+		Database:     database,
+		SearchClient: searchClient,
 	}
 	authMiddleware := middleware.AuthMiddleware{
 		Logger:   logger,
@@ -40,7 +42,8 @@ func New(logger *slog.Logger, database db.Database) http.Handler {
 				authMiddleware.Middleware(
 					mux.NewMux(
 						mux.WithHandleFunc(http.MethodGet, "/", h.Main),
-						mux.WithHandleFunc(http.MethodGet, "/job-listings", h.GetJobListings),
+						mux.WithHandleFunc(http.MethodGet, "/job-listings", h.GetJobListingsPage),
+						mux.WithHandleFunc(http.MethodGet, "/job-listings/content", h.GetJobListings),
 						mux.WithHandleFunc(http.MethodGet, "/job-listings/{id}", h.GetJobListingDetails),
 						mux.WithHandleFunc(http.MethodGet, "/stats", h.GetStats),
 						mux.WithHandleFunc(http.MethodPost, "/jobs", h.AddJob),
