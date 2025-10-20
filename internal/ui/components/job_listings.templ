@@ -244,7 +244,56 @@ templ jobListingsFilterForm() {
 			document.getElementById("is_remote").checked = false;
 			document.getElementById("is_hybrid").checked = false;
 			document.getElementById("tech_stack").value = "";
+			document.getElementById("tech_stack_display").value = "";
+			document.getElementById("tech_pills").innerHTML = "";
 		}
+
+		function initTechStackPills() {
+			const input = document.getElementById("tech_stack_display");
+			const hiddenInput = document.getElementById("tech_stack");
+			const pillsContainer = document.getElementById("tech_pills");
+			let techStacks = [];
+
+			function updateHiddenInput() {
+				hiddenInput.value = techStacks.join(",");
+			}
+
+			function addPill(value) {
+				const trimmed = value.trim();
+				if (!trimmed || techStacks.includes(trimmed)) return;
+
+				techStacks.push(trimmed);
+
+				const pill = document.createElement("span");
+				pill.className =
+					"inline-flex items-center gap-x-1 rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10";
+				pill.innerHTML =
+					trimmed +
+					' <button type="button" class="group relative -mr-1 h-3.5 w-3.5 rounded-sm hover:bg-blue-600/20"><span class="sr-only">Remove</span><svg viewBox="0 0 14 14" class="h-3.5 w-3.5 stroke-blue-600/50 group-hover:stroke-blue-600/75"><path d="M4 4l6 6m0-6l-6 6" /></svg></button>';
+
+				pill.querySelector("button").addEventListener("click", function () {
+					const index = techStacks.indexOf(trimmed);
+					if (index > -1) {
+						techStacks.splice(index, 1);
+						updateHiddenInput();
+						pill.remove();
+					}
+				});
+
+				pillsContainer.appendChild(pill);
+				updateHiddenInput();
+			}
+
+			input.addEventListener("keydown", function (e) {
+				if (e.key === "Enter" || e.key === ",") {
+					e.preventDefault();
+					addPill(input.value);
+					input.value = "";
+				}
+			});
+		}
+
+		document.addEventListener("DOMContentLoaded", initTechStackPills);
 	</script>
 	<form
 		id="job-listings-filter-form"
@@ -255,15 +304,16 @@ templ jobListingsFilterForm() {
 	>
 		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 			<div>
-				<label for="tech_stack" class="block text-sm font-medium leading-6 text-gray-900">Tech Stack</label>
+				<label for="tech_stack_display" class="block text-sm font-medium leading-6 text-gray-900">Tech Stack</label>
 				<div class="mt-2">
+					<div id="tech_pills" class="flex flex-wrap gap-2 mb-2"></div>
 					<input
 						type="text"
-						name="tech_stack"
-						id="tech_stack"
+						id="tech_stack_display"
 						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6"
-						placeholder="Go"
+						placeholder="Type and press Enter"
 					/>
+					<input type="hidden" name="tech_stack" id="tech_stack"/>
 				</div>
 			</div>
 			<div>
