@@ -59,7 +59,7 @@ func main() {
 		db.DatabaseOpts{
 			URL:           dbURL,
 			SyncURL:       os.Getenv("DB_PRIMARY_URL"),
-			Token:         os.Getenv("DB_TOKEN_READONLY"),
+			Token:         os.Getenv("DB_TOKEN"),
 			EncryptionKey: os.Getenv("ENC_KEY"),
 			SyncInterval:  12 * time.Hour,
 		},

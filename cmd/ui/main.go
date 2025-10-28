@@ -44,7 +44,11 @@ func main() {
 		version.Value = v
 	}
 
-	r := router.New(l, database, search.NewClient(l, &http.Client{}, "http://localhost:8081"))
+	searchURL := os.Getenv("URL_SEARCH")
+	if searchURL == "" {
+		searchURL = "http://localhost:8081"
+	}
+	r := router.New(l, database, search.NewClient(l, &http.Client{}, searchURL))
 
 	port := os.Getenv("PORT")
 	if port == "" {

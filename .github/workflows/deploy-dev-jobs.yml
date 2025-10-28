@@ -82,9 +82,11 @@ jobs:
           Restart=always
           RestartSec=5
           Environment=DB_TOKEN=${{ secrets.DEV_DB_TOKEN }}
-          Environment=DB_URL=${{ secrets.DEV_DB_URL }}
+          Environment=DB_PRIMARY_URL=${{ secrets.DEV_DB_URL }}
+          Environment=ENC_KEY=${{ secrets.ENC_KEY }}
           Environment=GEMINI_API_KEY=${{ secrets.DEV_GEMINI_API_KEY }}
           Environment=LOG_OUTPUT=/var/log/pathwise/pathwise-jobs-dev.log
+          Environment=PORT=8084
 
           [Install]
           WantedBy=multi-user.target
@@ -131,6 +133,15 @@ jobs:
 
             # Check status
             sudo systemctl status pathwise-jobs-dev
+            # Wait for service to start
+            sleep 10
+            # Health check
+            if curl -f http://localhost:8084/health; then
+              echo "✅ Dev health check passed - app is running on port 8084"
+            else
+              echo "❌ Dev health check failed - app is not responding on port 8084"
+              exit 1
+            fi
           EOF
       - name: Cleanup
         run: |
