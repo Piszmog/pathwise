@@ -135,6 +135,7 @@ templ jobListingCard(job search.JobListing) {
 		<div class="flex items-start justify-between mb-3">
 			<div class="flex-1 min-w-0">
 				<h3 class="text-lg font-semibold text-gray-900 truncate">{ job.Company }</h3>
+				<p class="text-sm text-gray-600 mt-1 truncate">{ job.Title }</p>
 			</div>
 			<div class="ml-3 flex-shrink-0">
 				if job.IsRemote {
