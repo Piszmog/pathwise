@@ -45,6 +45,7 @@ func New(logger *slog.Logger, database db.Database, searchClient *search.Client)
 						mux.WithHandleFunc(http.MethodGet, "/job-listings", h.GetJobListingsPage),
 						mux.WithHandleFunc(http.MethodGet, "/job-listings/content", h.GetJobListings),
 						mux.WithHandleFunc(http.MethodGet, "/job-listings/{id}", h.GetJobListingDetails),
+						mux.WithHandleFunc(http.MethodPost, "/job-listings/{id}/add", h.AddJobApplicationFromListing),
 						mux.WithHandleFunc(http.MethodGet, "/stats", h.GetStats),
 						mux.WithHandleFunc(http.MethodPost, "/jobs", h.AddJob),
 						mux.WithHandleFunc(http.MethodGet, "/archives", h.Archives),
