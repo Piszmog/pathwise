@@ -27,10 +27,10 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 		h.writeError(r.Context(), w, http.StatusBadRequest, "request body is not valid JSON", err)
 		return
 	}
-	h.Logger.DebugContext(r.Context(), "recieved search request", "request", req)
+	h.Logger.DebugContext(r.Context(), "received search request", "request", req)
 
-	limit := int64(req.PerPage)
-	offset := int64(req.Page) * limit
+	limit := req.PerPage
+	offset := req.Page * limit
 	keywords := req.Keywords
 
 	if len(keywords) == 0 {
@@ -98,12 +98,4 @@ func (h *Handler) writeError(ctx context.Context, w http.ResponseWriter, status 
 	if err := json.NewEncoder(w).Encode(res); err != nil {
 		h.Logger.ErrorContext(ctx, "failed to encode error response", "error", err, "status", status, "message", message, "id", id)
 	}
-}
-
-func toInterfaceSlice(strs []string) []any {
-	result := make([]any, len(strs))
-	for i, v := range strs {
-		result[i] = v
-	}
-	return result
 }

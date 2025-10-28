@@ -40,18 +40,20 @@ func main() {
 	}()
 
 	dbURL := os.Getenv("DB_URL")
+	var tempDir string
 	if dbURL == "" {
 		dir, err := os.MkdirTemp("", "libsql-*")
 		if err != nil {
 			l.Error("failed to create temp dir", "error", err)
-			os.Exit(1)
+			return
 		}
+		tempDir = dir
 		defer func() {
-			if removeErr := os.RemoveAll(dir); removeErr != nil {
+			if removeErr := os.RemoveAll(tempDir); removeErr != nil {
 				l.Error("failed to remove temp dir", "error", removeErr)
 			}
 		}()
-		dbURL = filepath.Join(dir, "db-jobs.sqlite3")
+		dbURL = filepath.Join(tempDir, "db-jobs.sqlite3")
 	}
 
 	database, err := db.New(

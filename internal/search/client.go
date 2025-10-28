@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -11,6 +12,8 @@ import (
 
 	"github.com/google/uuid"
 )
+
+var ErrSearchFailed = errors.New("search failed")
 
 type Client struct {
 	c       *http.Client
@@ -51,7 +54,9 @@ func (c *Client) Search(ctx context.Context, searchReq Request) ([]JobListing, e
 		return nil, fmt.Errorf("failed to call search api for %s: %w", id, err)
 	}
 	defer func() {
-		resp.Body.Close()
+		if err := resp.Body.Close(); err != nil {
+			c.logger.ErrorContext(ctx, "failed to close response body", "error", err)
+		}
 	}()
 
 	if resp.StatusCode != http.StatusOK {
@@ -61,7 +66,7 @@ func (c *Client) Search(ctx context.Context, searchReq Request) ([]JobListing, e
 			return nil, fmt.Errorf("failed to unmarshal error response for %s: %w", id, err)
 		}
 
-		return nil, fmt.Errorf("failed to search for job listings for %s: %s", id, errResp.Message)
+		return nil, fmt.Errorf("%w for %s: %s", ErrSearchFailed, id, errResp.Message)
 	}
 
 	var searchResp Response
