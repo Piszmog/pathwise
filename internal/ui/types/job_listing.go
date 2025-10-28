@@ -25,6 +25,7 @@ type JobListingDetails struct {
 	JobListing
 
 	TechStacks []string
+	HasAdded   bool
 }
 
 type JobListingFilterOpts struct {
