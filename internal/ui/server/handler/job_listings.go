@@ -58,7 +58,9 @@ func newJobListingSearchRequest(r *http.Request) (search.Request, types.JobListi
 	filterOpts := types.JobListingFilterOpts{}
 
 	req.Title = queries.Get("title")
-	req.Company = queries.Get("company")
+	if req.Title != "" {
+		filterOpts.Title = &req.Title
+	}
 
 	if keywords := queries.Get("keywords"); keywords != "" {
 		k := strings.SplitSeq(keywords, ",")

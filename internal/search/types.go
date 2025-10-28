@@ -4,7 +4,6 @@ import "time"
 
 type Request struct {
 	Title     string   `json:"title,omitempty"`
-	Company   string   `json:"company,omitempty"`
 	Location  string   `json:"location,omitempty"`
 	Keywords  []string `json:"keywords,omitempty"`
 	TechStack []string `json:"tech_stack,omitempty"`

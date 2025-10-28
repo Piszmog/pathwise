@@ -225,6 +225,9 @@ templ jobListingsPagination(paginationOpts types.PaginationOpts, filterOpts type
 func buildJobListingsURL(page int64, perPage int64, filterOpts types.JobListingFilterOpts) string {
 	url := "/job-listings/content?page=" + strconv.FormatInt(page, 10) + "&per_page=" + strconv.FormatInt(perPage, 10)
 
+	if filterOpts.Title != nil {
+		url += "&title=" + *filterOpts.Title
+	}
 	if filterOpts.IsRemote != nil {
 		url += "&is_remote=" + strconv.FormatBool(*filterOpts.IsRemote)
 	}
@@ -243,6 +246,7 @@ templ jobListingsFilterForm() {
 		function clearJobListingsFilter() {
 			document.getElementById("is_remote").checked = false;
 			document.getElementById("is_hybrid").checked = false;
+			document.getElementById("title").value = "";
 			document.getElementById("tech_stack").value = "";
 			document.getElementById("tech_stack_display").value = "";
 			document.getElementById("tech_pills").innerHTML = "";
@@ -304,15 +308,27 @@ templ jobListingsFilterForm() {
 	>
 		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 			<div>
+				<label for="title" class="block text-sm font-medium leading-6 text-gray-900">Title</label>
+				<div class="mt-2">
+					<input
+						type="text"
+						name="title"
+						id="title"
+						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6"
+						placeholder="Software Engineer"
+					/>
+				</div>
+			</div>
+			<div>
 				<label for="tech_stack_display" class="block text-sm font-medium leading-6 text-gray-900">Tech Stack</label>
 				<div class="mt-2">
-					<div id="tech_pills" class="flex flex-wrap gap-2 mb-2"></div>
 					<input
 						type="text"
 						id="tech_stack_display"
 						class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-gray-600 sm:text-sm sm:leading-6"
 						placeholder="Type and press Enter"
 					/>
+					<div id="tech_pills" class="flex flex-wrap gap-2 mt-2"></div>
 					<input type="hidden" name="tech_stack" id="tech_stack"/>
 				</div>
 			</div>

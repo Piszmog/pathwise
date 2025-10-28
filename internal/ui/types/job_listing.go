@@ -28,6 +28,7 @@ type JobListingDetails struct {
 }
 
 type JobListingFilterOpts struct {
+	Title     *string
 	IsRemote  *bool
 	IsHybrid  *bool
 	TechStack *string

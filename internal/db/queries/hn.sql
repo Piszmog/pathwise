@@ -214,10 +214,6 @@ WHERE
     OR j.title LIKE '%' || sqlc.narg ('title') || '%'
   )
   AND (
-    sqlc.narg ('company') IS NULL
-    OR j.company LIKE '%' || sqlc.narg ('company') || '%'
-  )
-  AND (
     sqlc.narg ('location') IS NULL
     OR j.location LIKE '%' || sqlc.narg ('location') || '%'
   )

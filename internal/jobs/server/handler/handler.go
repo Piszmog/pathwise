@@ -43,7 +43,6 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 		h.Logger.DebugContext(r.Context(), "searching for job listings", "keyword", keyword)
 		param := queries.SearchHNJobsParams{
 			Title:     db.NewNullString(req.Title),
-			Company:   db.NewNullString(req.Company),
 			Location:  db.NewNullString(req.Location),
 			IsRemote:  req.IsRemote,
 			IsHybrid:  req.IsHybrid,
