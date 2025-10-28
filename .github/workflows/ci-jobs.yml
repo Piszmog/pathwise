@@ -70,7 +70,7 @@ jobs:
       - uses: docker/metadata-action@v5
         id: meta
         with:
-          images: ghcr.io/piszmog/pathwise
+          images: ghcr.io/piszmog/pathwise-jobs
       - uses: docker/build-push-action@v5
         with:
           context: .

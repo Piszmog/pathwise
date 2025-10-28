@@ -303,6 +303,7 @@ jobs:
           Environment=DB_URL=${{ secrets.DB_URL }}
           Environment=LOG_OUTPUT=/var/log/pathwise/pathwise.log
           Environment=PORT=8080
+          Environment=URL_SEARCH=http://localhost:8085
 
           [Install]
           WantedBy=multi-user.target
@@ -482,9 +483,11 @@ jobs:
           Restart=always
           RestartSec=5
           Environment=DB_TOKEN=${{ secrets.DB_TOKEN }}
-          Environment=DB_URL=${{ secrets.DB_URL }}
+          Environment=DB_PRIMARY_URL=${{ secrets.DB_URL }}
+          Environment=ENC_KEY=${{ secrets.ENC_KEY }}
           Environment=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
           Environment=LOG_OUTPUT=/var/log/pathwise/pathwise-jobs.log
+          Environment=PORT=8085
 
           [Install]
           WantedBy=multi-user.target
@@ -531,6 +534,15 @@ jobs:
 
             # Check status
             sudo systemctl status pathwise-jobs
+            # Wait for service to start
+            sleep 10
+            # Health check
+            if curl -f http://localhost:8085/health; then
+              echo "✅ Health check passed - jobs is running"
+            else
+              echo "❌ Health check failed - jobs is not responding"
+              exit 1
+            fi
           EOF
       - name: Cleanup
         run: |

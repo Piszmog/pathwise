@@ -96,6 +96,7 @@ jobs:
           Environment=DB_URL=${{ secrets.DEV_DB_URL }}
           Environment=LOG_OUTPUT=/var/log/pathwise/pathwise-dev.log
           Environment=PORT=8082
+          Environment=URL_SEARCH=http://localhost:8084
 
           [Install]
           WantedBy=multi-user.target

@@ -1,4 +1,4 @@
-package handler_test
+package health_test
 
 import (
 	"encoding/json"
@@ -8,7 +8,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Piszmog/pathwise/internal/ui/server/router"
+	"github.com/Piszmog/pathwise/internal/server/health"
+	"github.com/Piszmog/pathwise/internal/server/mux"
 	"github.com/Piszmog/pathwise/internal/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -39,8 +40,10 @@ func TestHealthEndpoint(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 			logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
-			handler := router.New(logger, nil)
-			server := httptest.NewServer(handler)
+			router := mux.NewMux(
+				mux.WithHandleFunc(http.MethodGet, "/health", health.Handle(logger)),
+			)
+			server := httptest.NewServer(router)
 			defer server.Close()
 
 			req, err := http.NewRequestWithContext(t.Context(), test.method, server.URL+test.path, nil)

@@ -2,17 +2,16 @@ package main
 
 import (
 	"context"
-	"log/slog"
-	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
+	"path/filepath"
 	"time"
 
 	"github.com/Piszmog/pathwise/internal/db"
 	"github.com/Piszmog/pathwise/internal/jobs/hn"
 	"github.com/Piszmog/pathwise/internal/jobs/llm"
+	"github.com/Piszmog/pathwise/internal/jobs/server/router"
 	"github.com/Piszmog/pathwise/internal/logger"
+	"github.com/Piszmog/pathwise/internal/server"
 )
 
 func main() {
@@ -41,13 +40,31 @@ func main() {
 	}()
 
 	dbURL := os.Getenv("DB_URL")
+	var tempDir string
 	if dbURL == "" {
-		dbURL = "./db.sqlite3"
+		dir, err := os.MkdirTemp("", "libsql-*")
+		if err != nil {
+			l.Error("failed to create temp dir", "error", err)
+			return
+		}
+		tempDir = dir
+		defer func() {
+			if removeErr := os.RemoveAll(tempDir); removeErr != nil {
+				l.Error("failed to remove temp dir", "error", removeErr)
+			}
+		}()
+		dbURL = filepath.Join(tempDir, "db-jobs.sqlite3")
 	}
 
 	database, err := db.New(
 		l,
-		db.DatabaseOpts{URL: dbURL, Token: os.Getenv("DB_TOKEN")},
+		db.DatabaseOpts{
+			URL:           dbURL,
+			SyncURL:       os.Getenv("DB_PRIMARY_URL"),
+			Token:         os.Getenv("DB_TOKEN"),
+			EncryptionKey: os.Getenv("ENC_KEY"),
+			SyncInterval:  12 * time.Hour,
+		},
 	)
 	if err != nil {
 		l.Error("failed to create database", "error", err)
@@ -64,72 +81,18 @@ func main() {
 		return
 	}
 
-	scraper := hn.NewScraper(l, database, &http.Client{Timeout: 10 * time.Second})
-	processor := hn.NewProcessor(l, database, llmClient)
-	commentIDsChan := make(chan int64, 1000)
+	hnRunner := hn.NewRunner(l, database, llmClient)
+	hnRunner.Run(ctx)
+	defer func() {
+		_ = hnRunner.Close()
+	}()
 
-	go processor.Run(ctx, commentIDsChan)
-	go startCommentProcessor(ctx, l, database, commentIDsChan)
-	go startScraper(ctx, l, scraper, commentIDsChan)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8081"
+	}
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
-	<-sigChan
-	l.Info("shutting down...")
+	r := router.New(l, database)
+	server.New(l, ":"+port, server.WithHandler(r)).StartAndWait()
 	cancel()
-	close(commentIDsChan)
-	time.Sleep(100 * time.Millisecond)
-	close(commentIDsChan)
-}
-
-func startCommentProcessor(ctx context.Context, logger *slog.Logger, database db.Database, commentIDsChan chan<- int64) {
-	processQueuedComments(ctx, logger, database, []string{"queued", "in_progress", "failed"}, commentIDsChan)
-
-	ticker := time.NewTicker(12 * time.Hour)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			processQueuedComments(ctx, logger, database, []string{"failed"}, commentIDsChan)
-		case <-ctx.Done():
-			return
-		}
-	}
-}
-
-func processQueuedComments(ctx context.Context, logger *slog.Logger, database db.Database, status []string, commentIDsChan chan<- int64) {
-	logger.DebugContext(ctx, "getting un-completed comments")
-	ids, err := database.Queries().GetQueuedHNComments(ctx, status)
-	if err != nil {
-		logger.ErrorContext(ctx, "failed to get queued comments", "error", err)
-		return
-	}
-	for _, id := range ids {
-		commentIDsChan <- id
-	}
-}
-
-func startScraper(ctx context.Context, logger *slog.Logger, scraper *hn.Scraper, commentIDsChan chan<- int64) {
-	runScraper(ctx, logger, scraper, commentIDsChan)
-
-	ticker := time.NewTicker(4 * time.Hour)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			runScraper(ctx, logger, scraper, commentIDsChan)
-		case <-ctx.Done():
-			return
-		}
-	}
-}
-
-func runScraper(ctx context.Context, logger *slog.Logger, scraper *hn.Scraper, commentIDsChan chan<- int64) {
-	logger.DebugContext(ctx, "running scraper")
-	if err := scraper.Run(ctx, commentIDsChan); err != nil {
-		logger.ErrorContext(ctx, "failed to scrape", "error", err)
-	}
 }
