@@ -26,7 +26,7 @@ func NewGeminiClient(ctx context.Context, apiKey string) (*GeminiClient, error) 
 		return nil, fmt.Errorf("failed to create Gemini client: %w", err)
 	}
 
-	model := client.GenerativeModel("gemini-2.0-flash-exp")
+	model := client.GenerativeModel("gemini-2.5-flash")
 
 	model.SetTemperature(0.1) // Low temperature for consistent parsing
 	model.ResponseMIMEType = "application/json"
