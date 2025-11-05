@@ -90,127 +90,145 @@ func formatInputsForPrompt(inputs map[int64]string) string {
 	return formatted.String()
 }
 
-const batchPromptTemplate = `# Batch Posting Parser Prompt
-
-You are a specialized parser for job posts. Your task is to extract structured job information from multiple texts that may contain job postings or regular comments.
+const batchPromptTemplate = `Parse job postings from HTML text and extract structured information.
 
 ## Input Format
-You will receive 1-30 HTML-encoded texts from job posts. Each text has a unique ID that you MUST include in your response. Each text may contain:
-- Job postings with company information, roles, locations, and compensation
-- Regular comments that are not job postings
-- Mixed content with multiple job roles from the same company
+You will receive 1-30 HTML-encoded texts with unique IDs. Each may contain job postings, regular comments, or mixed content with multiple roles from the same company.
 
-## Text Preprocessing Instructions
-Before extracting information, normalize the following for each text:
+## Text Preprocessing
 
 ### HTML Entity Decoding
-- Decode HTML entities like &#x2F; (/) and &#x27; (') back to regular characters
-- Convert URLs like 'https:&#x2F;&#x2F;www.example.com&#x2F;' to 'https://www.example.com/'
+Decode HTML entities in URLs and text:
+- &#x2F; → /
+- &#x27; → '
+- &#x3A; → :
+- &#x3D; → =
+- &#x3F; → ?
+- &#x26; → &
 
-### Email Format Normalization
-- Convert obfuscated emails to standard format:
-  - 'careers<at>company<dot>com' → 'careers@company.com'
-  - 'hiring[at]company[dot]com' → 'hiring@company.com'
-  - 'contact AT company DOT com' → 'contact@company.com'
-  - 'email_hiring_2025 AT company.ai' → 'email_hiring_2025@company.ai'
+Example: 'https:&#x2F;&#x2F;example.com&#x2F;apply' → 'https://example.com/apply'
 
-### URL Extraction and Decoding - CRITICAL
-- ALWAYS look for <a href="URL"> tags in the HTML text
-- Extract the FULL URL from the href attribute value, NOT the display text
-- Example: <a href="https:&#x2F;&#x2F;example.com&#x2F;apply">https:&#x2F;&#x2F;example.com&#x2F;ap...</a>
-  → Extract: https:&#x2F;&#x2F;example.com&#x2F;apply (from href, not the truncated "..." text)
-- Decode ALL HTML entities in the extracted URL:
-  - &#x2F; → /
-  - &#x3A; → :
-  - &#x3D; → =
-  - &#x3F; → ?
-  - &#x26; → &
-- Example full conversion:
-  - Input: <a href="https:&#x2F;&#x2F;ats.rippling.com&#x2F;company&#x2F;jobs&#x2F;123">
-  - Extract href value: https:&#x2F;&#x2F;ats.rippling.com&#x2F;company&#x2F;jobs&#x2F;123
-  - Decode: https://ats.rippling.com/company/jobs/123
-  - This becomes application_url in the job object
-- Prioritize URLs containing: 'apply', 'application', 'jobs', 'careers', 'positions', 'hiring'
-- Look for context clues like "Apply here:", "Apply at:", "Application link:"
-- If a single job posting contains one application URL, put it in that job's application_url field
-- If multiple jobs share the same application URL, include it in each job object
+### Email Normalization
+Convert obfuscated emails to standard format:
+- 'contact<at>company<dot>com' → 'contact@company.com'
+- 'hiring AT company DOT com' → 'hiring@company.com'
 
-### Determining jobs_url vs application_url
-- If a single <a href> tag appears and applies to all jobs mentioned, use jobs_url
-- If specific URLs are provided for individual job titles/roles, use application_url within each job object
-- If text says "Apply here:" followed by a URL and only one job is listed, put URL in that job's application_url
-- If uncertain whether URL applies to all jobs or one specific job, prefer application_url in the job object
+### URL Extraction (CRITICAL)
+- Extract FULL URLs from <a href="..."> tags, NOT the display text
+- Example: <a href="https://example.com/apply">https://example.com/ap...</a> → use 'https://example.com/apply'
+- For plain text URLs truncated with "..." (like https://example.com/apply?id=abc...), extract the URL AS-IS including the "..."
+- Decode all HTML entities in URLs
+- Prioritize URLs with keywords: 'apply', 'application', 'jobs', 'careers', 'positions', 'hiring'
 
-### Text Case Normalization
-- Convert ALL CAPS company names to proper title case (e.g., "ACME CORP" → "Acme Corp")
-- Convert ALL CAPS job titles to proper title case (e.g., "SOFTWARE ENGINEER" → "Software Engineer")
-- Preserve intentional capitalization in acronyms and technical terms
+**jobs_url vs application_url:**
+- Use jobs_url if one URL applies to all jobs in the posting
+- Use application_url within each job object if URLs are role-specific
+- When uncertain, prefer jobs_url if only one URL is provided
 
-### Technology Stack Extraction - CRITICAL
-- ALWAYS extract technologies mentioned in job titles
-  - Example: "Senior Go Engineer" → tech_stack: ["Go"]
-  - Example: "Python/React Developer" → tech_stack: ["Python", "React"]
-  - Example: "Staff React Native SDK Engineer" → tech_stack: ["React Native"]
-  - Example: "WebRTC SFU Engineer" → tech_stack: ["WebRTC"]
-- Extract technologies from job descriptions and company tech stack sections
-- Look for phrases like "tech stack:", "Our tech stack:", "using:", "technologies:", "experience with:", "We use:"
-- Common patterns: "We use X, Y, and Z" → extract [X, Y, Z]
-- Include: programming languages, frameworks, databases, tools, protocols
-- Normalize technology names (e.g., "golang" → "Go", "reactjs" → "React", "postgres" → "PostgreSQL")
-- If tech applies to ALL jobs, use general_tech_stack; if job-specific, use job's tech_stack
-- When both title AND body mention tech for a specific job, combine them in that job's tech_stack
+### Text Normalization
+- Convert ALL CAPS to proper title case: "ACME CORP" → "Acme Corp"
+- Preserve acronyms and technical terms (API, SQL, AWS, etc.)
 
-## Critical Output Requirements
-- Return ONLY valid JSON array - no markdown code blocks, no explanations, no additional text
-- Process each text independently and return results in the same order as inputs
-- MUST include the correct ID for each text in the "id" field
-- Do NOT include citations, reference numbers, or bracketed numbers like [1], [2], etc.
-- Use ONLY information directly from the provided text
-- Do NOT add external knowledge about companies beyond what's in the text
-- All field values must be clean strings without citation markers
-- Apply all normalization rules above before populating JSON fields
-- MUST extract application_url from <a href="..."> tags when present and include in job objects
+### Company Description Extraction
+Extract company information from the posting:
+- Look for sentences describing what the company does, builds, or works on
+- Include industry, products, customers, or mission statements
+- Combine related sentences into a concise 1-3 sentence summary
+- Exclude information specific to individual job roles
+- Examples of what to capture:
+  - "We build tools for the mortgage industry"
+  - "Work with Fortune 500 companies"
+  - "At the forefront of applying AI in healthcare"
+- Keep descriptions factual and relevant to job seekers
+
+### Job Description Extraction
+For each job role, extract:
+- What the person will do/work on (responsibilities)
+- What the role involves (day-to-day activities)
+- Who they'll work with (team, stakeholders)
+- What impact they'll have
+- Key requirements or qualifications mentioned
+- Combine into a coherent 1-3 sentence summary per job
+- Exclude generic information that applies to all jobs
+- Examples:
+  - "Working directly with CTO on document processing systems. New-grad and junior engineers encouraged."
+  - "Manage AWS infrastructure with Terraform, handle software engineering tasks, and oversee IT operations."
+
+### Technology Stack Extraction (CRITICAL)
+Extract technologies from job titles AND descriptions:
+- Job titles: "Senior Go Engineer" → tech_stack: ["Go"]
+- Descriptions: look for "tech stack:", "We use:", "experience with:", "technologies:", "working with"
+- Include: programming languages, frameworks, databases, cloud platforms, tools, protocols
+- Normalize names: "golang" → "Go", "reactjs" → "React", "postgres" → "PostgreSQL", "aws" → "AWS"
+- Include AI/ML terms: "LLM" → "LLM", "machine learning" → "Machine Learning"
+
+**general_tech_stack vs tech_stack:**
+- Use general_tech_stack for technologies mentioned at company level or applying to all jobs
+- Use tech_stack for job-specific technologies
+- If unclear, put technologies in the specific job's tech_stack
+
+### Work Location Logic
+- is_remote: true if the posting mentions remote work for ANY of the jobs
+- is_hybrid: true if the posting mentions hybrid work for ANY of the jobs
+- Both can be true if the posting has mixed work arrangements (some hybrid, some remote)
+- location field: capture the primary location info from the posting header or description
+  - If multiple locations mentioned, use the most general description (e.g., "Hybrid SF & Remote", "US Remote", "SF Bay Area")
+  - If specific cities for different roles, prefer the company headquarters or first mentioned location
+
+### Compensation Handling
+- Put compensation in general_compensation if it applies to all jobs
+- Put compensation in individual job's compensation field if it's role-specific
+- If a salary range is given in the header (e.g., "$100k-$220k"), assume it applies to all jobs
+
+## Output Requirements
+- Return ONLY valid JSON array (no markdown, no explanations, no extra text)
+- Process texts in order with correct IDs
+- NO citations, reference numbers, or brackets like [1], [2]
+- Use ONLY information from the provided text
+- Do NOT add external knowledge about companies
+- Keep descriptions concise but informative (1-3 sentences each)
 
 ## JSON Structure
-Return an array of job posting objects, one for each input text, maintaining the same order:
+Return an array of objects in the same order as inputs:
 
 [
   {
-    "id": "int64 - the ID provided for this specific text (REQUIRED)",
-    "is_job_posting": "boolean - true if text contains job posting information, false otherwise",
-    "company_name": "string - the company name (required, normalized to proper case)",
-    "company_description": "string - brief description of what the company does (optional)",
-    "company_url": "string - company main website URL with HTML entities decoded (optional)",
-    "contact_email": "string - the contact email for job applications in standard format (optional)",
-    "jobs_url": "string - FULL URL extracted from <a href> attribute (NOT display text), with HTML entities decoded that is the general url link to apply for all jobs (optional)",
+    "id": 123,
+    "is_job_posting": true,
+    "company_name": "string (REQUIRED, proper case)",
+    "company_description": "string (1-3 sentences about what the company does, optional)",
+    "company_url": "string (optional, decoded)",
+    "contact_email": "string (optional, normalized)",
+    "jobs_url": "string (optional, decoded URL for all jobs)",
     "jobs": [
       {
-        "title": "string - job title normalized to proper case",
-        "description": "string - specific responsibilities/requirements for this role (optional if no specific description for the specific job)",
-        "role_type": "string - 'full-time', 'part-time', 'full-time contractor', 'contract', 'internship', or 'unknown'",
-        "application_url": "string - FULL URL extracted from <a href> attribute (NOT display text), with HTML entities decoded - look for URLs with 'apply', 'jobs', 'careers' keywords (optional but REQUIRED if <a href> tag is present in text and applicable to the specific job)",
+        "title": "string (REQUIRED, proper case)",
+        "description": "string (1-3 sentences about role responsibilities and requirements, optional)",
+        "role_type": "full-time|part-time|full-time contractor|contract|internship|unknown (REQUIRED)",
+        "application_url": "string (optional, decoded URL for this specific job)",
         "compensation": {
-          "base_salary": "salary range specific to this job (optional)",
-          "equity": "equity details specific to this job (optional)",
-          "other": "other compensation specific to this job (optional)"
+          "base_salary": "string (optional, for this specific job only)",
+          "equity": "string (optional, for this specific job only)",
+          "other": "string (optional, for this specific job only)"
         },
-        "tech_stack": [
-          "technologies specific to this job - MUST extract from job title AND job description (optional)"
-        ]
+        "tech_stack": ["string array (optional, from title AND description)"]
       }
     ],
-    "is_hybrid": "boolean - true only if hybrid work is explicitly mentioned AND remote is not",
-    "is_remote": "boolean - true if remote/distributed work is mentioned AND hybrid is not",
-    "location": "string - office location, 'Remote', or 'unknown'",
+    "is_hybrid": false,
+    "is_remote": true,
+    "location": "string (REQUIRED, 'Remote' or general location description or 'unknown')",
     "general_compensation": {
-      "base_salary": "salary that applies to all jobs (optional)",
-      "equity": "equity that applies to all jobs (optional)"
+      "base_salary": "string (optional, applies to all jobs)",
+      "equity": "string (optional, applies to all jobs)"
     },
-    "general_tech_stack": [
-      "technologies that apply to all jobs - extract from phrases like 'Our tech stack:', 'We use:', etc. (optional)"
-    ]
+    "general_tech_stack": ["string array (optional, applies to all jobs)"]
   }
 ]
+
+Notes:
+- Include all fields even if empty/null
+- Preserve original salary format (e.g., "$100k-$220k", "€50-70k", "120000-150000")
+- Descriptions should be concise summaries, not verbatim text dumps
 
 ## Texts to Parse:
 %s`
