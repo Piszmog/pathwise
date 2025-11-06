@@ -79,8 +79,8 @@ func executeMigrationFile(db *sql.DB, path string) error {
 	}
 
 	// Split SQL statements and execute them individually for go-libsql compatibility
-	statements := strings.Split(string(content), ";")
-	for _, stmt := range statements {
+	statements := strings.SplitSeq(string(content), ";")
+	for stmt := range statements {
 		stmt = strings.TrimSpace(stmt)
 		if stmt == "" || strings.HasPrefix(stmt, "--") {
 			continue
