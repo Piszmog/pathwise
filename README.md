@@ -67,13 +67,10 @@ Generate an API key through the web application settings, then configure your MC
 
 4. **Run the application**
    ```bash
-   # Web application with hot reload
    cd cmd/ui && air
 
-   # MCP server (optional, for programmatic access)
    cd cmd/mcp && air
 
-   # Jobs processor (optional, for HN scraping - requires GEMINI_API_KEY)
    export GEMINI_API_KEY=your_api_key_here
    cd cmd/jobs && air
    ```
@@ -103,19 +100,19 @@ Generate an API key through the web application settings, then configure your MC
 
 ```bash
 # Development servers with hot reload
-cd cmd/ui && air                   # Web application
-cd cmd/mcp && air                  # MCP server
-cd cmd/jobs && air                 # Jobs processor (requires GEMINI_API_KEY)
+cd cmd/ui && air
+cd cmd/mcp && air
+cd cmd/jobs && air
 
 # Build applications
-go build -o ./tmp/main ./cmd/ui    # Web application
-go build -o ./tmp/mcp ./cmd/mcp    # MCP server
-go build -o ./tmp/jobs ./cmd/jobs  # Jobs processor
+go build -o ./tmp/main ./cmd/ui
+go build -o ./tmp/mcp ./cmd/mcp
+go build -o ./tmp/jobs ./cmd/jobs
 
 # Run tests
-go test ./...                                             # All tests
-go test -tags=e2e ./internal/ui/e2e/...                  # E2E tests (requires Playwright)
-go test ./internal/mcp/tool/... -tags=integration        # MCP integration tests
+go test ./...
+go test -tags=e2e ./internal/ui/e2e/...
+go test ./internal/mcp/tool/... -tags=integration
 
 # Lint code
 golangci-lint run
@@ -202,16 +199,12 @@ The project uses several code generation tools:
 ## Testing
 
 ```bash
-# Unit tests
 go test ./...
 
-# E2E tests (requires Playwright setup)
 go test -tags=e2e ./internal/ui/e2e/...
 
-# MCP integration tests
 go test ./internal/mcp/tool/... -tags=integration
 
-# Test specific package
 go test ./internal/ui/server/handler -run TestJobHandler
 ```
 
@@ -226,25 +219,25 @@ docker build -f cmd/mcp/Dockerfile -t pathwise-mcp .
 docker build -f cmd/jobs/Dockerfile -t pathwise-jobs .
 
 # Run containers
-docker run -p 8080:8080 pathwise-ui                              # Web application
-docker run -p 8081:8080 pathwise-mcp                             # MCP server
-docker run -e GEMINI_API_KEY=your_key pathwise-jobs              # Jobs processor
+docker run -p 8080:8080 pathwise-ui
+docker run -p 8081:8080 pathwise-mcp
+docker run -e GEMINI_API_KEY=your_key pathwise-jobs
 ```
 
 ### Manual Deployment
 
 1. Build the applications:
    ```bash
-   go build -o pathwise-ui ./cmd/ui      # Web application
-   go build -o pathwise-mcp ./cmd/mcp    # MCP server
-   go build -o pathwise-jobs ./cmd/jobs  # Jobs processor
+   go build -o pathwise-ui ./cmd/ui
+   go build -o pathwise-mcp ./cmd/mcp
+   go build -o pathwise-jobs ./cmd/jobs
    ```
 2. Set environment variables as needed
 3. Run the binaries:
    ```bash
-   ./pathwise-ui    # Web application on port 8080
-   ./pathwise-mcp   # MCP server on port 8080 (or different port)
-   ./pathwise-jobs  # Jobs processor (requires GEMINI_API_KEY)
+   ./pathwise-ui
+   ./pathwise-mcp
+   ./pathwise-jobs
    ```
 
 ## Contributing
