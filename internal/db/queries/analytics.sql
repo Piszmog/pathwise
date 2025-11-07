@@ -39,3 +39,19 @@ GROUP BY
   STATUS
 ORDER BY
   count DESC;
+
+-- name: GetAppliedOnlyCount :one
+SELECT
+  COUNT(*) AS count
+FROM
+  job_applications ja
+WHERE
+  ja.user_id = ?
+  AND ja.archived = false
+  AND ja.status = 'applied'
+  AND NOT EXISTS (
+    SELECT 1
+    FROM job_application_status_histories h
+    WHERE h.job_application_id = ja.id
+      AND h.status != 'applied'
+  );

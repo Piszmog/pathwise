@@ -54,6 +54,11 @@ func (h *Handler) getSankeyData(ctx context.Context, userID int64) (types.Sankey
 		return types.SankeyData{}, err
 	}
 
+	appliedOnlyCount, err := h.Database.Queries().GetAppliedOnlyCount(ctx, userID)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return types.SankeyData{}, err
+	}
+
 	transitions := make([]types.StatusTransition, 0, len(dbTransitions))
 	for _, t := range dbTransitions {
 		transitions = append(transitions, types.StatusTransition{
@@ -71,10 +76,10 @@ func (h *Handler) getSankeyData(ctx context.Context, userID int64) (types.Sankey
 		})
 	}
 
-	return buildSankeyFromTransitions(transitions, statusCounts), nil
+	return buildSankeyFromTransitions(transitions, statusCounts, appliedOnlyCount), nil
 }
 
-func buildSankeyFromTransitions(transitions []types.StatusTransition, statusCounts []types.StatusCount) types.SankeyData {
+func buildSankeyFromTransitions(transitions []types.StatusTransition, statusCounts []types.StatusCount, appliedOnlyCount int64) types.SankeyData {
 	statusSet := make(map[string]bool)
 	for _, t := range transitions {
 		statusSet[t.FromStatus] = true
@@ -82,6 +87,11 @@ func buildSankeyFromTransitions(transitions []types.StatusTransition, statusCoun
 	}
 	for _, s := range statusCounts {
 		statusSet[s.Status] = true
+	}
+
+	noResponseStatus := "no response"
+	if appliedOnlyCount > 0 {
+		statusSet[noResponseStatus] = true
 	}
 
 	statuses := make([]string, 0, len(statusSet))
@@ -106,6 +116,18 @@ func buildSankeyFromTransitions(transitions []types.StatusTransition, statusCoun
 			Target: toIndex,
 			Value:  int(t.TransitionCount),
 		})
+	}
+
+	if appliedOnlyCount > 0 {
+		if appliedIndex, appliedExists := statusToIndex["applied"]; appliedExists {
+			if noResponseIndex, noResponseExists := statusToIndex[noResponseStatus]; noResponseExists {
+				links = append(links, types.SankeyLink{
+					Source: appliedIndex,
+					Target: noResponseIndex,
+					Value:  int(appliedOnlyCount),
+				})
+			}
+		}
 	}
 
 	if len(links) == 0 && len(statusCounts) > 0 {
