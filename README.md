@@ -74,15 +74,15 @@ Generate an API key through the web application settings, then configure your MC
    go build -o ./tmp/main ./cmd/ui
    ./tmp/main
 
-    # MCP server (optional, for programmatic access)
-    go build -o ./tmp/mcp ./cmd/mcp
-    ./tmp/mcp
+   # MCP server (optional, for programmatic access)
+   go build -o ./tmp/mcp ./cmd/mcp
+   ./tmp/mcp
 
-    # Jobs processor (optional, for HN scraping - requires GEMINI_API_KEY)
-    export GEMINI_API_KEY=your_api_key_here
-    go build -o ./tmp/jobs ./cmd/jobs
-    ./tmp/jobs
-    ```
+   # Jobs processor (optional, for HN scraping - requires GEMINI_API_KEY)
+   export GEMINI_API_KEY=your_api_key_here
+   go build -o ./tmp/jobs ./cmd/jobs
+   ./tmp/jobs
+   ```
 
 5. **Open your browser**
    Navigate to `http://localhost:8080`
@@ -96,8 +96,12 @@ Generate an API key through the web application settings, then configure your MC
 | `LOG_OUTPUT` | Log output (stdout or file path) | `stdout` |
 | `DB_URL` | Database URL | `./db.sqlite3` |
 | `DB_TOKEN` | Database token (for remote databases) | - |
+| `DB_PRIMARY_URL` | Primary database URL (used by jobs and mcp for write operations) | - |
+| `DB_TOKEN_READONLY` | Read-only database token (used by mcp) | - |
+| `ENC_KEY` | Encryption key for sensitive data | - |
+| `URL_SEARCH` | Search service URL (used by ui) | - |
 | `GEMINI_API_KEY` | Google Gemini API key (required for jobs processor) | - |
-| `VERSION` | Application version | - |
+| `VERSION` | Application version (used by ui and mcp) | - |
 
 ## Development
 
@@ -106,6 +110,7 @@ Generate an API key through the web application settings, then configure your MC
 ```bash
 # Development servers with hot reload
 cd cmd/ui && air                   # Web application
+cd cmd/mcp && air                  # MCP server
 cd cmd/jobs && air                 # Jobs processor (requires GEMINI_API_KEY)
 
 # Build applications
@@ -154,6 +159,11 @@ pathwise/
 │   │   ├── server/    # MCP server setup and middleware
 │   │   │   └── middleware/# Authentication middleware
 │   │   └── tool/      # MCP tool implementations
+│   ├── search/        # Search client implementation
+│   ├── server/        # Shared server utilities
+│   │   ├── health/    # Health check handlers
+│   │   ├── middleware/# Common HTTP middleware
+│   │   └── mux/       # HTTP router setup
 │   ├── ui/            # Frontend code and assets
 │   │   ├── components/# Templ templates (.templ files)
 │   │   ├── dist/      # Static assets (CSS, JS, images)
