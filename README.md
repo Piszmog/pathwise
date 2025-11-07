@@ -135,7 +135,6 @@ pathwise/
 │   │   ├── main.go
 │   │   ├── .air.toml
 │   │   ├── .goreleaser.yaml
-│   │   ├── app.yaml
 │   │   └── Dockerfile
 │   ├── mcp/
 │   │   ├── main.go
