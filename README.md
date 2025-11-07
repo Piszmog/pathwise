@@ -130,51 +130,64 @@ go tool sqlc generate
 
 ```
 pathwise/
-├── cmd/               # Application entry points
-│   ├── ui/            # Web application
-│   │   ├── main.go    # Web application entry point
-│   │   ├── .air.toml  # Hot reload configuration
-│   │   └── Dockerfile # Container configuration
-│   ├── mcp/           # MCP server
-│   │   ├── main.go    # MCP server entry point
-│   │   └── Dockerfile # Container configuration
-│   └── jobs/          # Jobs processor
-│       ├── main.go    # Jobs processor entry point
-│       ├── .air.toml  # Hot reload configuration
-│       └── Dockerfile # Container configuration
-├── internal/          # Private application code
+├── cmd/
+│   ├── ui/
+│   │   ├── main.go
+│   │   ├── .air.toml
+│   │   ├── .goreleaser.yaml
+│   │   ├── app.yaml
+│   │   └── Dockerfile
+│   ├── mcp/
+│   │   ├── main.go
+│   │   ├── .air.toml
+│   │   ├── .goreleaser.yaml
+│   │   └── Dockerfile
+│   └── jobs/
+│       ├── main.go
+│       ├── .air.toml
+│       ├── .goreleaser.yaml
+│       └── Dockerfile
+├── internal/
+│   ├── context_key/
 │   ├── db/
-│   │   ├── migrations/# Database schema migrations
-│   │   └── queries/   # SQL queries for sqlc
-│   ├── jobs/          # Jobs processor implementation
-│   │   ├── hn/        # Hacker News scraper
-│   │   └── llm/       # LLM client (Gemini integration)
-│   ├── mcp/           # MCP server implementation
-│   │   ├── server/    # MCP server setup and middleware
-│   │   │   └── middleware/# Authentication middleware
-│   │   └── tool/      # MCP tool implementations
-│   ├── search/        # Search client implementation
-│   ├── server/        # Shared server utilities
-│   │   ├── health/    # Health check handlers
-│   │   ├── middleware/# Common HTTP middleware
-│   │   └── mux/       # HTTP router setup
-│   ├── ui/            # Frontend code and assets
-│   │   ├── components/# Templ templates (.templ files)
-│   │   ├── dist/      # Static assets (CSS, JS, images)
-│   │   ├── e2e/       # End-to-end tests
+│   │   ├── migrations/
+│   │   └── queries/
+│   ├── jobs/
+│   │   ├── hn/
+│   │   ├── llm/
+│   │   └── server/
+│   │       ├── handler/
+│   │       └── router/
+│   ├── logger/
+│   ├── mcp/
 │   │   ├── server/
-│   │   │   ├── handler/   # HTTP request handlers
-│   │   │   ├── middleware/# HTTP middleware
-│   │   │   └── router/    # Route definitions
-│   │   ├── styles/    # Tailwind CSS source files
-│   │   ├── types/     # Domain types and business logic
-│   │   └── utils/     # Utility functions
-│   ├── logger/        # Structured logging setup
-│   ├── context_key/   # Context key definitions
-│   ├── testutil/      # Test utilities
-│   └── version/       # Application version management
-├── .github/           # GitHub workflows
-├── go.mod             # Go module with tools
+│   │   │   └── middleware/
+│   │   └── tool/
+│   ├── search/
+│   ├── server/
+│   │   ├── health/
+│   │   ├── middleware/
+│   │   └── mux/
+│   ├── testutil/
+│   ├── ui/
+│   │   ├── components/
+│   │   ├── dist/
+│   │   │   └── assets/
+│   │   ├── e2e/
+│   │   │   └── testdata/
+│   │   ├── server/
+│   │   │   ├── handler/
+│   │   │   ├── middleware/
+│   │   │   └── router/
+│   │   ├── styles/
+│   │   ├── types/
+│   │   └── utils/
+│   └── version/
+├── .github/
+│   └── workflows/
+├── go.mod
+├── sqlc.yml
+├── migrate.sh
 ├── README.md
 └── LICENSE
 ```
