@@ -87,32 +87,34 @@ templ SankeyGraph(data types.AnalyticsData) {
 
 					const { nodes, links } = sankey(data);
 
-					const colorScale = d3
-						.scaleOrdinal()
-						.domain([
-							"accepted",
-							"applied",
-							"canceled",
-							"closed",
-							"declined",
-							"interviewing",
-							"offered",
-							"rejected",
-							"watching",
-							"withdrawn",
-						])
-						.range([
-							"#22c55e", // accepted - green
-							"#3b82f6", // applied - blue
-							"#dc2626", // canceled - red
-							"#f97316", // closed - orange
-							"#a855f7", // declined - purple
-							"#eab308", // interviewing - yellow
-							"#16a34a", // offered - green (darker)
-							"#ef4444", // rejected - red
-							"#6b7280", // watching - gray
-							"#9ca3af", // withdrawn - gray (lighter)
-						]);
+				const colorScale = d3
+					.scaleOrdinal()
+					.domain([
+						"accepted",
+						"applied",
+						"canceled",
+						"closed",
+						"declined",
+						"interviewing",
+						"no response",
+						"offered",
+						"rejected",
+						"watching",
+						"withdrawn",
+					])
+					.range([
+						"#22c55e", // accepted - green
+						"#3b82f6", // applied - blue
+						"#dc2626", // canceled - red
+						"#f97316", // closed - orange
+						"#a855f7", // declined - purple
+						"#eab308", // interviewing - yellow
+						"#94a3b8", // no response - slate gray
+						"#16a34a", // offered - green (darker)
+						"#ef4444", // rejected - red
+						"#6b7280", // watching - gray
+						"#9ca3af", // withdrawn - gray (lighter)
+					]);
 
 					g.append("g")
 						.selectAll("path")
