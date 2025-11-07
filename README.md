@@ -70,18 +70,12 @@ Generate an API key through the web application settings, then configure your MC
    # Web application with hot reload
    cd cmd/ui && air
 
-   # Or build and run manually
-   go build -o ./tmp/main ./cmd/ui
-   ./tmp/main
-
    # MCP server (optional, for programmatic access)
-   go build -o ./tmp/mcp ./cmd/mcp
-   ./tmp/mcp
+   cd cmd/mcp && air
 
    # Jobs processor (optional, for HN scraping - requires GEMINI_API_KEY)
    export GEMINI_API_KEY=your_api_key_here
-   go build -o ./tmp/jobs ./cmd/jobs
-   ./tmp/jobs
+   cd cmd/jobs && air
    ```
 
 5. **Open your browser**
