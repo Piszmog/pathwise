@@ -259,7 +259,9 @@ SELECT
   MIN(h.created_at) AS heard_back_at
 FROM
   job_applications j
-  JOIN job_application_status_histories h ON h.job_application_id = j.id
+  LEFT JOIN job_application_status_histories h 
+    ON h.job_application_id = j.id
+    AND h.status IN ('interviewing', 'offered', 'rejected', 'accepted', 'declined')
 WHERE
   j.user_id = ?
   AND j.archived = 0
