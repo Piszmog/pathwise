@@ -33,6 +33,7 @@ func New(logger *slog.Logger, database db.Database, searchClient *search.Client)
 				http.Redirect(w, r, "/assets/img/favicon.ico", http.StatusSeeOther)
 			}),
 			mux.WithHandleFunc(http.MethodGet, "/health", health.Handle(logger)),
+			mux.WithHandleFunc(http.MethodGet, "/about", h.About),
 			mux.WithHandleFunc(http.MethodGet, "/signup", h.Signup),
 			mux.WithHandleFunc(http.MethodPost, "/signup", h.Register),
 			mux.WithHandleFunc(http.MethodGet, "/signin", h.Signin),
