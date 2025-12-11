@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/Piszmog/pathwise/internal/db/queries"
 	"github.com/Piszmog/pathwise/internal/ui/components"
@@ -119,13 +118,7 @@ func (h *Handler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session",
-		Value:    "",
-		Expires:  time.Now().Add(-1 * time.Hour),
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	})
+	utils.ClearSessionCookie(w)
 
 	w.Header().Set("HX-Redirect", "/signin")
 }
@@ -144,13 +137,7 @@ func (h *Handler) LogoutSessions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session",
-		Value:    "",
-		Expires:  time.Now().Add(-1 * time.Hour),
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	})
+	utils.ClearSessionCookie(w)
 
 	w.Header().Set("HX-Redirect", "/signin")
 }
@@ -169,13 +156,7 @@ func (h *Handler) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session",
-		Value:    "",
-		Expires:  time.Now().Add(-1 * time.Hour),
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	})
+	utils.ClearSessionCookie(w)
 
 	w.Header().Set("HX-Redirect", "/signin")
 }
