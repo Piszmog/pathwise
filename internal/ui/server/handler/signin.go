@@ -25,6 +25,15 @@ var (
 func (h *Handler) Signin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	utils.ClearSessionCookie(w)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "session",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/job-listings",
+		Secure:   utils.IsProduction(),
+	})
 	signinOnce.Do(func() {
 		var buf bytes.Buffer
 		if err := components.Signin().Render(ctx, &buf); err != nil {
