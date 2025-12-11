@@ -24,6 +24,7 @@ var (
 
 func (h *Handler) Signin(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	utils.ClearSessionCookie(w)
 	signinOnce.Do(func() {
 		var buf bytes.Buffer
 		if err := components.Signin().Render(ctx, &buf); err != nil {

@@ -4,6 +4,7 @@ package e2e_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/playwright-community/playwright-go"
 	"github.com/stretchr/testify/require"
@@ -104,4 +105,31 @@ func TestSignUp_PasswordsDoNotMatch(t *testing.T) {
 	require.NoError(t, expect.Page(page).ToHaveURL(getFullPath("signup"), playwright.PageAssertionsToHaveURLOptions{
 		Timeout: playwright.Float(10000),
 	}))
+}
+
+func TestSignup_ClearsCookiesOnPageLoad(t *testing.T) {
+	beforeEach(t)
+	email := generateUniqueEmail(t)
+	createTestUser(t, email)
+
+	signin(t, email, "password")
+
+	cookies, err := ctx.Cookies()
+	require.NoError(t, err)
+	require.NotEmpty(t, cookies)
+
+	sessionCookie := findCookie(cookies, "session")
+	require.NotNil(t, sessionCookie, "session cookie should exist after signin")
+
+	_, err = page.Goto(getFullPath("signup"))
+	require.NoError(t, err)
+
+	cookies, err = ctx.Cookies()
+	require.NoError(t, err)
+
+	sessionCookie = findCookie(cookies, "session")
+	if sessionCookie != nil {
+		require.True(t, time.Unix(int64(sessionCookie.Expires), 0).Before(time.Now()),
+			"session cookie should be expired after visiting signup page")
+	}
 }
