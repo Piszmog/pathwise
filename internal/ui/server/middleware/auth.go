@@ -10,6 +10,7 @@ import (
 
 	"github.com/Piszmog/pathwise/internal/db"
 	"github.com/Piszmog/pathwise/internal/db/queries"
+	"github.com/Piszmog/pathwise/internal/ui/utils"
 )
 
 const (
@@ -72,13 +73,7 @@ func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 			if err != nil {
 				m.Logger.ErrorContext(r.Context(), "failed to refresh session", "err", err)
 			} else {
-				http.SetCookie(w, &http.Cookie{
-					Name:     "session",
-					Value:    session.Token,
-					Expires:  newExpiry,
-					HttpOnly: true,
-					SameSite: http.SameSiteStrictMode,
-				})
+				utils.SetSessionCookie(w, session.Token, newExpiry)
 			}
 		}
 

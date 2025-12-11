@@ -2,7 +2,8 @@ package handler
 
 import (
 	"net/http"
-	"time"
+
+	"github.com/Piszmog/pathwise/internal/ui/utils"
 )
 
 func (h *Handler) Signout(w http.ResponseWriter, r *http.Request) {
@@ -19,13 +20,7 @@ func (h *Handler) Signout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session",
-		Value:    "",
-		Expires:  time.Now().Add(-1 * time.Hour),
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	})
+	utils.ClearSessionCookie(w)
 
 	http.Redirect(w, r, "/signin", http.StatusSeeOther)
 }

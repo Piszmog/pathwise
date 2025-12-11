@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Piszmog/pathwise/internal/ui/components"
 	"github.com/Piszmog/pathwise/internal/db/queries"
+	"github.com/Piszmog/pathwise/internal/ui/components"
 	"github.com/Piszmog/pathwise/internal/ui/server/middleware"
 	"github.com/Piszmog/pathwise/internal/ui/types"
 	"github.com/Piszmog/pathwise/internal/ui/utils"
@@ -76,13 +76,7 @@ func (h *Handler) Authenticate(w http.ResponseWriter, r *http.Request) {
 		h.html(r.Context(), w, http.StatusInternalServerError, components.Alert(types.AlertTypeWarning, "Something went wrong", "Try again later."))
 		return
 	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session",
-		Value:    token,
-		Expires:  expiresAt,
-		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
-	})
+	utils.SetSessionCookie(w, token, expiresAt)
 
 	err = h.Database.Queries().DeleteOldUserSessions(r.Context(), user.ID)
 	if err != nil {
