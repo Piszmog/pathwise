@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"sync"
 
-	"github.com/Piszmog/pathwise/internal/ui/components"
 	"github.com/Piszmog/pathwise/internal/db/queries"
+	"github.com/Piszmog/pathwise/internal/ui/components"
 	"github.com/Piszmog/pathwise/internal/ui/types"
 	"github.com/Piszmog/pathwise/internal/ui/utils"
 )
@@ -19,6 +19,7 @@ var (
 
 func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	utils.ClearSessionCookie(w)
 	signupOnce.Do(func() {
 		var buf bytes.Buffer
 		if err := components.Signup().Render(ctx, &buf); err != nil {
